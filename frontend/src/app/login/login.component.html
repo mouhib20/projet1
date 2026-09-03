@@ -1,0 +1,42 @@
+<div class="auth-page">
+    <button class="back-btn" (click)="goHome()">
+        ← Retour à l'accueil
+    </button>
+
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="brand-icon">🔒</div>
+            <h2>Connexion</h2>
+            <p>Accédez à votre espace GSMPro</p>
+        </div>
+
+        <form class="auth-form" (ngSubmit)="goHome()">
+            <div class="form-group">
+                <label for="email">Adresse Email</label>
+                <input type="email" id="email" placeholder="admin@gsmpro.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+
+            <div class="form-options">
+                <label class="checkbox-label">
+                    <input type="checkbox">
+                    <span>Se souvenir de moi</span>
+                </label>
+                <a href="#" class="forgot-link">Mot de passe oublié ?</a>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                Se connecter
+            </button>
+        </form>
+    </div>
+
+    <div class="background-elements">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+</div>

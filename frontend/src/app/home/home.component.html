@@ -1,0 +1,91 @@
+<div class="home-page">
+    <!-- ─── Navbar ──────────────────────────────────────── -->
+    <nav class="home-nav">
+        <div class="nav-brand">
+            <span class="brand-icon">📱</span>
+            <span class="brand-name">GSM<span class="brand-accent">Pro</span></span>
+        </div>
+        <div class="nav-actions">
+            <div class="dropdown-wrapper">
+                <button class="icon-btn translation-btn" title="Changer la langue" (click)="toggleLangMenu()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path
+                            d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                        </path>
+                        <path d="M2 12h20"></path>
+                    </svg>
+                </button>
+                <div class="lang-dropdown" *ngIf="showLangMenu">
+                    <button class="lang-item" *ngFor="let lang of languages" [class.active]="currentLang === lang.label"
+                        (click)="selectLang(lang)">
+                        {{ lang.label }}
+                    </button>
+                </div>
+            </div>
+            <button class="login-btn" title="Se connecter" (click)="goTo('login')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+                <span>{{ 'HOME.LOGIN' | translate }}</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ─── Hero ────────────────────────────────────────── -->
+    <section class="hero">
+        <div class="hero-badge">{{ 'HOME.BADGE' | translate }}</div>
+        <h1 class="hero-title">{{ 'HOME.WELCOME' | translate }}<br><span class="gradient-text">{{ 'HOME.GSM_MANAGEMENT'
+                | translate }}</span></h1>
+        <p class="hero-subtitle">{{ 'HOME.SUBTITLE' | translate }}</p>
+    </section>
+
+    <!-- ─── Cards ───────────────────────────────────────── -->
+    <section class="cards-section">
+        <div class="space-card" (click)="goTo('vente')">
+            <div class="card-glow card-glow--blue"></div>
+            <div class="card-icon">🛒</div>
+            <h2 class="card-title">{{ 'SPACE.VENTE_TITLE' | translate }}</h2>
+            <p class="card-desc">{{ 'SPACE.VENTE_DESC' | translate }}</p>
+            <div class="card-features">
+                <span class="feature-tag">{{ 'HOME.FEAT_PRODUCTS' | translate }}</span>
+                <span class="feature-tag">{{ 'HOME.FEAT_ORDERS' | translate }}</span>
+                <span class="feature-tag">{{ 'HOME.FEAT_STOCK' | translate }}</span>
+            </div>
+            <div class="card-arrow">
+                <span>{{ 'BTN.ACCESS' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="space-card" (click)="goTo('reparation')">
+            <div class="card-glow card-glow--purple"></div>
+            <div class="card-icon">🔧</div>
+            <h2 class="card-title">{{ 'SPACE.REPARATION_TITLE' | translate }}</h2>
+            <p class="card-desc">{{ 'SPACE.REPARATION_DESC' | translate }}</p>
+            <div class="card-features">
+                <span class="feature-tag">{{ 'HOME.FEAT_RECARDS' | translate }}</span>
+                <span class="feature-tag">{{ 'HOME.FEAT_TRACKING' | translate }}</span>
+                <span class="feature-tag">{{ 'HOME.FEAT_CLIENTS' | translate }}</span>
+            </div>
+            <div class="card-arrow">
+                <span>{{ 'BTN.ACCESS' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── Footer ──────────────────────────────────────── -->
+    <footer class="home-footer">
+        <p>{{ 'HOME.FOOTER' | translate }}</p>
+    </footer>
+</div>

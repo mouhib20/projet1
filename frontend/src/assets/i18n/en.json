@@ -1,0 +1,103 @@
+{
+    "SIDEBAR": {
+        "HOME": "Home",
+        "VENTE": "Sales",
+        "STATS": "Statistics",
+        "CHARGES": "Expenses",
+        "STOCK": "Stock",
+        "SUPPLIERS": "Suppliers",
+        "INVOICES": "Invoices"
+    },
+    "HOME": {
+        "WELCOME": "Your workspace for",
+        "GSM_MANAGEMENT": "GSM management",
+        "SUBTITLE": "Choose your workspace to get started",
+        "LOGIN": "Login",
+        "BADGE": "Welcome",
+        "FEAT_PRODUCTS": "Products",
+        "FEAT_ORDERS": "Orders",
+        "FEAT_STOCK": "Stock",
+        "FEAT_RECARDS": "Tickets",
+        "FEAT_TRACKING": "Tracking",
+        "FEAT_CLIENTS": "Clients",
+        "FOOTER": "© 2026 GSMPro — All rights reserved"
+    },
+    "SPACE": {
+        "VENTE_TITLE": "Sales Space",
+        "VENTE_DESC": "Manage your products, orders, and sales transactions",
+        "REPARATION_TITLE": "Repair Space",
+        "REPARATION_DESC": "Track repair tickets and device status"
+    },
+    "BTN": {
+        "ACCESS": "Access",
+        "HOME": "Home",
+        "NEW_PRODUCT": "New Product",
+        "SAVE": "💾 Save",
+        "CREATE": "✅ Create",
+        "CANCEL": "Cancel"
+    },
+    "VENTE": {
+        "TITLE": "Sales Space",
+        "TOTAL_PRODUCTS": "Total products",
+        "MY_PRODUCTS": "My Products",
+        "SUBTITLE": "Add, edit and delete your products for sale",
+        "EDIT_PRODUCT": "Edit product",
+        "ADD_PRODUCT": "Add a product",
+        "PRODUCT_NAME": "Product name *",
+        "NAME_PLACEHOLDER": "Ex: iPhone 15 Pro",
+        "PRICE": "Price (DT) *",
+        "DESCRIPTION": "Description",
+        "DESC_PLACEHOLDER": "Product description...",
+        "SEARCH_PLACEHOLDER": "Search for a product...",
+        "PRODUCTS_COUNT": "product(s)",
+        "LOADING": "Loading...",
+        "CONNECTING_BACKEND": "Connecting to backend server",
+        "NO_RESULT": "No results found",
+        "NO_PRODUCT_YET": "No product yet",
+        "TRY_ANOTHER_TERM": "Try another search term",
+        "CLICK_NEW_PRODUCT": "Click on \"New product\" to start",
+        "TBL_NAME": "Name",
+        "TBL_DESC": "Description",
+        "TBL_PRICE": "Price",
+        "TBL_DATE": "Date added",
+        "TBL_ACTIONS": "Actions",
+        "BTN_EDIT": "Edit",
+        "BTN_DELETE": "Delete"
+    },
+    "FOURNISSEURS": {
+        "TITLE": "Suppliers",
+        "SUBTITLE": "Manage your suppliers",
+        "ADD_NEW": "New Supplier",
+        "ADD": "Add a supplier",
+        "EDIT": "Edit supplier",
+        "EMPTY_LIST": "No supplier registered."
+    },
+    "FACTURES": {
+        "TITLE": "Invoices"
+    },
+    "DASHBOARD": {
+        "OVERVIEW": "Overview of your activity",
+        "REFRESH": "Refresh",
+        "LOADING_STATS": "Loading statistics...",
+        "RETRY": "Retry",
+        "KPI_ARTICLES": "Articles",
+        "KPI_SUPPLIERS": "Suppliers",
+        "KPI_INVOICES": "Invoices",
+        "KPI_STOCK_VALUE": "Stock Value",
+        "RECENT_INVOICES": "Recent Invoices",
+        "LOW_STOCK_ALERTS": "Low Stock Alerts",
+        "COLUMN_REF": "Reference",
+        "COLUMN_DATE": "Date",
+        "COLUMN_SUPPLIER": "Supplier",
+        "COLUMN_TOTAL_HT": "Total HT",
+        "EMPTY_INVOICES": "No invoices recorded",
+        "EMPTY_LOW_STOCK": "All articles are in sufficient stock",
+        "LOADING_ERROR": "Unable to load statistics.",
+        "STATUS_OUT": "Out of Stock",
+        "STATUS_LOW": "Low",
+        "STATUS_OK": "OK"
+    },
+    "CANCEL": "Cancel",
+    "SAVE": "Save",
+    "CURRENCY": "DT"
+}

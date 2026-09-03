@@ -1,0 +1,143 @@
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dash-header">
+        <div>
+            <h2 class="dash-title">{{ 'SIDEBAR.HOME' | translate }}</h2>
+            <p class="dash-subtitle">{{ 'DASHBOARD.OVERVIEW' | translate }}</p>
+        </div>
+        <button class="btn-refresh" (click)="loadStats()" [disabled]="loading">
+            <span class="refresh-icon" [class.spinning]="loading">⟳</span>
+            {{ 'DASHBOARD.REFRESH' | translate }}
+        </button>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-state">
+        <div class="loader"></div>
+        <p>{{ 'DASHBOARD.LOADING_STATS' | translate }}</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="errorMsg && !loading" class="error-state">
+        <span class="error-icon">⚠️</span>
+        <p>{{ errorMsg | translate }}</p>
+        <button class="btn-retry" (click)="loadStats()">{{ 'DASHBOARD.RETRY' | translate }}</button>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div *ngIf="stats && !loading" class="dash-content fade-in">
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card kpi-articles">
+                <div class="kpi-icon-wrap kpi-icon-blue">
+                    <span>📦</span>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-value">{{ stats.totalArticles }}</span>
+                    <span class="kpi-label">{{ 'DASHBOARD.KPI_ARTICLES' | translate }}</span>
+                </div>
+                <div class="kpi-glow kpi-glow-blue"></div>
+            </div>
+
+            <div class="kpi-card kpi-fournisseurs">
+                <div class="kpi-icon-wrap kpi-icon-purple">
+                    <span>🤝</span>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-value">{{ stats.totalFournisseurs }}</span>
+                    <span class="kpi-label">{{ 'DASHBOARD.KPI_SUPPLIERS' | translate }}</span>
+                </div>
+                <div class="kpi-glow kpi-glow-purple"></div>
+            </div>
+
+            <div class="kpi-card kpi-factures">
+                <div class="kpi-icon-wrap kpi-icon-green">
+                    <span>📄</span>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-value">{{ stats.totalFactures }}</span>
+                    <span class="kpi-label">{{ 'DASHBOARD.KPI_INVOICES' | translate }}</span>
+                </div>
+                <div class="kpi-glow kpi-glow-green"></div>
+            </div>
+
+            <div class="kpi-card kpi-stock-value">
+                <div class="kpi-icon-wrap kpi-icon-amber">
+                    <span>💰</span>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-value">{{ stats.totalStockValue | number:'1.3-3' }}</span>
+                    <span class="kpi-label">{{ 'DASHBOARD.KPI_STOCK_VALUE' | translate }} ({{ 'CURRENCY' | translate
+                        }})</span>
+                </div>
+                <div class="kpi-glow kpi-glow-amber"></div>
+            </div>
+        </div>
+
+        <!-- Two-column layout -->
+        <div class="panels-grid">
+            <!-- Recent Invoices -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">📋 {{ 'DASHBOARD.RECENT_INVOICES' | translate }}</h3>
+                </div>
+                <div class="panel-body">
+                    <table class="mini-table" *ngIf="stats.recentFactures.length > 0">
+                        <thead>
+                            <tr>
+                                <th>{{ 'DASHBOARD.COLUMN_REF' | translate }}</th>
+                                <th>{{ 'DASHBOARD.COLUMN_DATE' | translate }}</th>
+                                <th>{{ 'DASHBOARD.COLUMN_SUPPLIER' | translate }}</th>
+                                <th>{{ 'DASHBOARD.COLUMN_TOTAL_HT' | translate }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let f of stats.recentFactures">
+                                <td><span class="ref-badge">{{ f.reference }}</span></td>
+                                <td>{{ f.date_facture | date:'dd/MM/yyyy' }}</td>
+                                <td>{{ f.fournisseur?.entreprise || f.fournisseur?.nom || '—' }}</td>
+                                <td class="fw-bold">{{ f.total_ht | number:'1.3-3' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div *ngIf="stats.recentFactures.length === 0" class="empty-panel">
+                        <p>{{ 'DASHBOARD.EMPTY_INVOICES' | translate }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Low Stock Alerts -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">🔔 {{ 'DASHBOARD.LOW_STOCK_ALERTS' | translate }}</h3>
+                    <span *ngIf="stats.lowStockArticles.length > 0" class="alert-count">
+                        {{ stats.lowStockArticles.length }}
+                    </span>
+                </div>
+                <div class="panel-body">
+                    <div *ngIf="stats.lowStockArticles.length > 0" class="alert-list">
+                        <div *ngFor="let art of stats.lowStockArticles" class="alert-item">
+                            <div class="alert-info">
+                                <span class="alert-name">{{ art.designation }}</span>
+                                <span class="alert-detail">{{ art.marque || '' }} {{ art.modele || '' }}</span>
+                            </div>
+                            <div class="alert-qty">
+                                <span class="qty-badge" [ngClass]="getStockStatusClass(art)">
+                                    {{ art.quantite }} / {{ art.qte_min ?? 3 }}
+                                </span>
+                                <span class="qty-label" [ngClass]="getStockStatusClass(art)">
+                                    {{ getStockStatusLabel(art) | translate }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div *ngIf="stats.lowStockArticles.length === 0" class="empty-panel success-empty">
+                        <span>✅</span>
+                        <p>{{ 'DASHBOARD.EMPTY_LOW_STOCK' | translate }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

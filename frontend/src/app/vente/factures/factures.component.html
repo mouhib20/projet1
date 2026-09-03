@@ -1,0 +1,387 @@
+<div class="factures-container">
+    <div class="header-section">
+        <h2 class="title">{{ 'FACTURES.TITLE' | translate | uppercase }} (ACHAT)</h2>
+        <p class="subtitle">{{ 'FACTURES.SUBTITLE' | translate }}</p>
+        <button class="btn-primary add-btn" (click)="openModal()">
+            + {{ 'FACTURES.NEW_INVOICE' | translate }}
+        </button>
+    </div>
+
+    <!-- MAIN TABLE -->
+    <div class="table-container fade-in">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>{{ 'FACTURES.COL_REF' | translate }}</th>
+                    <th>{{ 'FACTURES.COL_DATE' | translate }}</th>
+                    <th>{{ 'FACTURES.COL_SUPP' | translate }}</th>
+                    <th>{{ 'FACTURES.COL_TOT' | translate }}</th>
+                    <th>{{ 'FACTURES.COL_TVA' | translate }}</th>
+                    <th>{{ 'FACTURES.COL_NET' | translate }}</th>
+                    <th>{{ 'FACTURES.COL_REMAIN' | translate }}</th>
+                    <th>{{ 'FACTURES.COL_ITEMS' | translate }}</th>
+                    <th>{{ 'FACTURES.COL_ACT' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let f of factures">
+                    <td><span class="badge">{{ f.reference }}</span></td>
+                    <td>{{ f.date_facture | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ f.fournisseur?.entreprise || f.fournisseur?.nom }}</td>
+                    <td>{{ f.total_ht | number:'1.3-3' }}</td>
+                    <td class="text-muted">{{ f.total_tva | number:'1.3-3' }}</td>
+                    <td class="fw-bold text-success">{{ f.net_a_payer | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                    </td>
+                    <td [class.text-danger]="f.reste_a_payer > 0">
+                        {{ f.reste_a_payer | number:'1.3-3' }}
+                    </td>
+                    <td class="text-center">{{ f.mouvements_achat?.length || 0 }}</td>
+                    <td>
+                        <button class="btn-icon view" title="Voir les détails" (click)="openDetail(f)">👁</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div *ngIf="factures.length === 0" class="empty-state">
+            <p>{{ 'FACTURES.EMPTY_LIST' | translate }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     Modal Creation Facture (Matching GSM UI)
+     ========================================================= -->
+<div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
+    <!-- Note: Modal is slightly wider to accommodate detailed forms -->
+    <div class="modal-content scale-in large-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>{{ 'FACTURES.MODAL_ADD_TITLE' | translate }}</h3>
+            <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+
+        <div class="modal-body custom-scroll">
+            <div class="modern-form">
+
+                <!-- TOP SECTION: Supplier and Basic Info -->
+                <div class="form-row">
+                    <div class="form-group mb-4" style="flex: 2;">
+                        <label>{{ 'FACTURES.SUPPLIER' | translate }} <span class="required">*</span></label>
+                        <select [(ngModel)]="formData.fournisseurId" (ngModelChange)="onFournisseurChange()"
+                            class="form-control select-box">
+                            <option [ngValue]="undefined" disabled>{{ 'FACTURES.SELECT_SUPPLIER' | translate }}</option>
+                            <option *ngFor="let fr of fournisseurs" [ngValue]="fr.id_fournisseur">
+                                {{ fr.entreprise ? fr.entreprise + ' - ' : '' }}{{ fr.nom }} {{ fr.prenom }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>{{ 'FACTURES.REFERENCE' | translate }} <span class="required">*</span></label>
+                        <input type="text" [(ngModel)]="formData.reference" class="form-control" />
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>{{ 'FACTURES.DATE' | translate }} <span class="required">*</span></label>
+                        <input type="date" [(ngModel)]="formData.date_facture" class="form-control" />
+                    </div>
+                </div>
+
+                <!-- ADD ITEM WORKFLOW (Only shown if supplier selected) -->
+                <ng-container *ngIf="formData.fournisseurId">
+                    <div class="add-item-box">
+
+                        <!-- Smart Search (ALWAYS FIRST) -->
+                        <div class="search-section p-3 mb-4 rounded"
+                            style="background-color: rgba(30, 41, 59, 0.4); border: 1px solid #334155;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <label class="blue-label text-info m-0" style="font-size: 16px;">
+                                        <span style="font-size: 18px; margin-right: 5px;">🔍</span> {{
+                                        'FACTURES.SMART_SEARCH' | translate }}
+                                    </label>
+                                    <p class="text-muted-xs m-0 mt-1">{{ 'FACTURES.SMART_SEARCH_DESC' | translate }}</p>
+                                </div>
+                                <button *ngIf="!currentItem.isNew" (click)="resetCurrentItem()" class="btn btn-sm"
+                                    style="background-color: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+                                    ✕ Annuler la sélection
+                                </button>
+                            </div>
+
+                            <div class="search-wrapper mt-3">
+                                <input type="text" [(ngModel)]="searchTerm"
+                                    class="form-control barcode-input custom-search-input"
+                                    placeholder="Utilisez le lecteur de codes-barres ou tapez le nom..."
+                                    (focus)="showSmartSearchResults = true" (blur)="hideSmartSearch()"
+                                    (keyup.enter)="handleSearchEnter()" [disabled]="!currentItem.isNew" />
+                                <!-- Search Autocomplete Dropdown -->
+                                <div class="search-results"
+                                    *ngIf="showSmartSearchResults && filteredSmartArticles.length > 0 && currentItem.isNew">
+                                    <div class="search-item" *ngFor="let art of filteredSmartArticles"
+                                        (click)="selectSmartArticle(art)">
+                                        <span class="art-name">{{ art.designation }}</span>
+                                        <span class="art-brand" *ngIf="art.marque">({{ art.marque }})</span>
+                                        <span class="art-stock">Stock: {{ art.quantite }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 1. EXISTING ARTICLE FORM (When found) -->
+                        <div class="piece-details fade-in" *ngIf="!currentItem.isNew">
+                            <h4 class="blue-title text-center mb-3">Article Sélectionné : {{ currentItem.designation }}
+                            </h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="text-right d-block">{{ 'FACTURES.QTY_RECEIVED' | translate }} <span
+                                            class="required">*</span></label>
+                                    <input type="number" min="1" [(ngModel)]="currentItem.qte"
+                                        class="form-control dark-input text-center font-monospace font-lg"
+                                        placeholder="1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="text-right d-block">{{ 'FACTURES.PRICE_BUY' | translate }} <span
+                                            class="required">*</span></label>
+                                    <input type="number" min="0" step="0.001" [(ngModel)]="currentItem.prix"
+                                        class="form-control dark-input text-right font-monospace">
+                                </div>
+                                <div class="form-group">
+                                    <label class="text-right d-block">{{ 'FACTURES.PRICE_SELL' | translate }}</label>
+                                    <input type="number" min="0" step="0.001" [(ngModel)]="currentItem.prix_vente"
+                                        class="form-control dark-input text-right font-monospace">
+                                </div>
+                            </div>
+                            <div class="form-row mt-3 justify-content-end">
+                                <button class="btn-green-add w-100" (click)="addItemToInvoice()">
+                                    <span class="icon">+</span>
+                                    {{ 'FACTURES.ADD_TO_INVOICE' | translate }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2. NEW ARTICLE FORM (If not found / not selected) -->
+                        <div class="new-piece-section fade-in" *ngIf="currentItem.isNew">
+                            <div class="d-flex align-items-center mb-4 mt-2">
+                                <hr class="flex-grow-1" style="border-color: #334155;">
+                                <span class="mx-3 text-muted"
+                                    style="font-size: 13px; font-weight: 600; letter-spacing: 1px;">OU CRÉER UN NOUVEL
+                                    ARTICLE</span>
+                                <hr class="flex-grow-1" style="border-color: #334155;">
+                            </div>
+
+                            <label class="blue-label">{{ 'FACTURES.ITEM_TYPE' | translate }}</label>
+                            <select [(ngModel)]="currentItem.type"
+                                class="form-control select-box item-type-select mb-4">
+                                <option value="">{{ 'FACTURES.SELECT_TYPE' | translate }}</option>
+                                <option *ngFor="let t of supplierTypes" [value]="t">{{ t }}</option>
+                            </select>
+
+                            <!-- Specific Fields if a type is chosen -->
+                            <div class="piece-details" *ngIf="currentItem.type">
+                                <h4 class="blue-title text-center mb-3">{{ 'FACTURES.ITEM_DETAILS' | translate }} {{
+                                    currentItemDisplayType }}</h4>
+
+                                <!-- Normal form -->
+                                <ng-container *ngIf="!isAutreType">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="text-right d-block">{{ 'FACTURES.BRAND' | translate }}</label>
+                                            <input type="text" [(ngModel)]="currentItem.marque"
+                                                class="form-control dark-input text-right"
+                                                [placeholder]="'FACTURES.BRAND_EX' | translate">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="text-right d-block">{{ 'FACTURES.MODEL' | translate }}</label>
+                                            <input type="text" [(ngModel)]="currentItem.modele"
+                                                class="form-control dark-input text-right"
+                                                [placeholder]="'FACTURES.MODEL_EX' | translate">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="text-right d-block">{{ 'FACTURES.QTY_RECEIVED' | translate }}
+                                                <span class="required">*</span></label>
+                                            <input type="number" min="1" [(ngModel)]="currentItem.qte"
+                                                class="form-control dark-input text-center font-monospace font-lg"
+                                                placeholder="1">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="text-right d-block">{{ 'FACTURES.BARCODE' | translate
+                                                }}</label>
+                                            <input type="text" [(ngModel)]="currentItem.barcode"
+                                                class="form-control dark-input text-center" placeholder="|||||||">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="text-right d-block">{{ 'FACTURES.PRICE_BUY' | translate }}
+                                                <span class="required">*</span></label>
+                                            <input type="number" min="0" step="0.001" [(ngModel)]="currentItem.prix"
+                                                class="form-control dark-input text-right font-monospace">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="text-right d-block">{{ 'FACTURES.PRICE_SELL' | translate
+                                                }}</label>
+                                            <input type="number" min="0" step="0.001"
+                                                [(ngModel)]="currentItem.prix_vente"
+                                                class="form-control dark-input text-right font-monospace">
+                                        </div>
+                                    </div>
+                                </ng-container>
+
+                                <!-- Special form for "Autre" -->
+                                <ng-container *ngIf="isAutreType">
+                                    <div class="form-row flex-column">
+                                        <div class="form-group mb-3 w-100">
+                                            <label class="text-right d-block w-100">{{ 'FACTURES.OTHER_NAME_DESC' |
+                                                translate }}</label>
+                                            <input type="text" [(ngModel)]="currentItem.designation"
+                                                class="form-control dark-input w-100 text-right">
+                                        </div>
+                                        <div class="form-group mb-3 w-100">
+                                            <label class="text-right d-block w-100">{{ 'FACTURES.OTHER_PRICE' |
+                                                translate }}</label>
+                                            <input type="number" min="0" step="0.001" [(ngModel)]="currentItem.prix"
+                                                class="form-control dark-input w-100 text-right font-monospace">
+                                        </div>
+                                    </div>
+                                </ng-container>
+
+                                <div class="form-row mt-3 justify-content-end">
+                                    <button class="btn-green-add w-100" (click)="addItemToInvoice()">
+                                        <span class="icon">+</span>
+                                        {{ 'FACTURES.ADD_TO_INVOICE' | translate }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CURRENT INVOICE ELEMENTS TABLE -->
+                    <div class="current-invoice-section mt-4">
+                        <div class="section-badge-title text-right">{{ 'FACTURES.CURRENT_ELEMENTS' | translate }}</div>
+
+                        <div class="items-table-wrapper dark-border mt-3">
+                            <table class="items-table highlight-table">
+                                <thead>
+                                    <tr>
+                                        <th width="35%">{{ 'FACTURES.DESIGNATION' | translate }}</th>
+                                        <th width="10%">{{ 'FACTURES.QTY' | translate }}</th>
+                                        <th width="20%">{{ 'FACTURES.PRICE_BUY' | translate }}</th>
+                                        <th width="25%">{{ 'FACTURES.TOTAL_TTC' | translate }}</th>
+                                        <th width="10%">{{ 'FACTURES.ACTIONS' | translate }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let item of formData.items; let i = index">
+                                        <td class="fw-bold">{{ item.designation }} <span *ngIf="item.isNew"
+                                                class="badge-new">{{ 'FACTURES.NEW_BADGE' | translate }}</span></td>
+                                        <td class="text-center font-monospace">{{ item.qte }}</td>
+                                        <td class="text-right font-monospace">{{ item.prix | number:'1.3-3' }}</td>
+                                        <td class="text-right fw-bold text-success font-monospace">
+                                            {{ item.total_ttc | number:'1.3-3' }}
+                                        </td>
+                                        <td class="text-center">
+                                            <button class="btn-icon delete-sm tooltip-btn" title="Supprimer"
+                                                (click)="removeItem(i)">✕</button>
+                                        </td>
+                                    </tr>
+                                    <tr *ngIf="formData.items.length === 0">
+                                        <td colspan="5" class="text-center text-muted py-4">{{ 'FACTURES.EMPTY_ELEMENTS'
+                                            | translate }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TOTALS SECTION (Bottom layout exactly like screenshot) -->
+                    <div class="bottom-totals mt-4">
+                        <div class="form-row text-right right-to-left">
+                            <div class="form-group flex-1 pl-3">
+                                <label class="d-block mb-2">{{ 'FACTURES.TOTAL_INVOICE' | translate }}</label>
+                                <div class="total-display">{{ computed.net_a_payer | number:'1.3-3' }}</div>
+                            </div>
+                            <div class="form-group flex-1">
+                                <label class="d-block mb-2">{{ 'FACTURES.AMOUNT_PAID' | translate }}</label>
+                                <input type="number" min="0" step="0.001" [(ngModel)]="formData.montant_paye"
+                                    (ngModelChange)="calculateTotals()" class="form-control input-paid text-right" />
+                            </div>
+                        </div>
+
+                        <!-- Submit Final -->
+                        <div class="mt-4 pb-2 text-center w-100">
+                            <button class="btn-blue-submit w-100" (click)="saveFacture()">
+                                {{ 'FACTURES.VALIDATE_INVOICE' | translate }}
+                            </button>
+                        </div>
+                    </div>
+                </ng-container>
+
+                <!-- Empty State before selecting supplier -->
+                <div *ngIf="!formData.fournisseurId" class="text-center text-muted p-5 mt-4 border-dashed rounded">
+                    <p style="font-size: 16px;">{{ 'FACTURES.PLEASE_SELECT_SUPPLIER' | translate }}</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     Detail View Modal
+     ========================================================= -->
+<div class="modal-overlay" *ngIf="isDetailOpen" (click)="closeDetail()">
+    <div class="modal-content scale-in" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>{{ 'FACTURES.DETAIL_TITLE' | translate }} {{ selectedFacture?.reference }}</h3>
+            <button class="close-btn" (click)="closeDetail()">✕</button>
+        </div>
+        <div class="modal-body custom-scroll" *ngIf="selectedFacture">
+            <!-- Details content remains the same... -->
+            <div class="detail-info">
+                <div class="form-row">
+                    <div class="detail-field">
+                        <label>{{ 'FACTURES.SUPPLIER' | translate }}</label>
+                        <span>{{ selectedFacture.fournisseur?.entreprise || selectedFacture.fournisseur?.nom }}</span>
+                    </div>
+                    <div class="detail-field">
+                        <label>{{ 'FACTURES.DATE' | translate }}</label>
+                        <span>{{ selectedFacture.date_facture | date:'dd/MM/yyyy' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="section-title mt-3">{{ 'FACTURES.DELIVERED_ITEMS' | translate }}</h4>
+            <div class="items-table-wrapper">
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>{{ 'FACTURES.DESIGNATION' | translate }}</th>
+                            <th>{{ 'FACTURES.QTY' | translate }}</th>
+                            <th>{{ 'FACTURES.UNIT_PRICE_HT' | translate }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let m of selectedFacture.mouvements_achat">
+                            <td>{{ m.article?.designation }}</td>
+                            <td class="text-center">{{ m.qte }}</td>
+                            <td class="text-right">{{ m.prix | number:'1.3-3' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="totals-section">
+                <!-- Keep totals simplified here -->
+                <div class="total-row net-payer pt-0 mt-0">
+                    <span>{{ 'FACTURES.COL_NET' | translate }} :</span>
+                    <span>{{ selectedFacture.net_a_payer | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                </div>
+                <!-- ... -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeDetail()">{{ 'FACTURES.CLOSE' | translate }}</button>
+        </div>
+    </div>
+</div>

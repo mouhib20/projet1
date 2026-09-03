@@ -1,0 +1,191 @@
+<div class="stock-page">
+
+    <!-- ─── Page Header ──────────────────────────────────────── -->
+    <div class="page-header">
+        <div>
+            <div class="page-title">📦 Inventaire Stock</div>
+            <div class="page-subtitle">Gérez vos pièces et accessoires</div>
+        </div>
+        <button class="btn btn-primary" (click)="openAddForm()" *ngIf="!showForm">
+            ＋ Ajouter
+        </button>
+    </div>
+
+    <!-- ─── Alerts ────────────────────────────────────────────── -->
+    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg }}</div>
+
+    <!-- ─── Form Card ─────────────────────────────────────────── -->
+    <div class="form-card" *ngIf="showForm">
+        <div class="form-card-header">
+            {{ isEditing ? '✏️ Modifier l\'article' : '➕ Ajouter un article' }}
+        </div>
+
+        <div class="form-grid">
+
+            <!-- Row 1: Name + Barcode -->
+            <div class="form-group">
+                <label>Nom *</label>
+                <input type="text" [(ngModel)]="form.designation" placeholder="ex: Afficheur Samsung A32" />
+            </div>
+            <div class="form-group">
+                <label>Barcode</label>
+                <input type="text" [(ngModel)]="form.barcode" placeholder="ex: 6901234567890" />
+            </div>
+
+            <!-- Row 2: Brand + Model -->
+            <div class="form-group">
+                <label>Marque</label>
+                <input type="text" [(ngModel)]="form.marque" placeholder="ex: Samsung" />
+            </div>
+            <div class="form-group">
+                <label>Modèle</label>
+                <input type="text" [(ngModel)]="form.modele" placeholder="ex: Galaxy A32" />
+            </div>
+
+            <!-- Row 3: Type + Sub-category -->
+            <div class="form-group">
+                <label>Type</label>
+                <select [(ngModel)]="form.type">
+                    <option value="part">Pièce</option>
+                    <option value="accessory">Accessoire</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Sous-catégorie</label>
+                <select [(ngModel)]="form.sous_categorie">
+                    <option value="">— Sélectionner —</option>
+                    <option *ngFor="let cat of subCategories" [value]="cat.key">{{ cat.label }}</option>
+                </select>
+            </div>
+
+            <!-- Row 4: Quantity + Min Qty -->
+            <div class="form-group">
+                <label>Quantité</label>
+                <input type="number" [(ngModel)]="form.quantite" min="0" placeholder="0" />
+            </div>
+            <div class="form-group">
+                <label>Qté min (alerte)</label>
+                <input type="number" [(ngModel)]="form.qte_min" min="0" placeholder="3" />
+            </div>
+
+            <!-- Row 5: Purchase Price + Sell Price -->
+            <div class="form-group">
+                <label>Prix Achat (DT)</label>
+                <input type="number" [(ngModel)]="form.prix_achat" min="0" step="0.001" placeholder="0.000" />
+            </div>
+            <div class="form-group">
+                <label>Prix Vente (DT)</label>
+                <input type="number" [(ngModel)]="form.prix_vente" min="0" step="0.001" placeholder="0.000" />
+            </div>
+
+            <!-- Row 6: Description (full width) -->
+            <div class="form-group full">
+                <label>Description</label>
+                <textarea [(ngModel)]="form.description" placeholder="Notes..."></textarea>
+            </div>
+
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-secondary" (click)="cancelForm()">Annuler</button>
+            <button class="btn btn-success" (click)="saveProduct()">
+                {{ isEditing ? 'Enregistrer' : 'Créer' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- ─── Table Card ─────────────────────────────────────────── -->
+    <div class="table-card">
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <button class="tab-btn" [class.active]="activeTab === 'all'" (click)="setTab('all')">
+                📦 Tous <span class="tab-count">{{ products.length }}</span>
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'part'" (click)="setTab('part')">
+                🔧 Pièces
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'accessory'" (click)="setTab('accessory')">
+                🎧 Accessoires
+            </button>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="table-toolbar">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input class="search-input" type="text" placeholder="Chercher par nom, barcode, marque…"
+                    [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()" />
+            </div>
+            <div class="table-count">{{ filteredProducts.length }} article(s)</div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-state" *ngIf="loading">
+            <div class="loading-icon">⟳</div>
+            <strong>Chargement…</strong>
+        </div>
+
+        <!-- Empty -->
+        <div class="empty-state" *ngIf="!loading && filteredProducts.length === 0 && !errorMsg">
+            <div class="empty-icon">📭</div>
+            <strong>{{ searchTerm ? 'Aucun résultat' : 'Aucun article pour l\'instant' }}</strong>
+            <p>{{ searchTerm ? 'Essayez un autre terme.' : 'Cliquez sur « ＋ Ajouter » pour commencer.' }}</p>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrapper" *ngIf="!loading && filteredProducts.length > 0">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Barcode</th>
+                        <th>Sous-cat</th>
+                        <th>Marque</th>
+                        <th>Modèle / Nom</th>
+                        <th class="text-center">Qté</th>
+                        <th class="text-right">Prix Achat</th>
+                        <th class="text-right">Prix Vente</th>
+                        <th class="text-center">Statut</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let p of filteredProducts; let i = index">
+                        <td class="td-num">{{ i + 1 }}</td>
+                        <td class="td-barcode">{{ p.barcode || '—' }}</td>
+                        <td>
+                            <span class="badge-cat" *ngIf="p.sous_categorie">{{ p.sous_categorie }}</span>
+                            <span *ngIf="!p.sous_categorie">—</span>
+                        </td>
+                        <td>{{ p.marque || '—' }}</td>
+                        <td class="td-name">
+                            <span>{{ p.designation }}</span>
+                            <small *ngIf="p.modele" class="td-model">{{ p.modele }}</small>
+                        </td>
+                        <td class="text-center td-qty">{{ p.quantite ?? '—' }}</td>
+                        <td class="text-right td-price-buy">
+                            {{ p.prix_achat != null ? (p.prix_achat | number:'1.3-3') + ' DT' : '—' }}
+                        </td>
+                        <td class="text-right td-price-sell">
+                            {{ p.prix_vente != null ? (p.prix_vente | number:'1.3-3') + ' DT' : '—' }}
+                        </td>
+                        <td class="text-center">
+                            <span [class]="'stock-badge ' + getStockStatus(p).cls">
+                                {{ getStockStatus(p).label }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="actions-cell">
+                                <button class="btn-icon edit" title="Modifier" (click)="openEditForm(p)">✏️</button>
+                                <button class="btn-icon delete" title="Supprimer"
+                                    (click)="deleteProduct(p.id_article, p.designation)">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

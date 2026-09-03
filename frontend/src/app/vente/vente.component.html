@@ -1,0 +1,63 @@
+<div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <button class="back-btn" (click)="goHome()">
+                ← {{ 'BTN.HOME' | translate }}
+            </button>
+            <div class="nav-title" style="margin-top: 15px; font-size: 1.2rem;">
+                <span>🛒</span> {{ 'VENTE.TITLE' | translate }}
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a routerLink="accueil" routerLinkActive="active" class="nav-link">🏠 {{ 'SIDEBAR.HOME' | translate }}</a>
+            <a routerLink="operations" routerLinkActive="active" class="nav-link">💳 {{ 'SIDEBAR.VENTE' | translate
+                }}</a>
+            <a routerLink="statistiques" routerLinkActive="active" class="nav-link">📊 {{ 'SIDEBAR.STATS' | translate
+                }}</a>
+            <a routerLink="charges" routerLinkActive="active" class="nav-link">💸 {{ 'SIDEBAR.CHARGES' | translate
+                }}</a>
+            <a routerLink="stock" routerLinkActive="active" class="nav-link">📦 {{ 'SIDEBAR.STOCK' | translate }}</a>
+            <a routerLink="fournisseurs" routerLinkActive="active" class="nav-link">🤝 {{ 'SIDEBAR.SUPPLIERS' |
+                translate }}</a>
+            <a routerLink="factures" routerLinkActive="active" class="nav-link">📄 {{ 'SIDEBAR.INVOICES' | translate
+                }}</a>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+        <!-- Top Navigation -->
+        <header class="top-header">
+            <div class="header-left">
+                <!-- can put breadcrumbs or current title -->
+            </div>
+            <div class="header-right">
+                <div class="dropdown-wrapper">
+                    <button class="icon-btn translation-btn" title="Changer la langue" (click)="toggleLangMenu()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path
+                                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                            </path>
+                            <path d="M2 12h20"></path>
+                        </svg>
+                    </button>
+                    <div class="lang-dropdown" *ngIf="showLangMenu">
+                        <button class="lang-item" *ngFor="let lang of languages"
+                            [class.active]="currentLang === lang.label" (click)="selectLang(lang)">
+                            {{ lang.label }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Content injected via Router -->
+        <main class="content-area">
+            <router-outlet></router-outlet>
+        </main>
+    </div>
+</div>

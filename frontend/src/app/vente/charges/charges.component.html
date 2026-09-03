@@ -1,0 +1,98 @@
+<div class="charges-container">
+    <div class="header-section">
+        <h2 class="title">{{ 'SIDEBAR.CHARGES' | translate | uppercase }}</h2>
+        <p class="subtitle">Gérez vos dépenses et charges (loyer, salaires, électricité...)</p>
+        <button class="btn-primary add-btn" (click)="openModal()">
+            + NOUVELLE CHARGE
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon">🏷️</div>
+            <div class="stat-info">
+                <span class="stat-value">{{ charges.length }}</span>
+                <span class="stat-label">Nombre de charges</span>
+            </div>
+        </div>
+        <div class="stat-card amount">
+            <div class="stat-icon">💸</div>
+            <div class="stat-info">
+                <span class="stat-value">{{ totalAmount | number:'1.3-3' }}</span>
+                <span class="stat-label">Total Dépenses ({{ 'CURRENCY' | translate }})</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-bar">
+        <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 Rechercher par description..."
+            class="search-input" />
+    </div>
+
+    <!-- Table -->
+    <div class="table-container fade-in">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th width="20%">Date</th>
+                    <th width="40%">Description</th>
+                    <th width="20%" class="text-right">Montant</th>
+                    <th width="20%" class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let c of filteredCharges">
+                    <td>{{ c.date_charge | date:'dd/MM/yyyy' }}</td>
+                    <td class="fw-bold">{{ c.description }}</td>
+                    <td class="text-right text-danger fw-bold">
+                        - {{ c.montant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                    </td>
+                    <td class="text-center">
+                        <button class="btn-icon delete-action" title="Supprimer" (click)="deleteCharge(c.id_charge!)">🗑
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div *ngIf="filteredCharges.length === 0" class="empty-state">
+            <p>Aucune charge trouvée.</p>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     Modal Nouvelle Charge
+     ========================================================= -->
+<div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
+    <div class="modal-content scale-in small-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Nouvelle Charge</h3>
+            <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+        <div class="modal-body custom-scroll">
+            <div class="modern-form">
+                <div class="form-group mb-4">
+                    <label>Description (Raison) <span class="required">*</span></label>
+                    <input type="text" [(ngModel)]="formData.description" class="form-control"
+                        placeholder="Ex: Loyer Avril 2026" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date <span class="required">*</span></label>
+                        <input type="date" [(ngModel)]="formData.date_charge" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Montant <span class="required">*</span></label>
+                        <input type="number" min="0" step="0.001" [(ngModel)]="formData.montant" class="form-control" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeModal()">{{ 'CANCEL' | translate }}</button>
+            <button class="btn-primary" (click)="saveCharge()">AJOUTER LA DÉPENSE</button>
+        </div>
+    </div>
+</div>

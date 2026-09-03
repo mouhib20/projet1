@@ -1,0 +1,434 @@
+
+> backend@1.0.0 start
+> nest start
+
+[32m[Nest] 18236  - [39m19/08/2026 21:15:41 [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 18236  - [39m19/08/2026 21:15:41 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +16ms[39m
+[32m[Nest] 18236  - [39m19/08/2026 21:15:41 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 18236  - [39m19/08/2026 21:15:41 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 18236  - [39m19/08/2026 21:15:41 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 18236  - [39m19/08/2026 21:15:41 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+node.exe : [31m[Nest] 
+18236  - [39m19/08/2026 
+21:15:41 [31m  ERROR[39m 
+[38;5;3m[TypeOrmModule] 
+[39m[31mUnable to connect 
+to the database. Retrying 
+(1)...[39m
+Au caract?re Ligne:1 : 1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecified: ([31m  
+  [Nest] 182...ing (1)...   
+ [39m:String) [], Remot    
+eException
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+QueryFailedError: Cannot 
+drop index 'FK_article': 
+needed in a foreign key 
+constraint
+    at Query.onResult (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\typeorm\dri
+ver\src\driver\mysql\MysqlQu
+eryRunner.ts:248:33)
+    at Query.execute (C:\Use
+rs\Lenovo\Desktop\GSMM\backe
+nd\node_modules\mysql2\lib\c
+ommands\command.js:36:14)
+    at 
+PoolConnection.handlePacket 
+(C:\Users\Lenovo\Desktop\GSM
+M\backend\node_modules\mysql
+2\lib\base\connection.js:555
+:34)
+    at 
+PacketParser.onPacket (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\mysql2\lib\
+base\connection.js:104:12)
+    at 
+PacketParser.executeStart (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\base\connection.js:112:2
+5)
+    at Socket.emit 
+(node:events:508:28)
+    at addChunk (node:intern
+al/streams/readable:559:12)
+    at readableAddChunkPushB
+yteMode (node:internal/strea
+ms/readable:510:3)
+    at Readable.push (node:i
+nternal/streams/readable:390
+:5)
+[31m[Nest] 18236  - 
+[39m19/08/2026 21:15:44 
+[31m  ERROR[39m 
+[38;5;3m[TypeOrmModule] 
+[39m[31mUnable to connect 
+to the database. Retrying 
+(2)...[39m
+QueryFailedError: Cannot 
+drop index 'FK_article': 
+needed in a foreign key 
+constraint
+    at Query.onResult (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\typeorm\dri
+ver\src\driver\mysql\MysqlQu
+eryRunner.ts:248:33)
+    at Query.execute (C:\Use
+rs\Lenovo\Desktop\GSMM\backe
+nd\node_modules\mysql2\lib\c
+ommands\command.js:36:14)
+    at 
+PoolConnection.handlePacket 
+(C:\Users\Lenovo\Desktop\GSM
+M\backend\node_modules\mysql
+2\lib\base\connection.js:555
+:34)
+    at 
+PacketParser.onPacket (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\mysql2\lib\
+base\connection.js:104:12)
+    at 
+PacketParser.executeStart (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\base\connection.js:112:2
+5)
+    at Socket.emit 
+(node:events:508:28)
+    at addChunk (node:intern
+al/streams/readable:559:12)
+    at readableAddChunkPushB
+yteMode (node:internal/strea
+ms/readable:510:3)
+    at Readable.push (node:i
+nternal/streams/readable:390
+:5)
+[31m[Nest] 18236  - 
+[39m19/08/2026 21:15:47 
+[31m  ERROR[39m 
+[38;5;3m[TypeOrmModule] 
+[39m[31mUnable to connect 
+to the database. Retrying 
+(3)...[39m
+QueryFailedError: Cannot 
+drop index 'FK_article': 
+needed in a foreign key 
+constraint
+    at Query.onResult (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\typeorm\dri
+ver\src\driver\mysql\MysqlQu
+eryRunner.ts:248:33)
+    at Query.execute (C:\Use
+rs\Lenovo\Desktop\GSMM\backe
+nd\node_modules\mysql2\lib\c
+ommands\command.js:36:14)
+    at 
+PoolConnection.handlePacket 
+(C:\Users\Lenovo\Desktop\GSM
+M\backend\node_modules\mysql
+2\lib\base\connection.js:555
+:34)
+    at 
+PacketParser.onPacket (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\mysql2\lib\
+base\connection.js:104:12)
+    at 
+PacketParser.executeStart (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\base\connection.js:112:2
+5)
+    at Socket.emit 
+(node:events:508:28)
+    at addChunk (node:intern
+al/streams/readable:559:12)
+    at readableAddChunkPushB
+yteMode (node:internal/strea
+ms/readable:510:3)
+    at Readable.push (node:i
+nternal/streams/readable:390
+:5)
+[31m[Nest] 18236  - 
+[39m19/08/2026 21:15:51 
+[31m  ERROR[39m 
+[38;5;3m[TypeOrmModule] 
+[39m[31mUnable to connect 
+to the database. Retrying 
+(4)...[39m
+QueryFailedError: Cannot 
+drop index 'FK_article': 
+needed in a foreign key 
+constraint
+    at Query.onResult (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\typeorm\dri
+ver\src\driver\mysql\MysqlQu
+eryRunner.ts:248:33)
+    at Query.execute (C:\Use
+rs\Lenovo\Desktop\GSMM\backe
+nd\node_modules\mysql2\lib\c
+ommands\command.js:36:14)
+    at 
+PoolConnection.handlePacket 
+(C:\Users\Lenovo\Desktop\GSM
+M\backend\node_modules\mysql
+2\lib\base\connection.js:555
+:34)
+    at 
+PacketParser.onPacket (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\mysql2\lib\
+base\connection.js:104:12)
+    at 
+PacketParser.executeStart (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\base\connection.js:112:2
+5)
+    at Socket.emit 
+(node:events:508:28)
+    at addChunk (node:intern
+al/streams/readable:559:12)
+    at readableAddChunkPushB
+yteMode (node:internal/strea
+ms/readable:510:3)
+    at Readable.push (node:i
+nternal/streams/readable:390
+:5)
+[31m[Nest] 18236  - 
+[39m19/08/2026 21:15:54 
+[31m  ERROR[39m 
+[38;5;3m[TypeOrmModule] 
+[39m[31mUnable to connect 
+to the database. Retrying 
+(5)...[39m
+QueryFailedError: Cannot 
+drop index 'FK_article': 
+needed in a foreign key 
+constraint
+    at Query.onResult (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\typeorm\dri
+ver\src\driver\mysql\MysqlQu
+eryRunner.ts:248:33)
+    at Query.execute (C:\Use
+rs\Lenovo\Desktop\GSMM\backe
+nd\node_modules\mysql2\lib\c
+ommands\command.js:36:14)
+    at 
+PoolConnection.handlePacket 
+(C:\Users\Lenovo\Desktop\GSM
+M\backend\node_modules\mysql
+2\lib\base\connection.js:555
+:34)
+    at 
+PacketParser.onPacket (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\mysql2\lib\
+base\connection.js:104:12)
+    at 
+PacketParser.executeStart (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\base\connection.js:112:2
+5)
+    at Socket.emit 
+(node:events:508:28)
+    at addChunk (node:intern
+al/streams/readable:559:12)
+    at readableAddChunkPushB
+yteMode (node:internal/strea
+ms/readable:510:3)
+    at Readable.push (node:i
+nternal/streams/readable:390
+:5)
+[31m[Nest] 18236  - 
+[39m19/08/2026 21:15:57 
+[31m  ERROR[39m 
+[38;5;3m[TypeOrmModule] 
+[39m[31mUnable to connect 
+to the database. Retrying 
+(6)...[39m
+QueryFailedError: Cannot 
+drop index 'FK_article': 
+needed in a foreign key 
+constraint
+    at Query.onResult (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\typeorm\dri
+ver\src\driver\mysql\MysqlQu
+eryRunner.ts:248:33)
+    at Query.execute (C:\Use
+rs\Lenovo\Desktop\GSMM\backe
+nd\node_modules\mysql2\lib\c
+ommands\command.js:36:14)
+    at 
+PoolConnection.handlePacket 
+(C:\Users\Lenovo\Desktop\GSM
+M\backend\node_modules\mysql
+2\lib\base\connection.js:555
+:34)
+    at 
+PacketParser.onPacket (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\mysql2\lib\
+base\connection.js:104:12)
+    at 
+PacketParser.executeStart (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\base\connection.js:112:2
+5)
+    at Socket.emit 
+(node:events:508:28)
+    at addChunk (node:intern
+al/streams/readable:559:12)
+    at readableAddChunkPushB
+yteMode (node:internal/strea
+ms/readable:510:3)
+    at Readable.push (node:i
+nternal/streams/readable:390
+:5)
+[31m[Nest] 18236  - 
+[39m19/08/2026 21:16:00 
+[31m  ERROR[39m 
+[38;5;3m[TypeOrmModule] 
+[39m[31mUnable to connect 
+to the database. Retrying 
+(7)...[39m
+QueryFailedError: Cannot 
+drop index 'FK_article': 
+needed in a foreign key 
+constraint
+    at Query.onResult (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\typeorm\dri
+ver\src\driver\mysql\MysqlQu
+eryRunner.ts:248:33)
+    at Query.execute (C:\Use
+rs\Lenovo\Desktop\GSMM\backe
+nd\node_modules\mysql2\lib\c
+ommands\command.js:36:14)
+    at 
+PoolConnection.handlePacket 
+(C:\Users\Lenovo\Desktop\GSM
+M\backend\node_modules\mysql
+2\lib\base\connection.js:555
+:34)
+    at 
+PacketParser.onPacket (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\mysql2\lib\
+base\connection.js:104:12)
+    at 
+PacketParser.executeStart (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\base\connection.js:112:2
+5)
+    at Socket.emit 
+(node:events:508:28)
+    at addChunk (node:intern
+al/streams/readable:559:12)
+    at readableAddChunkPushB
+yteMode (node:internal/strea
+ms/readable:510:3)
+    at Readable.push (node:i
+nternal/streams/readable:390
+:5)
+[31m[Nest] 18236  - 
+[39m19/08/2026 21:16:03 
+[31m  ERROR[39m 
+[38;5;3m[TypeOrmModule] 
+[39m[31mUnable to connect 
+to the database. Retrying 
+(8)...[39m
+QueryFailedError: Cannot 
+drop index 'FK_article': 
+needed in a foreign key 
+constraint
+    at Query.onResult (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\typeorm\dri
+ver\src\driver\mysql\MysqlQu
+eryRunner.ts:248:33)
+    at Query.execute (C:\Use
+rs\Lenovo\Desktop\GSMM\backe
+nd\node_modules\mysql2\lib\c
+ommands\command.js:36:14)
+    at 
+PoolConnection.handlePacket 
+(C:\Users\Lenovo\Desktop\GSM
+M\backend\node_modules\mysql
+2\lib\base\connection.js:555
+:34)
+    at 
+PacketParser.onPacket (C:\Us
+ers\Lenovo\Desktop\GSMM\back
+end\node_modules\mysql2\lib\
+base\connection.js:104:12)
+    at 
+PacketParser.executeStart (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\packet_parser.js:75:16)
+    at Socket.<anonymous> (C
+:\Users\Lenovo\Desktop\GSMM\
+backend\node_modules\mysql2\
+lib\base\connection.js:112:2
+5)
+    at Socket.emit 
+(node:events:508:28)
+    at addChunk (node:intern
+al/streams/readable:559:12)
+    at readableAddChunkPushB
+yteMode (node:internal/strea
+ms/readable:510:3)
+    at Readable.push (node:i
+nternal/streams/readable:390
+:5)

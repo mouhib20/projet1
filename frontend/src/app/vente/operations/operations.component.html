@@ -1,0 +1,178 @@
+<div class="operations-container">
+    <div class="header-section">
+        <h2 class="title">{{ 'SIDEBAR.VENTE' | translate | uppercase }}</h2>
+        <p class="subtitle">Gérez vos ventes et transactions clients</p>
+        <div class="header-actions">
+            <button class="btn-outline" (click)="openClientModal()">+ Client</button>
+            <button class="btn-primary add-btn" (click)="openModal()">+ NOUVELLE VENTE</button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon">🧾</div>
+            <div class="stat-info">
+                <span class="stat-value">{{ ventes.length }}</span>
+                <span class="stat-label">Ventes</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+                <span class="stat-value">{{ clients.length }}</span>
+                <span class="stat-label">Clients</span>
+            </div>
+        </div>
+        <div class="stat-card revenue">
+            <div class="stat-icon">💰</div>
+            <div class="stat-info">
+                <span class="stat-value">{{ totalRevenue | number:'1.3-3' }}</span>
+                <span class="stat-label">Chiffre d'affaires ({{ 'CURRENCY' | translate }})</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-bar">
+        <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 Rechercher par client, article..."
+            class="search-input" />
+    </div>
+
+    <!-- Sales Table -->
+    <div class="table-container fade-in">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Article</th>
+                    <th>Qté</th>
+                    <th>Prix Unit.</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let v of filteredVentes">
+                    <td>{{ v.date | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ v.client?.nom || '—' }}</td>
+                    <td>
+                        <span class="badge">{{ v.article?.designation || v.designation }}</span>
+                    </td>
+                    <td class="text-center">{{ v.qte || 1 }}</td>
+                    <td class="text-right">{{ v.prix | number:'1.3-3' }}</td>
+                    <td class="fw-bold text-success text-right">
+                        {{ (v.qte || 1) * (v.prix || 0) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                    </td>
+                    <td class="text-center">
+                        <button class="btn-icon delete-action" title="Supprimer" (click)="deleteVente(v.id_vente!)">🗑
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div *ngIf="filteredVentes.length === 0" class="empty-state">
+            <p>Aucune vente trouvée.</p>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     Modal Nouvelle Vente
+     ========================================================= -->
+<div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
+    <div class="modal-content scale-in" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Nouvelle Vente</h3>
+            <button class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+
+        <div class="modal-body custom-scroll">
+            <div class="modern-form">
+                <!-- Date -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date <span class="required">*</span></label>
+                        <input type="date" [(ngModel)]="formData.date" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Client</label>
+                        <select [(ngModel)]="formData.clientId" class="form-control select-box">
+                            <option [ngValue]="undefined">Sans client</option>
+                            <option *ngFor="let c of clients" [ngValue]="c.id_client">
+                                {{ c.nom }} {{ c.telephone ? '(' + c.telephone + ')' : '' }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Article -->
+                <div class="form-group mb-4">
+                    <label>Article <span class="required">*</span></label>
+                    <select [(ngModel)]="formData.articleId" (ngModelChange)="onArticleChange()"
+                        class="form-control select-box">
+                        <option [ngValue]="undefined" disabled>Sélectionner un article...</option>
+                        <option *ngFor="let art of availableArticles" [ngValue]="art.id_article">
+                            {{ art.designation }} {{ art.marque ? '(' + art.marque + ')' : '' }}
+                            — Stock: {{ art.quantite }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Qty + Price -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Quantité <span class="required">*</span></label>
+                        <input type="number" min="1" [(ngModel)]="formData.qte" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label>Prix Unitaire <span class="required">*</span></label>
+                        <input type="number" min="0" step="0.001" [(ngModel)]="formData.prix" class="form-control" />
+                    </div>
+                </div>
+
+                <!-- Computed total -->
+                <div class="sale-total">
+                    <span>Total :</span>
+                    <span class="total-value">{{ (formData.qte || 0) * (formData.prix || 0) | number:'1.3-3' }} {{
+                        'CURRENCY' | translate }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeModal()">{{ 'CANCEL' | translate }}</button>
+            <button class="btn-primary" (click)="saveVente()">VALIDER LA VENTE</button>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     Modal Nouveau Client
+     ========================================================= -->
+<div class="modal-overlay" *ngIf="isClientModalOpen" (click)="closeClientModal()">
+    <div class="modal-content scale-in small-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Nouveau Client</h3>
+            <button class="close-btn" (click)="closeClientModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="modern-form">
+                <div class="form-group mb-4">
+                    <label>Nom <span class="required">*</span></label>
+                    <input type="text" [(ngModel)]="clientForm.nom" class="form-control" placeholder="Nom du client" />
+                </div>
+                <div class="form-group">
+                    <label>Téléphone</label>
+                    <input type="text" [(ngModel)]="clientForm.telephone" class="form-control"
+                        placeholder="Numéro de téléphone" />
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeClientModal()">{{ 'CANCEL' | translate }}</button>
+            <button class="btn-primary" (click)="saveClient()">AJOUTER CLIENT</button>
+        </div>
+    </div>
+</div>
