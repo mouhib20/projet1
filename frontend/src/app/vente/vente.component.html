@@ -8,6 +8,11 @@
             <div class="nav-title" style="margin-top: 15px; font-size: 1.2rem;">
                 <span>🛒</span> {{ 'VENTE.TITLE' | translate }}
             </div>
+            <!-- Logout Button -->
+            <button class="logout-btn" (click)="logout()"
+                style="margin-top: 10px; width: 100%; border-radius: 4px; padding: 8px; background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.3); color: #ff3b30; cursor: pointer;">
+                🚪 {{ 'HOME.LOGOUT' | translate }}
+            </button>
         </div>
 
         <nav class="sidebar-nav">
@@ -16,13 +21,14 @@
                 }}</a>
             <a routerLink="statistiques" routerLinkActive="active" class="nav-link">📊 {{ 'SIDEBAR.STATS' | translate
                 }}</a>
-            <a routerLink="charges" routerLinkActive="active" class="nav-link">💸 {{ 'SIDEBAR.CHARGES' | translate
-                }}</a>
-            <a routerLink="stock" routerLinkActive="active" class="nav-link">📦 {{ 'SIDEBAR.STOCK' | translate }}</a>
-            <a routerLink="fournisseurs" routerLinkActive="active" class="nav-link">🤝 {{ 'SIDEBAR.SUPPLIERS' |
-                translate }}</a>
-            <a routerLink="factures" routerLinkActive="active" class="nav-link">📄 {{ 'SIDEBAR.INVOICES' | translate
-                }}</a>
+            <a *ngIf="auth.getRole() !== 'visiteur'" routerLink="charges" routerLinkActive="active" class="nav-link">💸
+                {{ 'SIDEBAR.CHARGES' | translate }}</a>
+            <a *ngIf="auth.isAdmin()" routerLink="stock" routerLinkActive="active" class="nav-link">📦 {{
+                'SIDEBAR.STOCK' | translate }}</a>
+            <a *ngIf="auth.isAdmin()" routerLink="fournisseurs" routerLinkActive="active" class="nav-link">🤝 {{
+                'SIDEBAR.SUPPLIERS' | translate }}</a>
+            <a *ngIf="auth.isAdmin()" routerLink="factures" routerLinkActive="active" class="nav-link">📄 {{
+                'SIDEBAR.INVOICES' | translate }}</a>
         </nav>
     </aside>
 

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -39,6 +39,17 @@ export class FacturesComponent implements OnInit {
   currentItem: Partial<FactureItem> = this.initCurrentItem();
   searchTerm: string = '';
   showSmartSearchResults: boolean = false;
+  @ViewChild('searchInput') searchInput!: ElementRef;
+
+  // Quick Supplier
+  isQuickAddSupplierModalOpen = false;
+  newSupplierData = {
+    nom: '',
+    prenom: '',
+    tel: '',
+    entreprise: '',
+    type_articles: ''
+  };
 
   // Totals (computed)
   computed = {
@@ -145,24 +156,24 @@ export class FacturesComponent implements OnInit {
   }
 
   onFournisseurChange() {
-    this.supplierTypes = [...this.defaultSupplierTypes];
-
     if (!this.formData.fournisseurId) {
+      this.supplierTypes = [...this.defaultSupplierTypes];
       this.availableArticles = [];
       return;
     }
+
     const selectedFournisseur = this.fournisseurs.find(f => f.id_fournisseur == this.formData.fournisseurId);
 
-    // Extract types if available, otherwise keep default
+    // Override types with the supplier's specific types (not append)
     if (selectedFournisseur && selectedFournisseur.type_articles) {
-      const dynamicTypes = selectedFournisseur.type_articles.split(',').map(s => s.trim()).filter(Boolean);
-      for (const dt of dynamicTypes) {
-        // Only add if not already covered by default types (e.g., "Accessoires" inside "Accessoires (إكسسوارات)")
-        const exists = this.supplierTypes.some(t => t.toLowerCase().includes(dt.toLowerCase()) || dt.toLowerCase().includes(t.toLowerCase()));
-        if (!exists) {
-          this.supplierTypes.unshift(dt); // add at the top
-        }
+      const dynamicTypes = selectedFournisseur.type_articles.split(',').map((s: string) => s.trim()).filter(Boolean);
+      if (dynamicTypes.length > 0) {
+        this.supplierTypes = [...dynamicTypes, 'Autre (شيء آخر)'];
+      } else {
+        this.supplierTypes = [...this.defaultSupplierTypes];
       }
+    } else {
+      this.supplierTypes = [...this.defaultSupplierTypes];
     }
 
     if (selectedFournisseur && (selectedFournisseur as any).articles) {
@@ -171,9 +182,22 @@ export class FacturesComponent implements OnInit {
       this.availableArticles = [];
     }
 
-    // Reset current item buffer when changing supplier
+    // Reset current item buffer
     this.currentItem = this.initCurrentItem();
     this.searchTerm = '';
+
+    // Auto-select type if only one is available
+    if (this.supplierTypes.length === 1 ||
+      (this.supplierTypes.length === 2 && this.supplierTypes[1] === 'Autre (شيء آخر)')) {
+      this.currentItem.type = this.supplierTypes[0];
+    }
+
+    // Auto-focus search input
+    setTimeout(() => {
+      if (this.searchInput) {
+        this.searchInput.nativeElement.focus();
+      }
+    }, 150);
   }
 
   // --- SMART SEARCH LOGIC ---
@@ -213,14 +237,68 @@ export class FacturesComponent implements OnInit {
     this.showSmartSearchResults = false;
   }
 
+  /**
+   * Called on every keystroke in the search field.
+   * If no article matches and the input looks like a barcode (3+ digits),
+   * pre-fill the barcode field of the new-article form automatically.
+   */
+  onSearchInput() {
+    if (!this.searchTerm) {
+      // Reset when search is cleared
+      if (this.currentItem.isNew) {
+        this.currentItem.barcode = '';
+        this.currentItem.designation = '';
+      }
+      return;
+    }
+
+    const results = this.filteredSmartArticles;
+    if (results.length === 0 && this.currentItem.isNew) {
+      const trimmed = this.searchTerm.trim();
+      const isBarcode = /^\d{3,}$/.test(trimmed);
+      if (isBarcode) {
+        this.currentItem.barcode = trimmed;
+        this.currentItem.designation = '';
+      } else {
+        this.currentItem.designation = trimmed;
+        this.currentItem.barcode = '';
+      }
+    }
+
+    // Keep search dropdown visible if there are results
+    if (this.filteredSmartArticles.length > 0) {
+      this.showSmartSearchResults = true;
+    }
+  }
+
   handleSearchEnter() {
     const results = this.filteredSmartArticles;
     // Auto-select if there's exactly one match (very common with barcode scanners)
     if (results.length === 1) {
-      this.selectSmartArticle(results[0]);
+      // Check if already in invoice
+      const existing = this.formData.items.find(i => i.articleId === results[0].id_article);
+      if (existing) {
+        existing.qte = (existing.qte || 0) + 1;
+        this.calculateTotals();
+        this.resetCurrentItem();
+      } else {
+        this.selectSmartArticle(results[0]);
+        this.addItemToInvoice();
+      }
     } else if (results.length > 0) {
       // If multiple, maybe just keep the dropdown open
       this.showSmartSearchResults = true;
+    } else if (this.searchTerm) {
+      // 0 matches -> new article from scan/type
+      const isBarcode = /^\d{3,}$/.test(this.searchTerm.trim());
+      // If no matching article is found, treat the input as a barcode if it looks like one (3+ digits)
+      // and pre‑fill the barcode field of the new‑article buffer.
+      // This will automatically display the "new article" form with the barcode populated.
+      if (isBarcode) {
+        this.currentItem.barcode = this.searchTerm.trim();
+      } else {
+        this.currentItem.designation = this.searchTerm.trim();
+      }
     }
   }
 
@@ -236,6 +314,13 @@ export class FacturesComponent implements OnInit {
   get currentItemDisplayType(): string {
     if (!this.currentItem.type) return 'Détails';
     return this.currentItem.type.split('(')[0].trim();
+  }
+
+  get showNewArticleForm(): boolean {
+    if (!this.currentItem.isNew) return false;
+    if (this.searchTerm && this.filteredSmartArticles.length === 0) return true;
+    if (this.currentItem.barcode || this.currentItem.designation) return true;
+    return false;
   }
 
   get isAutreType(): boolean {
@@ -393,5 +478,41 @@ export class FacturesComponent implements OnInit {
   closeDetail() {
     this.isDetailOpen = false;
     this.selectedFacture = null;
+  }
+
+  // --- QUICK ADD SUPPLIER ---
+  openQuickAddSupplierModal() {
+    this.newSupplierData = { nom: '', prenom: '', tel: '', entreprise: '', type_articles: '' };
+    this.isQuickAddSupplierModalOpen = true;
+  }
+
+  closeQuickAddSupplierModal() {
+    this.isQuickAddSupplierModalOpen = false;
+  }
+
+  saveQuickAddSupplier() {
+    if (!this.newSupplierData.nom) {
+      alert('Erreur: Le nom du fournisseur est obligatoire.');
+      return;
+    }
+    this.fournisseurService.createFournisseur(this.newSupplierData as any).subscribe({
+      next: (res) => {
+        // Refresh list
+        this.fournisseurService.getFournisseurs().subscribe(data => {
+          this.fournisseurs = data;
+          // Auto-select new supplier
+          const newId = res.id_fournisseur || (data.length ? data[data.length - 1].id_fournisseur : undefined);
+          if (newId) {
+            this.formData.fournisseurId = newId;
+            this.onFournisseurChange();
+          }
+          this.closeQuickAddSupplierModal();
+        });
+      },
+      error: (err) => {
+        console.error(err);
+        alert('Erreur: ' + (err.error?.message || 'Erreur lors de la création du fournisseur'));
+      }
+    });
   }
 }

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Vente } from './vente.entity';
 import { Article } from '../articles/article.entity';
+import { StocksService } from '../stocks/stocks.service';
 
 @Injectable()
 export class VentesService {
@@ -10,6 +11,7 @@ export class VentesService {
         @InjectRepository(Vente)
         private readonly venteRepo: Repository<Vente>,
         private readonly dataSource: DataSource,
+        private readonly stocksService: StocksService,
     ) { }
 
     findAll(): Promise<Vente[]> {
@@ -47,7 +49,9 @@ export class VentesService {
                 );
             }
 
-            // 2. Decrement stock
+            // 2. Decrement stock via StocksService
+            await this.stocksService.decreaseStock(article.id_article, qte);
+            // Ensure article entity reflects updated quantity for the sale record
             article.quantite -= qte;
             await queryRunner.manager.save(article);
 

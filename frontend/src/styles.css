@@ -14,3 +14,9 @@ html, body {
   font-size: 14px;
   line-height: 1.5;
 }
+
+
+.form-control, input, select, textarea {
+  text-align: left !important;
+  direction: ltr !important;
+}

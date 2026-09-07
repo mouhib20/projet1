@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { AuthService } from '../services/auth.service';
 
 @Component({
     selector: 'app-vente',
@@ -22,7 +23,8 @@ export class VenteComponent {
 
     constructor(
         private router: Router,
-        private translate: TranslateService
+        private translate: TranslateService,
+        public auth: AuthService
     ) {
         this.setInitialLangLabel();
     }
@@ -37,6 +39,10 @@ export class VenteComponent {
 
     goHome() {
         this.router.navigate(['']);
+    }
+
+    logout() {
+        this.auth.logout();
     }
 
     toggleLangMenu() {

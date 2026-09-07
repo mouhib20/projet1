@@ -5,6 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { VenteService } from '../../services/vente.service';
 import { ClientService } from '../../services/client.service';
 import { ArticleService, ArticleForm } from '../../services/article.service';
+import { AuthService } from '../../services/auth.service';
 import { Vente } from '../../models/vente.model';
 import { Client } from '../../models/client.model';
 
@@ -30,7 +31,8 @@ export class OperationsComponent implements OnInit {
   constructor(
     private venteService: VenteService,
     private clientService: ClientService,
-    private articleService: ArticleService
+    private articleService: ArticleService,
+    public auth: AuthService
   ) { }
 
   ngOnInit(): void {

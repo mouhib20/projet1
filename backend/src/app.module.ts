@@ -2,6 +2,9 @@
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { Utilisateur } from './users/user.entity';
 import { AppService } from './app.service';
 import { Article } from './articles/article.entity';
 import { Fournisseur } from './fournisseurs/fournisseur.entity';
@@ -23,6 +26,7 @@ import { ClientsModule } from './clients/clients.module';
 import { VentesModule } from './ventes/ventes.module';
 import { ChargesModule } from './charges/charges.module';
 import { Charge } from './charges/charge.entity';
+import { ReparationsModule } from './reparations/reparations.module';
 
 @Module({
     imports: [
@@ -39,7 +43,7 @@ import { Charge } from './charges/charge.entity';
                 username: configService.get<string>('DB_USERNAME', 'root'),
                 password: configService.get<string>('DB_PASSWORD', ''),
                 database: configService.get<string>('DB_DATABASE', 'gsmpro'),
-                entities: [Article, Fournisseur, MouvementAchat, Stock, Client, Vente, Reparation, ProductEntity, FactureAchat, Charge],
+                entities: [Article, Fournisseur, MouvementAchat, Stock, Client, Vente, Reparation, ProductEntity, FactureAchat, Charge, Utilisateur],
                 synchronize: false,
             }),
         }),
@@ -53,6 +57,9 @@ import { Charge } from './charges/charge.entity';
         ClientsModule,
         VentesModule,
         ChargesModule,
+        AuthModule,
+        UsersModule,
+        ReparationsModule,
     ],
     controllers: [AppController],
     providers: [AppService],

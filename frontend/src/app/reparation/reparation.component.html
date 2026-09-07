@@ -1,16 +1,237 @@
-<div class="space-page">
-    <nav class="space-nav">
-        <button class="back-btn" (click)="goHome()">
-            ← Accueil
-        </button>
-        <div class="nav-title">
-            <span>🔧</span> Espace Réparation
+<div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <button class="back-btn" (click)="goHome()">
+                ← Retour
+            </button>
+            <div class="nav-title" style="margin-top: 15px; font-size: 1.2rem;">
+                <span>🔧</span> Espace Réparation
+            </div>
         </div>
-        <div></div>
-    </nav>
-    <div class="coming-soon">
-        <div class="cs-icon">🔧</div>
-        <h1>Espace Réparation</h1>
-        <p>Cette section est en cours de développement.<br>Le suivi des réparations sera disponible bientôt.</p>
+
+        <nav class="sidebar-nav">
+            <a class="nav-link" [class.active]="activeTab === 'tickets'" (click)="setTab('tickets')">
+                🎟️ Tickets de Réparation
+            </a>
+            <a class="nav-link" [class.active]="activeTab === 'stock'" (click)="setTab('stock')">
+                📦 Stocks Pièces
+            </a>
+        </nav>
+
+        <div style="margin-top: auto;">
+            <button class="btn btn-primary"
+                style="width: 100%; border-radius: 8px; padding: 12px; font-weight: bold; background: #6366f1; border: none; color: white; cursor: pointer;"
+                (click)="openTicketModal()">
+                + Nouveau Ticket
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+        <header class="top-header">
+            <div class="header-left">
+                <h2 style="color: #fff; margin: 0; font-size: 1.2rem;">
+                    {{ activeTab === 'tickets' ? 'Tous les Tickets' : 'Stock de Pièces' }}
+                </h2>
+            </div>
+        </header>
+
+        <main class="content-area">
+            <!-- TICKETS TAB -->
+            <div *ngIf="activeTab === 'tickets'" class="fade-in">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Client</th>
+                                <th>Appareil</th>
+                                <th>Statut</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let rep of reparations">
+                                <td>#{{ rep.id_reparation }}</td>
+                                <td>{{ rep.date_reception | date:'dd/MM/yyyy' }}</td>
+                                <td>{{ rep.client?.nom || 'Inconnu' }}</td>
+                                <td>{{ rep.appareil }}</td>
+                                <td>
+                                    <span class="badge" [class.badge-primary]="rep.statut === 'En attente'"
+                                        [class.badge-warning]="rep.statut === 'En cours'"
+                                        [class.badge-success]="rep.statut === 'Terminé'">
+                                        {{ rep.statut }}
+                                    </span>
+                                </td>
+                                <td class="price-text">{{ rep.prix }} MAD</td>
+                                <td>
+                                    <select class="form-select status-select" [ngModel]="rep.statut"
+                                        (ngModelChange)="updateStatut(rep.id_reparation, $event)">
+                                        <option value="En attente">En attente</option>
+                                        <option value="En cours">En cours</option>
+                                        <option value="Terminé">Terminé</option>
+                                        <option value="Livré">Livré</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr *ngIf="reparations.length === 0">
+                                <td colspan="7" class="text-center text-muted">Aucun ticket trouvé.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- STOCK TAB -->
+            <div *ngIf="activeTab === 'stock'" class="fade-in">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Désignation</th>
+                                <th>Prix Achat</th>
+                                <th>Prix Vente</th>
+                                <th>Stock Actuel</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let part of stockParts">
+                                <td>{{ part.id_article }}</td>
+                                <td>{{ part.designation }}</td>
+                                <td class="price-text">{{ part.prix_achat }} MAD</td>
+                                <td class="price-text">{{ part.prix_vente }} MAD</td>
+                                <td>
+                                    <span class="badge-stock" [class.danger]="(part.quantite || 0) < 5">{{ part.quantite
+                                        || 0 }}</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- TICKET MODAL -->
+<div class="modal-overlay" *ngIf="isTicketModalOpen">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h2>Nouveau Ticket de Réparation</h2>
+            <button class="btn-close" (click)="closeTicketModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label>Client <span class="required">*</span></label>
+                    <div class="input-with-button">
+                        <select class="form-control flex-1" [(ngModel)]="ticketForm.id_client">
+                            <option *ngFor="let c of clients" [value]="c.id_client">{{ c.nom }} - {{ c.telephone }}
+                            </option>
+                        </select>
+                        <button class="btn btn-secondary ml-2" (click)="openClientModal()">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label>Appareil (Modèle) <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="ticketForm.appareil"
+                        placeholder="Ex: iPhone 13 Pro">
+                </div>
+                <div class="form-group flex-1">
+                    <label>Problème / Description</label>
+                    <input type="text" class="form-control" [(ngModel)]="ticketForm.description"
+                        placeholder="Ex: Ecran cassé">
+                </div>
+            </div>
+
+            <div class="section-title">Pièces de rechange</div>
+            <div class="search-box mb-3">
+                <input type="text" class="form-control" placeholder="Rechercher une pièce (nom ou code-barres)..."
+                    [(ngModel)]="searchTerm">
+                <div class="search-results" *ngIf="filteredParts.length > 0">
+                    <div class="search-result-item" *ngFor="let part of filteredParts" (click)="addPartToTicket(part)">
+                        {{ part.designation }} <span class="stock-info">Stock: {{ part.quantite }}</span> <span
+                            class="price-info">{{ part.prix_vente }} MAD</span>
+                    </div>
+                </div>
+            </div>
+
+            <table class="parts-table mb-3">
+                <thead>
+                    <tr>
+                        <th>Pièce</th>
+                        <th>Prix U.</th>
+                        <th>Qte</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let item of ticketForm.items; let i = index">
+                        <td>{{ item.designation }} <br><small class="text-muted">Max: {{item.maxStock}}</small></td>
+                        <td>
+                            <input type="number" class="form-control text-right min-w-80" [(ngModel)]="item.prix">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control w-20" [(ngModel)]="item.qte" min="1"
+                                [max]="item.maxStock">
+                        </td>
+                        <td class="text-right price-text">{{ item.prix * item.qte }} MAD</td>
+                        <td><button class="btn-icon danger" (click)="removePart(i)">🗑️</button></td>
+                    </tr>
+                    <tr *ngIf="ticketForm.items.length === 0">
+                        <td colspan="5" class="text-center text-muted">Aucune pièce ajoutée.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="form-row align-items-center justify-end">
+                <div class="form-group flex-item-fixed w-150 mr-3">
+                    <label>Main d'oeuvre</label>
+                    <input type="number" class="form-control text-right" [(ngModel)]="ticketForm.cout_main_oeuvre">
+                </div>
+                <div class="total-box mt-4">
+                    <strong>Total Ticket: </strong> <span>{{ ticketTotal }} MAD</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="closeTicketModal()">Annuler</button>
+            <button class="btn btn-primary" (click)="saveTicket()">Créer le Ticket</button>
+        </div>
+    </div>
+</div>
+
+<!-- CLIENT MODAL -->
+<div class="modal-overlay" *ngIf="isClientModalOpen" style="z-index: 1050;">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h2>Nouveau Client</h2>
+            <button class="btn-close" (click)="closeClientModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group mb-3">
+                <label>Nom Complet <span class="required">*</span></label>
+                <input type="text" class="form-control" [(ngModel)]="newClient.nom">
+            </div>
+            <div class="form-group">
+                <label>Téléphone</label>
+                <input type="text" class="form-control" [(ngModel)]="newClient.telephone" placeholder="+212...">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="closeClientModal()">Annuler</button>
+            <button class="btn btn-primary" (click)="saveClient()">Enregistrer</button>
+        </div>
     </div>
 </div>

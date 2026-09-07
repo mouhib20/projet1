@@ -5,6 +5,7 @@ import { FactureAchat } from './facture-achat.entity';
 import { MouvementAchat } from '../mouvements-achat/mouvement-achat.entity';
 import { Article } from '../articles/article.entity';
 import { Fournisseur } from '../fournisseurs/fournisseur.entity';
+import { StocksService } from '../stocks/stocks.service';
 
 @Injectable()
 export class FacturesAchatService {
@@ -12,6 +13,7 @@ export class FacturesAchatService {
         @InjectRepository(FactureAchat)
         private readonly factureRepo: Repository<FactureAchat>,
         private readonly dataSource: DataSource,
+        private readonly stocksService: StocksService,
     ) { }
 
     findAll(): Promise<FactureAchat[]> {
@@ -97,8 +99,8 @@ export class FacturesAchatService {
                         });
                         if (!article) throw new Error(`Article ${item.articleId} introuvable`);
 
-                        // Increment stock quantity
-                        article.quantite += item.qte;
+                        // Increment stock quantity via StocksService
+                        await this.stocksService.increaseStock(article.id_article, item.qte);
                         if (item.prix > 0) {
                             article.prix_achat = item.prix; // update purchase price to latest
                         }
