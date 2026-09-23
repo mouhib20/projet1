@@ -22,6 +22,22 @@ export class Reparation {
     @Column({ type: 'varchar', length: 50, default: 'En attente' })
     statut: string;
 
+    // Acompte versé par le client au dépôt de l'appareil; le reste est encaissé à la récupération
+    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+    acompte: number;
+
+    // Ticket d'origine quand cette réparation est un retour après réparation
+    @Column({ type: 'int', nullable: true })
+    retour_de: number | null;
+
+    // Gravité du dommage déclarée au retour: Léger / Moyen / Grave
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    degre_dommage: string | null;
+
+    // Montant effectivement reçu du client, saisi à la finalisation ("Vente avec reçu")
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    montant_recu: number;
+
     @Column({ type: 'date', nullable: true })
     date_reception: Date;
 

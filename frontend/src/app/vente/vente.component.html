@@ -19,6 +19,8 @@
             <a routerLink="accueil" routerLinkActive="active" class="nav-link">🏠 {{ 'SIDEBAR.HOME' | translate }}</a>
             <a routerLink="operations" routerLinkActive="active" class="nav-link">💳 {{ 'SIDEBAR.VENTE' | translate
                 }}</a>
+            <a *ngIf="auth.getRole() !== 'visiteur'" routerLink="clients" routerLinkActive="active"
+                class="nav-link">👥 {{ 'SIDEBAR.CLIENTS' | translate }}</a>
             <a routerLink="statistiques" routerLinkActive="active" class="nav-link">📊 {{ 'SIDEBAR.STATS' | translate
                 }}</a>
             <a *ngIf="auth.getRole() !== 'visiteur'" routerLink="charges" routerLinkActive="active" class="nav-link">💸

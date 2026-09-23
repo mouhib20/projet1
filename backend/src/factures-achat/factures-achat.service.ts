@@ -83,12 +83,13 @@ export class FacturesAchatService {
                             sous_categorie: item.sous_categorie || null,
                             marque: item.marque || null,
                             modele: item.modele || null,
+                            image: item.image || null,
                         });
                         article = await queryRunner.manager.save(article);
 
                         // Link new article to the fournisseur via raw SQL (avoids TypeORM column naming issues)
                         await queryRunner.query(
-                            `INSERT IGNORE INTO fournisseur_articles (fournisseurId_fournisseur, articleId_article) VALUES (?, ?)`,
+                            `INSERT INTO fournisseur_articles ("fournisseurId_fournisseur", "articleId_article") VALUES ($1, $2) ON CONFLICT DO NOTHING`,
                             [data.fournisseurId, article.id_article]
                         );
 

@@ -14,6 +14,9 @@
             <a class="nav-link" [class.active]="activeTab === 'tickets'" (click)="setTab('tickets')">
                 🎟️ Tickets de Réparation
             </a>
+            <a class="nav-link" [class.active]="activeTab === 'retours'" (click)="setTab('retours')">
+                🔁 Retours
+            </a>
             <a class="nav-link" [class.active]="activeTab === 'stock'" (click)="setTab('stock')">
                 📦 Stocks Pièces
             </a>
@@ -33,7 +36,7 @@
         <header class="top-header">
             <div class="header-left">
                 <h2 style="color: #fff; margin: 0; font-size: 1.2rem;">
-                    {{ activeTab === 'tickets' ? 'Tous les Tickets' : 'Stock de Pièces' }}
+                    {{ activeTab === 'tickets' ? 'Tous les Tickets' : (activeTab === 'retours' ? 'Téléphones retournés' : 'Stock de Pièces') }}
                 </h2>
             </div>
         </header>
@@ -49,37 +52,130 @@
                                 <th>Date</th>
                                 <th>Client</th>
                                 <th>Appareil</th>
+                                <th>Problème</th>
                                 <th>Statut</th>
                                 <th>Total</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr *ngFor="let rep of reparations">
+                            <tr *ngFor="let rep of reparations" style="cursor: pointer;" (click)="ouvrirDetails(rep)"
+                                title="Cliquer pour voir tous les détails">
                                 <td>#{{ rep.id_reparation }}</td>
                                 <td>{{ rep.date_reception | date:'dd/MM/yyyy' }}</td>
                                 <td>{{ rep.client?.nom || 'Inconnu' }}</td>
                                 <td>{{ rep.appareil }}</td>
+                                <td>{{ rep.description || '—' }}</td>
                                 <td>
-                                    <span class="badge" [class.badge-primary]="rep.statut === 'En attente'"
-                                        [class.badge-warning]="rep.statut === 'En cours'"
-                                        [class.badge-success]="rep.statut === 'Terminé'">
+                                    <span class="badge" [class.badge-primary]="estEnCours(rep)"
+                                        [class.badge-warning]="estEnLivraison(rep)"
+                                        [class.badge-success]="estFinalise(rep)">
                                         {{ rep.statut }}
                                     </span>
                                 </td>
                                 <td class="price-text">{{ rep.prix }} MAD</td>
-                                <td>
-                                    <select class="form-select status-select" [ngModel]="rep.statut"
-                                        (ngModelChange)="updateStatut(rep.id_reparation, $event)">
-                                        <option value="En attente">En attente</option>
-                                        <option value="En cours">En cours</option>
-                                        <option value="Terminé">Terminé</option>
-                                        <option value="Livré">Livré</option>
-                                    </select>
+                                <td (click)="$event.stopPropagation()">
+                                    <!-- Step 1: repair in progress -->
+                                    <button *ngIf="estEnCours(rep)" class="btn-step btn-step-primary"
+                                        (click)="ouvrirFinalisation(rep)">
+                                        🔧 Maintenance terminée
+                                    </button>
+
+                                    <!-- Step 2: awaiting payment -->
+                                    <div *ngIf="estEnLivraison(rep)" class="montant-recu-row">
+                                        <button class="btn-step btn-step-success" (click)="envoyerEnCaisse(rep)">
+                                            🛒 Envoyer en caisse (POS)
+                                        </button>
+                                    </div>
+
+                                    <!-- Step 3: closed out -->
+                                    <span *ngIf="estFinalise(rep)" class="montant-recu-final">
+                                        ✅ Reçu : {{ (rep.montant_recu ?? rep.prix) | number:'1.2-2' }} MAD
+                                    </span>
                                 </td>
                             </tr>
                             <tr *ngIf="reparations.length === 0">
-                                <td colspan="7" class="text-center text-muted">Aucun ticket trouvé.</td>
+                                <td colspan="8" class="text-center text-muted">Aucun ticket trouvé.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- RETOURS TAB -->
+            <div *ngIf="activeTab === 'retours'" class="fade-in">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Retour</th>
+                                <th>Téléphone</th>
+                                <th>Problème</th>
+                                <th>Dommage</th>
+                                <th>Pièce défectueuse</th>
+                                <th>Fournisseur</th>
+                                <th>Remplacement</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let r of retours">
+                                <td>#{{ r.id_reparation }}<br><small class="text-muted">du ticket #{{ r.ticket_origine
+                                        }}</small></td>
+                                <td>{{ r.appareil }}<br><small class="text-muted">{{ r.client?.nom }}</small></td>
+                                <td>{{ r.description || '—' }}</td>
+                                <td>
+                                    <span class="badge" *ngIf="r.degre_dommage"
+                                        [class.badge-success]="r.degre_dommage === 'Léger'"
+                                        [class.badge-warning]="r.degre_dommage === 'Moyen'"
+                                        [class.badge-danger]="r.degre_dommage === 'Grave'">{{ r.degre_dommage }}</span>
+                                    <span *ngIf="!r.degre_dommage">—</span>
+                                </td>
+                                <td>{{ r.piece_defectueuse?.designation || '—' }}</td>
+                                <td>{{ fournisseursDe(r) || '—' }}</td>
+                                <td>
+                                    <span *ngIf="r.items?.length === 0" class="text-muted">—</span>
+                                    <span *ngFor="let it of r.items; let last = last">{{ it.article?.designation }}{{
+                                        last ? '' : ', ' }}</span>
+                                </td>
+                                <td>
+                                    <button class="btn-step btn-step-primary" *ngIf="estEnCours(r)"
+                                        (click)="ouvrirRemplacement(r)">
+                                        🔧 Remplacer (stock)
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr *ngIf="retours.length === 0">
+                                <td colspan="8" class="text-center text-muted">Aucun retour déclaré.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="section-title" style="margin-top: 28px;">Pièces renvoyées au fournisseur</div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Pièce défectueuse</th>
+                                <th>Marque / Modèle</th>
+                                <th>Qté</th>
+                                <th>Problème</th>
+                                <th>Fournisseur</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let rf of retoursFournisseur">
+                                <td>{{ rf.date_retour | date:'dd/MM/yyyy' }}</td>
+                                <td>{{ rf.designation || ('Article #' + rf.id_article) }}</td>
+                                <td>{{ (rf.marque || '') + ' ' + (rf.modele || '') }}</td>
+                                <td>{{ rf.qte }}</td>
+                                <td>{{ rf.probleme }}</td>
+                                <td>{{ nomFournisseur(rf) || '—' }}</td>
+                            </tr>
+                            <tr *ngIf="retoursFournisseur.length === 0">
+                                <td colspan="6" class="text-center text-muted">Aucune pièce renvoyée.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -97,10 +193,11 @@
                                 <th>Prix Achat</th>
                                 <th>Prix Vente</th>
                                 <th>Stock Actuel</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr *ngFor="let part of stockParts">
+                            <tr *ngFor="let part of piecesEnStock">
                                 <td>{{ part.id_article }}</td>
                                 <td>{{ part.designation }}</td>
                                 <td class="price-text">{{ part.prix_achat }} MAD</td>
@@ -109,12 +206,194 @@
                                     <span class="badge-stock" [class.danger]="(part.quantite || 0) < 5">{{ part.quantite
                                         || 0 }}</span>
                                 </td>
+                                <td>
+                                    <button class="btn-step btn-step-primary" (click)="ouvrirRenvoi(part)">
+                                        ↩ Renvoyer
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr *ngIf="piecesEnStock.length === 0">
+                                <td colspan="6" class="text-center text-muted">Aucune pièce en stock.</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </main>
+    </div>
+</div>
+
+<!-- TICKET DETAILS MODAL -->
+<div class="modal-overlay" *ngIf="detailRep" (click)="fermerDetails()">
+    <div class="modal-content modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h2>Ticket #{{ detailRep.id_reparation }}</h2>
+            <button class="btn-close" (click)="fermerDetails()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-grid">
+                <span class="detail-label">Statut</span>
+                <span><span class="badge" [class.badge-primary]="estEnCours(detailRep)"
+                        [class.badge-warning]="estEnLivraison(detailRep)"
+                        [class.badge-success]="estFinalise(detailRep)">{{ detailRep.statut }}</span></span>
+                <span class="detail-label">Date de réception</span>
+                <span>{{ detailRep.date_reception | date:'dd/MM/yyyy' }}</span>
+                <span class="detail-label">Client</span>
+                <span>{{ detailRep.client?.nom || 'Inconnu' }}</span>
+                <span class="detail-label">Téléphone</span>
+                <span>{{ detailRep.client?.telephone || '—' }}</span>
+                <span class="detail-label">Appareil</span>
+                <span>{{ detailRep.appareil || '—' }}</span>
+                <span class="detail-label">Problème(s)</span>
+                <span><strong>{{ detailRep.description || '—' }}</strong></span>
+                <span class="detail-label">Main d'œuvre</span>
+                <span>{{ detailRep.cout_main_oeuvre || 0 }} MAD</span>
+                <span class="detail-label">Prix convenu</span>
+                <span class="price-text">{{ detailRep.prix }} MAD</span>
+                <span class="detail-label" *ngIf="detailRep.acompte > 0">Acompte versé</span>
+                <span class="price-text" *ngIf="detailRep.acompte > 0">{{ detailRep.acompte }} MAD</span>
+                <span class="detail-label" *ngIf="detailRep.acompte > 0">Reste à payer</span>
+                <span class="price-text" *ngIf="detailRep.acompte > 0">{{ resteAPayer(detailRep) }} MAD</span>
+                <span class="detail-label" *ngIf="detailRep.montant_recu !== null && detailRep.montant_recu !== undefined">
+                    Montant reçu</span>
+                <span class="price-text"
+                    *ngIf="detailRep.montant_recu !== null && detailRep.montant_recu !== undefined">{{
+                    detailRep.montant_recu }} MAD</span>
+            </div>
+
+            <div class="section-title">Pièces utilisées</div>
+            <div *ngIf="!detailRep.items || detailRep.items.length === 0" class="text-muted">
+                Aucune pièce pour le moment.
+            </div>
+            <div class="detail-part" *ngFor="let it of detailRep.items">
+                <div>
+                    {{ it.article?.designation || 'Pièce' }}
+                    <small class="text-muted" *ngIf="it.article?.marque || it.article?.modele">
+                        — {{ it.article?.marque }} {{ it.article?.modele }}</small>
+                </div>
+                <div class="text-muted">
+                    Qté {{ it.qte }} · achat {{ it.article?.prix_achat || 0 }} MAD · prix {{ it.prix }} MAD
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" style="margin-right: auto;" *ngIf="peutDeclarerRetour(detailRep)"
+                (click)="ouvrirRetour(detailRep)">
+                🔁 Déclarer un retour
+            </button>
+            <button class="btn btn-secondary" (click)="fermerDetails()">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- SEND-BACK MODAL: return a defective part to its supplier -->
+<div class="modal-overlay" *ngIf="renvoiPiece">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h2>Renvoyer la pièce</h2>
+            <button class="btn-close" (click)="fermerRenvoi()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p class="text-muted" style="margin-bottom: 12px;">
+                <strong>{{ renvoiPiece.designation }}</strong> — en stock : {{ renvoiPiece.quantite }}.
+                La pièce sera renvoyée au fournisseur et retirée du stock.
+            </p>
+            <div class="form-group">
+                <label>Quantité renvoyée</label>
+                <input type="number" min="1" [max]="renvoiPiece.quantite || 1" class="form-control"
+                    [(ngModel)]="renvoiQte">
+            </div>
+            <div class="form-group">
+                <label>Quel est le problème ? <span class="required">*</span></label>
+                <textarea class="form-control" rows="3" [(ngModel)]="renvoiProbleme"
+                    placeholder="Ex: l'écran ne s'allume pas, pixels morts…"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="fermerRenvoi()">Annuler</button>
+            <button class="btn btn-primary" [disabled]="renvoiEnCours" (click)="confirmerRenvoi()">
+                {{ renvoiEnCours ? 'Envoi…' : 'Renvoyer la pièce' }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- REPLACEMENT MODAL: swap the defective part for one from the spare-parts stock -->
+<div class="modal-overlay" *ngIf="remplacerRep">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h2>Remplacer la pièce</h2>
+            <button class="btn-close" (click)="fermerRemplacement()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p class="text-muted" style="margin-bottom: 12px;">
+                Retour #{{ remplacerRep.id_reparation }} — {{ remplacerRep.appareil }}
+                <span *ngIf="remplacerRep.piece_defectueuse"><br>Pièce défectueuse :
+                    <strong>{{ remplacerRep.piece_defectueuse.designation }}</strong></span>
+            </p>
+            <div class="search-box">
+                <input type="text" class="form-control" placeholder="Rechercher une pièce de rechange en stock..."
+                    [(ngModel)]="remplacerSearchTerm">
+                <div class="search-results" *ngIf="remplacementResultats.length > 0">
+                    <div class="search-result-item" *ngFor="let part of remplacementResultats"
+                        (click)="remplacerPar(part)">
+                        {{ part.designation }} <span class="stock-info">Stock: {{ part.quantite }}</span>
+                    </div>
+                </div>
+                <p class="text-muted" *ngIf="remplacerSearchTerm && remplacementResultats.length === 0"
+                    style="margin-top: 8px; font-size: 0.85rem;">
+                    Aucune pièce en stock trouvée.
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="fermerRemplacement()">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- RETURN DECLARATION MODAL -->
+<div class="modal-overlay" *ngIf="retourRep">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h2>Déclarer un retour</h2>
+            <button class="btn-close" (click)="fermerRetour()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p class="text-muted" style="margin-bottom: 12px;">
+                Ticket #{{ retourRep.id_reparation }} — {{ retourRep.appareil }} ({{ retourRep.client?.nom }}).
+                Un nouveau ticket sans frais sera créé pour ce retour.
+            </p>
+            <div class="form-group">
+                <label>Quel est le problème rencontré ? <span class="required">*</span></label>
+                <div class="checkbox-chip-group">
+                    <label class="checkbox-chip" *ngFor="let t of ['Écran', 'Batterie', 'Problème technique']"
+                        [class.checked]="retourType === t">
+                        <input type="radio" name="retourType" [value]="t" [(ngModel)]="retourType"> {{ t }}
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Degré de dommage <span class="required">*</span></label>
+                <div class="checkbox-chip-group">
+                    <label class="checkbox-chip" *ngFor="let d of ['Léger', 'Moyen', 'Grave']"
+                        [class.checked]="retourDegre === d">
+                        <input type="radio" name="retourDegre" [value]="d" [(ngModel)]="retourDegre"> {{ d }}
+                    </label>
+                </div>
+            </div>
+            <div class="form-group" *ngIf="retourType === 'Problème technique'">
+                <label>Détails (facultatif)</label>
+                <textarea class="form-control" rows="2" [(ngModel)]="retourDetails"
+                    placeholder="Ex: ne s'allume plus, pas de réseau…"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="fermerRetour()">Annuler</button>
+            <button class="btn btn-primary" [disabled]="savingRetour" (click)="declarerRetour()">
+                {{ savingRetour ? 'Enregistrement…' : 'Déclarer le retour' }}
+            </button>
+        </div>
     </div>
 </div>
 
@@ -142,14 +421,46 @@
 
             <div class="form-row">
                 <div class="form-group flex-1">
-                    <label>Appareil (Modèle) <span class="required">*</span></label>
-                    <input type="text" class="form-control" [(ngModel)]="ticketForm.appareil"
-                        placeholder="Ex: iPhone 13 Pro">
+                    <label>Marque <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="ticketForm.marqueAppareil"
+                        placeholder="Ex: Apple">
                 </div>
                 <div class="form-group flex-1">
-                    <label>Problème / Description</label>
-                    <input type="text" class="form-control" [(ngModel)]="ticketForm.description"
-                        placeholder="Ex: Ecran cassé">
+                    <label>Modèle <span class="required">*</span></label>
+                    <input type="text" class="form-control" [(ngModel)]="ticketForm.modeleAppareil"
+                        placeholder="Ex: iPhone 13 Pro">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label>Problème(s) / Pièce(s) nécessaire(s)</label>
+                    <div class="checkbox-chip-group">
+                        <label class="checkbox-chip" [class.checked]="panneTypes.includes('Écran')">
+                            <input type="checkbox" [checked]="panneTypes.includes('Écran')"
+                                (change)="togglePanneType('Écran')"> Écran
+                        </label>
+                        <label class="checkbox-chip" [class.checked]="panneTypes.includes('Batterie')">
+                            <input type="checkbox" [checked]="panneTypes.includes('Batterie')"
+                                (change)="togglePanneType('Batterie')"> Batterie
+                        </label>
+                        <label class="checkbox-chip" [class.checked]="panneTypes.includes('Filtre')">
+                            <input type="checkbox" [checked]="panneTypes.includes('Filtre')"
+                                (change)="togglePanneType('Filtre')"> Filtre
+                        </label>
+                        <label class="checkbox-chip" [class.checked]="panneTypes.includes('Autre')">
+                            <input type="checkbox" [checked]="panneTypes.includes('Autre')"
+                                (change)="togglePanneType('Autre')"> Autre
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row" *ngIf="panneTypes.includes('Autre')">
+                <div class="form-group flex-1">
+                    <label>Décrivez le problème</label>
+                    <input type="text" class="form-control" [(ngModel)]="problemeAutre"
+                        placeholder="Ex: Connecteur de charge défectueux">
                 </div>
             </div>
 
@@ -199,8 +510,15 @@
                     <label>Main d'oeuvre</label>
                     <input type="number" class="form-control text-right" [(ngModel)]="ticketForm.cout_main_oeuvre">
                 </div>
+                <div class="form-group flex-item-fixed w-150 mr-3">
+                    <label>Acompte versé</label>
+                    <input type="number" min="0" class="form-control text-right" [(ngModel)]="ticketForm.acompte">
+                </div>
                 <div class="total-box mt-4">
                     <strong>Total Ticket: </strong> <span>{{ ticketTotal }} MAD</span>
+                    <div *ngIf="ticketForm.acompte > 0" style="font-size: 13px;">
+                        Reste à payer : {{ ticketTotal - ticketForm.acompte }} MAD
+                    </div>
                 </div>
             </div>
         </div>
@@ -232,6 +550,187 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" (click)="closeClientModal()">Annuler</button>
             <button class="btn btn-primary" (click)="saveClient()">Enregistrer</button>
+        </div>
+    </div>
+</div>
+
+<!-- CUSTOM PART PRICING MODAL (when the part isn't Écran/Batterie) -->
+<div class="modal-overlay" *ngIf="isCustomPartModalOpen" style="z-index: 1050;">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h2>Tarification de la pièce et fournisseur</h2>
+            <button class="btn-close" (click)="closeCustomPartModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p class="text-muted" style="margin-bottom: 12px;"
+                *ngIf="customPartContext === 'finalisation' && typesRestants.length > 0">
+                Pièce manquante pour {{ finaliserRep?.appareil }} : <strong>{{ typesRestants[0] }}</strong>
+            </p>
+            <div class="finaliser-step">
+                <div class="finaliser-step-title">1. Rechercher dans l'inventaire</div>
+                <div class="search-box">
+                    <input type="text" class="form-control" placeholder="Nom, marque, modèle ou code-barres..."
+                        [(ngModel)]="customPartSearchTerm">
+                    <div class="search-results" *ngIf="customPartSearchResults.length > 0">
+                        <div class="search-result-item" *ngFor="let part of customPartSearchResults"
+                            (click)="choisirPieceDepuisTarification(part)">
+                            {{ part.designation }} <span class="stock-info">Stock: {{ part.quantite }}</span> <span
+                                class="price-info">{{ part.prix_vente }} MAD</span>
+                        </div>
+                    </div>
+                    <p class="text-muted" *ngIf="customPartSearchTerm && customPartSearchResults.length === 0"
+                        style="margin-top: 8px; font-size: 0.85rem;">
+                        Aucune pièce trouvée en stock.
+                    </p>
+                </div>
+            </div>
+            <div class="finaliser-step-title">2. Introuvable ? Saisissez le prix d'achat et le fournisseur</div>
+            <div class="form-group mb-3">
+                <label>Prix d'achat de la pièce (MAD)</label>
+                <input type="number" min="0" step="0.01" class="form-control" [(ngModel)]="customPart.prix_achat">
+            </div>
+            <div class="form-group">
+                <label>Fournisseur de la pièce</label>
+                <select class="form-control" [(ngModel)]="customPart.fournisseurId">
+                    <option [ngValue]="undefined">-- Sans fournisseur --</option>
+                    <option *ngFor="let f of fournisseurs" [ngValue]="f.id_fournisseur">
+                        {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}
+                    </option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-link" style="margin-right: auto;"
+                *ngIf="customPartContext === 'finalisation'" (click)="closeCustomPartModal(); finaliserSansPiece()">
+                Aucune pièce
+            </button>
+            <button class="btn btn-secondary" (click)="closeCustomPartModal()">Annuler</button>
+            <button class="btn btn-primary" [disabled]="savingCustomPart" (click)="saveCustomPart()">
+                {{ savingCustomPart ? 'Enregistrement…' : 'Enregistrer prix et détails de la pièce' }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- FINALISATION MODAL: "Quelle pièce avez-vous utilisée ?" (déclenché par Maintenance terminée) -->
+<div class="modal-overlay" *ngIf="isFinaliserModalOpen && !isCustomPartModalOpen">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h2>Maintenance terminée</h2>
+            <button class="btn-close" (click)="fermerFinalisation()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p class="text-muted" style="margin-bottom: 12px;" *ngIf="!finaliserTypePreselected">
+                Quelle(s) pièce(s) avez-vous utilisée(s) pour {{ finaliserRep?.appareil }} ?
+            </p>
+            <p class="text-muted" style="margin-bottom: 12px;" *ngIf="finaliserTypePreselected">
+                <ng-container *ngIf="typesRestants.length > 0; else pieceGenerique">
+                    Pièce manquante pour {{ finaliserRep?.appareil }} : <strong>{{ typesRestants.join(', ') }}</strong>
+                </ng-container>
+                <ng-template #pieceGenerique>Pièce utilisée pour {{ finaliserRep?.appareil }} :</ng-template>
+            </p>
+
+            <div class="form-group mb-3" *ngIf="!finaliserTypePreselected">
+                <div class="checkbox-chip-group">
+                    <label class="checkbox-chip" [class.checked]="finaliserTypesSelected.includes('Écran')">
+                        <input type="checkbox" [checked]="finaliserTypesSelected.includes('Écran')"
+                            (change)="toggleFinaliserType('Écran')"> Écran
+                    </label>
+                    <label class="checkbox-chip" [class.checked]="finaliserTypesSelected.includes('Batterie')">
+                        <input type="checkbox" [checked]="finaliserTypesSelected.includes('Batterie')"
+                            (change)="toggleFinaliserType('Batterie')"> Batterie
+                    </label>
+                    <label class="checkbox-chip" [class.checked]="finaliserTypesSelected.includes('Filtre')">
+                        <input type="checkbox" [checked]="finaliserTypesSelected.includes('Filtre')"
+                            (change)="toggleFinaliserType('Filtre')"> Filtre
+                    </label>
+                </div>
+            </div>
+
+            <div class="finaliser-step">
+                <div class="finaliser-step-title">1. Rechercher en stock</div>
+                <div class="search-box mb-3" *ngIf="!selectedStockPart">
+                    <input type="text" class="form-control" placeholder="Rechercher une pièce en stock..."
+                        [(ngModel)]="finaliserSearchTerm">
+                    <div class="search-results" *ngIf="finaliserFilteredParts.length > 0">
+                        <div class="search-result-item" *ngFor="let part of finaliserFilteredParts"
+                            (click)="choisirPieceFinalisation(part)">
+                            {{ part.designation }} <span class="stock-info">Stock: {{ part.quantite }}</span> <span
+                                class="price-info">{{ part.prix_vente }} MAD</span>
+                        </div>
+                    </div>
+                    <p class="text-muted" *ngIf="finaliserSearchTerm && finaliserFilteredParts.length === 0"
+                        style="margin-top: 8px; font-size: 0.85rem;">
+                        Aucune pièce trouvée en stock.
+                    </p>
+                    <button type="button" class="btn-link" style="margin-top: 10px;"
+                        (click)="openCustomPartModal('finalisation')">
+                        + La pièce n'est pas dans l'inventaire — la tarifer manuellement
+                    </button>
+                </div>
+
+                <div class="occasion-row" *ngIf="selectedStockPart">
+                    <label>{{ selectedStockPart.designation }} — confirmer le prix et le fournisseur :</label>
+                    <div class="occasion-input-row">
+                        <input type="number" min="0" step="0.01" class="form-control"
+                            [(ngModel)]="stockPartPrix" placeholder="Prix (MAD)">
+                        <select class="form-control" [(ngModel)]="stockPartFournisseurId">
+                            <option [ngValue]="undefined">-- Sans fournisseur --</option>
+                            <option *ngFor="let f of fournisseurs" [ngValue]="f.id_fournisseur">
+                                {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="occasion-input-row" style="margin-top: 8px;">
+                        <button type="button" class="btn btn-secondary" (click)="annulerPieceStock()">
+                            Annuler
+                        </button>
+                        <button type="button" class="btn btn-primary" [disabled]="finalisationEnCours"
+                            (click)="confirmerPieceStock()">
+                            {{ finalisationEnCours ? 'Ajout…' : 'Ajouter' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="finaliser-step">
+                <div class="finaliser-step-title">2. Ou, pièce d'occasion</div>
+                <div class="occasion-row">
+                    <select class="form-control" *ngIf="typesRestants.length > 1"
+                        style="margin-bottom: 8px;" [(ngModel)]="occasionType">
+                        <option *ngFor="let type of typesRestants" [ngValue]="type">{{ type }}</option>
+                    </select>
+                    <div class="marque-modele-connus" *ngIf="occasionMarqueModeleReadonly">
+                        📱 {{ finaliserMarqueModeleConnus?.marque }} {{ finaliserMarqueModeleConnus?.modele }}
+                        <span class="text-muted">(déjà saisi)</span>
+                    </div>
+                    <div class="occasion-input-row" *ngIf="!occasionMarqueModeleReadonly">
+                        <input type="text" class="form-control" [(ngModel)]="occasionMarque" placeholder="Marque">
+                        <input type="text" class="form-control" [(ngModel)]="occasionModele" placeholder="Modèle">
+                    </div>
+                    <div class="occasion-input-row" style="margin-top: 8px;">
+                        <input type="number" min="0" step="0.01" class="form-control" [(ngModel)]="occasionPrix"
+                            placeholder="Prix (MAD)">
+                    </div>
+                    <div class="occasion-input-row" style="margin-top: 8px;">
+                        <select class="form-control" [(ngModel)]="occasionFournisseurId">
+                            <option [ngValue]="undefined">-- Sans fournisseur --</option>
+                            <option *ngFor="let f of fournisseurs" [ngValue]="f.id_fournisseur">
+                                {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}
+                            </option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" [disabled]="savingOccasion"
+                            (click)="ajouterPieceOccasion()">
+                            {{ savingOccasion ? 'Ajout…' : 'Ajouter' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="finaliserSansPiece()">
+                {{ finaliserRep?.items?.length > 0 ? 'Continuer' : "Aucune pièce (main d'œuvre seulement)" }}
+            </button>
         </div>
     </div>
 </div>

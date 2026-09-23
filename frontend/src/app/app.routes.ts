@@ -10,6 +10,7 @@ import { ChargesComponent } from './vente/charges/charges.component';
 import { StockComponent } from './vente/stock/stock.component';
 import { FournisseursComponent } from './vente/fournisseurs/fournisseurs.component';
 import { FacturesComponent } from './vente/factures/factures.component';
+import { ClientsComponent } from './vente/clients/clients.component';
 import { authGuard } from './guards/auth.guard';
 import { adminGuard } from './guards/admin.guard';
 
@@ -29,6 +30,7 @@ export const routes: Routes = [
             { path: 'stock', component: StockComponent, canActivate: [adminGuard] },
             { path: 'fournisseurs', component: FournisseursComponent, canActivate: [adminGuard] },
             { path: 'factures', component: FacturesComponent, canActivate: [adminGuard] },
+            { path: 'clients', component: ClientsComponent, canActivate: [authGuard], data: { roles: ['admin', 'vendeur', 'vendeuse'] } },
         ]
     },
     { path: 'reparation', component: ReparationComponent, canActivate: [authGuard] },

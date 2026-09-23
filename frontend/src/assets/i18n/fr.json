@@ -6,7 +6,8 @@
         "CHARGES": "Charges",
         "STOCK": "Stock",
         "SUPPLIERS": "Fournisseurs",
-        "INVOICES": "Factures"
+        "INVOICES": "Factures",
+        "CLIENTS": "Clients"
     },
     "HOME": {
         "WELCOME": "Votre espace de",

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { FactureAchatService } from '../../services/facture-achat.service';
 import { FournisseurService } from '../../services/fournisseur.service';
-import { ArticleService, ArticleForm } from '../../services/article.service';
+import { ArticleService, ArticleForm, articleImageUrl } from '../../services/article.service';
 import { FactureAchat, FactureItem } from '../../models/facture-achat.model';
 import { Fournisseur } from '../../models/fournisseur.model';
 
@@ -22,24 +22,67 @@ export class FacturesComponent implements OnInit {
   availableArticles: ArticleForm[] = [];
 
   isModalOpen = false;
+  savingFacture = false;
   selectedFacture: FactureAchat | null = null;
   isDetailOpen = false;
 
   // New Workflow Buffer
   defaultSupplierTypes: string[] = [
-    'Glass (الباغات والزجاج الخارجي)',
-    'Cache (الأغطية الخلفية والإطارات)',
-    'Accessoires (إكسسوارات)',
-    'Pièce de rechange (قطع غيار)',
+    'Afficheur (شاشة عرض)',
+    'Batterie (بطارية)',
+    'Vitre (زجاج/غطاء)',
     'Autre (شيء آخر)'
   ];
 
   supplierTypes: string[] = [...this.defaultSupplierTypes];
 
+  // Supplier classifications are not real part types: expand them to the actual categories
+  reparationPartTypes: string[] = [
+    'Afficheur (شاشة عرض)',
+    'Batterie (بطارية)',
+    'Vitre (زجاج/غطاء)'
+  ];
+
+  accessoiresPartTypes: string[] = [
+    'Cendre',
+    'Glace'
+  ];
+
   currentItem: Partial<FactureItem> = this.initCurrentItem();
+  editingItemIndex: number | null = null;
   searchTerm: string = '';
   showSmartSearchResults: boolean = false;
+  imageUploading = false;
+  imageError = '';
   @ViewChild('searchInput') searchInput!: ElementRef;
+
+  imageUrl(image?: string | null): string | null {
+    return articleImageUrl(image);
+  }
+
+  onImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.imageError = '';
+    this.imageUploading = true;
+    this.articleService.uploadImage(file).subscribe({
+      next: (res) => {
+        this.currentItem.image = res.url;
+        this.imageUploading = false;
+      },
+      error: (err) => {
+        this.imageError = err.error?.message || 'Erreur lors du téléchargement de l\'image.';
+        this.imageUploading = false;
+      }
+    });
+    input.value = '';
+  }
+
+  removeImage(): void {
+    this.currentItem.image = undefined;
+  }
 
   // Quick Supplier
   isQuickAddSupplierModalOpen = false;
@@ -100,6 +143,7 @@ export class FacturesComponent implements OnInit {
       marque: '',
       modele: '',
       barcode: '',
+      image: '',
       qte: 1,
       prix: 0,
       prix_vente: 0,
@@ -131,6 +175,7 @@ export class FacturesComponent implements OnInit {
 
   openModal() {
     this.isModalOpen = true;
+    this.savingFacture = false;
     this.resetForm();
   }
 
@@ -151,6 +196,7 @@ export class FacturesComponent implements OnInit {
     this.computed = { total_ht: 0, total_tva: 0, net_a_payer: 0, reste_a_payer: 0 };
     this.availableArticles = [];
     this.currentItem = this.initCurrentItem();
+    this.editingItemIndex = null;
     this.searchTerm = '';
     this.supplierTypes = [...this.defaultSupplierTypes];
   }
@@ -166,7 +212,21 @@ export class FacturesComponent implements OnInit {
 
     // Override types with the supplier's specific types (not append)
     if (selectedFournisseur && selectedFournisseur.type_articles) {
-      const dynamicTypes = selectedFournisseur.type_articles.split(',').map((s: string) => s.trim()).filter(Boolean);
+      const rawTypes = selectedFournisseur.type_articles.split(',').map((s: string) => s.trim()).filter(Boolean);
+      const dynamicTypes: string[] = [];
+      for (const t of rawTypes) {
+        if (t.toLowerCase().includes('réparation') || t.toLowerCase().includes('reparation')) {
+          for (const rt of this.reparationPartTypes) {
+            if (!dynamicTypes.includes(rt)) dynamicTypes.push(rt);
+          }
+        } else if (t.toLowerCase().includes('accessoire')) {
+          for (const at of this.accessoiresPartTypes) {
+            if (!dynamicTypes.includes(at)) dynamicTypes.push(at);
+          }
+        } else if (!dynamicTypes.includes(t)) {
+          dynamicTypes.push(t);
+        }
+      }
       if (dynamicTypes.length > 0) {
         this.supplierTypes = [...dynamicTypes, 'Autre (شيء آخر)'];
       } else {
@@ -184,6 +244,7 @@ export class FacturesComponent implements OnInit {
 
     // Reset current item buffer
     this.currentItem = this.initCurrentItem();
+    this.editingItemIndex = null;
     this.searchTerm = '';
 
     // Auto-select type if only one is available
@@ -202,12 +263,16 @@ export class FacturesComponent implements OnInit {
 
   // --- SMART SEARCH LOGIC ---
   get filteredSmartArticles() {
+    if (!this.currentItem.type) return [];
     if (!this.searchTerm || this.searchTerm.length < 2) return [];
     const term = this.searchTerm.toLowerCase();
 
     // Search in both available (supplier specific) and all articles (if looking for generic)
     // Preference to supplier articles
     let searchPool = this.availableArticles.length > 0 ? this.availableArticles : this.articles;
+
+    // Scope results to the chosen part type
+    searchPool = searchPool.filter(a => a.sous_categorie === this.currentItem.type);
 
     return searchPool.filter(a =>
       (a.id_article && a.id_article.toString().includes(term)) ||
@@ -216,6 +281,19 @@ export class FacturesComponent implements OnInit {
       (a.marque && a.marque.toLowerCase().includes(term)) ||
       (a.modele && a.modele.toLowerCase().includes(term))
     ).slice(0, 5); // Limit results
+  }
+
+  onTypeChange() {
+    // Changing the part type invalidates any in-progress search/selection
+    this.searchTerm = '';
+    if (this.currentItem.isNew === false) {
+      this.currentItem = { ...this.initCurrentItem(), type: this.currentItem.type };
+    }
+    setTimeout(() => {
+      if (this.searchInput) {
+        this.searchInput.nativeElement.focus();
+      }
+    }, 100);
   }
 
   selectSmartArticle(article: ArticleForm) {
@@ -227,6 +305,7 @@ export class FacturesComponent implements OnInit {
       marque: article.marque || '',
       modele: article.modele || '',
       barcode: article.barcode || '',
+      image: article.image || '',
       qte: 1,
       prix: article.prix_achat || 0,
       prix_vente: article.prix_vente || 0,
@@ -307,7 +386,8 @@ export class FacturesComponent implements OnInit {
   }
 
   resetCurrentItem() {
-    this.currentItem = this.initCurrentItem();
+    const type = this.currentItem.type;
+    this.currentItem = { ...this.initCurrentItem(), type };
     this.searchTerm = '';
   }
 
@@ -321,10 +401,6 @@ export class FacturesComponent implements OnInit {
     if (this.searchTerm && this.filteredSmartArticles.length === 0) return true;
     if (this.currentItem.barcode || this.currentItem.designation) return true;
     return false;
-  }
-
-  get isAutreType(): boolean {
-    return this.currentItem.type ? this.currentItem.type.toLowerCase().includes('autre') : false;
   }
 
   // --- ITEM WORKFLOW ---
@@ -367,15 +443,54 @@ export class FacturesComponent implements OnInit {
       c.designation = `${typeStr} ${c.marque} ${c.modele}`.trim();
     }
 
-    this.formData.items.push({ ...c } as FactureItem);
+    if (this.editingItemIndex !== null) {
+      // Replace the line being edited in place
+      this.formData.items[this.editingItemIndex] = { ...c } as FactureItem;
+      this.editingItemIndex = null;
+    } else {
+      // Merge into an already-added identical line instead of creating a duplicate
+      // (protects against a double-click on "Ajouter à la facture" adding the item twice,
+      // and also lets scanning the same barcode again simply bump the quantity)
+      const existing = this.formData.items.find(i =>
+        c.isNew
+          ? i.isNew && i.designation === c.designation && i.marque === c.marque &&
+          i.modele === c.modele && (i.barcode || '') === (c.barcode || '')
+          : !i.isNew && i.articleId === c.articleId
+      );
+      if (existing) {
+        existing.qte = (existing.qte || 0) + q;
+        const lineHt = existing.qte * p;
+        existing.total_ttc = lineHt + lineHt * (tvaRate / 100);
+      } else {
+        this.formData.items.push({ ...c } as FactureItem);
+      }
+    }
     this.calculateTotals();
 
-    // Reset buffer
-    this.currentItem = this.initCurrentItem();
+    // Reset buffer, keeping the chosen type so the next item can be added right away
+    const type = c.type;
+    this.currentItem = { ...this.initCurrentItem(), type };
+    this.searchTerm = '';
+  }
+
+  editItem(index: number): void {
+    const item = this.formData.items[index];
+    this.editingItemIndex = index;
+    this.currentItem = { ...item };
+    this.searchTerm = item.designation || '';
+  }
+
+  cancelEditItem(): void {
+    const type = this.currentItem.type;
+    this.editingItemIndex = null;
+    this.currentItem = { ...this.initCurrentItem(), type };
     this.searchTerm = '';
   }
 
   removeItem(index: number) {
+    if (this.editingItemIndex === index) {
+      this.cancelEditItem();
+    }
     this.formData.items.splice(index, 1);
     this.calculateTotals();
   }
@@ -406,6 +521,8 @@ export class FacturesComponent implements OnInit {
   }
 
   saveFacture() {
+    if (this.savingFacture) return; // Avoid duplicate submissions on repeated clicks
+
     if (!this.formData.fournisseurId || !this.formData.reference) {
       alert('Veuillez remplir le fournisseur et la référence.');
       return;
@@ -415,6 +532,8 @@ export class FacturesComponent implements OnInit {
       alert('La facture est vide. Ajoutez au moins un élément.');
       return;
     }
+
+    this.savingFacture = true;
 
     const payload = {
       reference: this.formData.reference,
@@ -430,7 +549,7 @@ export class FacturesComponent implements OnInit {
         let mappedType = 'part';
         let subCategory = item.type || '';
 
-        if (subCategory.toLowerCase().includes('accessoires')) {
+        if (this.accessoiresPartTypes.includes(subCategory) || subCategory.toLowerCase().includes('accessoires')) {
           mappedType = 'accessory';
         }
 
@@ -449,6 +568,7 @@ export class FacturesComponent implements OnInit {
           prix_vente: item.prix_vente,
           marque: item.marque,
           modele: item.modele,
+          image: item.image || null,
           type: mappedType,
           sous_categorie: subCategory,
           tva_rate: item.tva_rate || 0
@@ -458,12 +578,14 @@ export class FacturesComponent implements OnInit {
 
     this.factureAchatService.createFacture(payload as any).subscribe({
       next: () => {
+        this.savingFacture = false;
         this.loadFactures();
         this.loadArticles();
         this.loadFournisseurs();
         this.closeModal();
       },
       error: (err: any) => {
+        this.savingFacture = false;
         console.error(err);
         alert(err.message || 'Erreur lors de la création de la facture.');
       }

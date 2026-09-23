@@ -6,7 +6,8 @@
         "CHARGES": "نفقات",
         "STOCK": "مخزون",
         "SUPPLIERS": "موردين",
-        "INVOICES": "فواتير"
+        "INVOICES": "فواتير",
+        "CLIENTS": "الزبائن"
     },
     "HOME": {
         "WELCOME": "مساحتك لـ",

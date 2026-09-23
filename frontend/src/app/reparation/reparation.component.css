@@ -337,6 +337,11 @@
     color: #10b981;
 }
 
+.badge-danger {
+    background: #ef444433;
+    color: #ef4444;
+}
+
 .badge-stock {
     background: #10b98133;
     color: #10b981;
@@ -403,4 +408,218 @@ label {
     border: 1px solid #30363d;
     padding: 5px;
     border-radius: 4px;
+}
+
+/* Two-button repair workflow */
+.btn-step {
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+
+.btn-step:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-step-primary {
+    background: #3b82f633;
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.btn-step-primary:hover {
+    background: #3b82f64d;
+}
+
+.btn-step-success {
+    background: #10b98133;
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.btn-step-success:hover {
+    background: #10b9814d;
+}
+
+.montant-recu-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.montant-recu-input {
+    width: 80px;
+    background-color: #0f1117;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.montant-recu-final {
+    color: #34d399;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: #60a5fa;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 0;
+    text-align: left;
+    text-decoration: underline;
+}
+
+.btn-link:hover {
+    color: #93c5fd;
+}
+
+.checkbox-chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.checkbox-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid #30363d;
+    background: #0f1117;
+    color: #c9d1d9;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.checkbox-chip input {
+    accent-color: #6366f1;
+    cursor: pointer;
+}
+
+.checkbox-chip:hover {
+    border-color: #6366f1;
+}
+
+.checkbox-chip.checked {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: #6366f1;
+    color: #a5b4fc;
+    font-weight: 600;
+}
+
+.added-parts-list {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+    font-size: 12.5px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.occasion-row {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed #30363d;
+}
+
+.occasion-row label {
+    display: block;
+    font-size: 13px;
+    color: #8b949e;
+    margin-bottom: 6px;
+}
+
+.occasion-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.occasion-input-row .form-control {
+    flex: 1;
+}
+
+.marque-modele-connus {
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.marque-modele-connus .text-muted {
+    font-weight: 400;
+    font-size: 12px;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 10px 12px;
+    font-size: 14px;
+}
+
+.detail-label {
+    color: #8b949e;
+    font-weight: 600;
+}
+
+.detail-part {
+    padding: 8px 0;
+    border-bottom: 1px solid #30363d;
+    font-size: 14px;
+}
+
+.type-progress-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.type-progress-chip {
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.type-progress-chip.done {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.finaliser-step {
+    margin-bottom: 18px;
+}
+
+.finaliser-step-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 8px;
 }

@@ -1,0 +1,132 @@
+<div class="clients-page">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <div class="page-title">👥 Clients</div>
+            <div class="page-subtitle">Gérez vos clients, leurs dépôts et leur solde disponible</div>
+        </div>
+        <button class="btn btn-primary" (click)="openAddForm()" *ngIf="!showAddForm">＋ Ajouter un client</button>
+    </div>
+
+    <!-- Alerts -->
+    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg }}</div>
+
+    <!-- Add client form -->
+    <div class="form-card" *ngIf="showAddForm">
+        <div class="form-card-header">➕ Nouveau client</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Nom *</label>
+                <input type="text" [(ngModel)]="newClient.nom" placeholder="Nom du client" />
+            </div>
+            <div class="form-group">
+                <label>Téléphone</label>
+                <input type="text" [(ngModel)]="newClient.telephone" placeholder="Numéro de téléphone" />
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-secondary" (click)="cancelAddForm()">Annuler</button>
+            <button class="btn btn-success" [disabled]="savingClient" (click)="saveClient()">
+                {{ savingClient ? 'Enregistrement…' : 'Créer' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="table-toolbar">
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" type="text" placeholder="Chercher par nom ou téléphone…"
+                [(ngModel)]="searchTerm" />
+        </div>
+        <div class="table-count">{{ filteredClients.length }} client(s)</div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="loading">
+        <div class="loading-icon">⟳</div>
+        <strong>Chargement…</strong>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty-state" *ngIf="!loading && filteredClients.length === 0">
+        <div class="empty-icon">📭</div>
+        <strong>Aucun client pour l'instant</strong>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container" *ngIf="!loading && filteredClients.length > 0">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Téléphone</th>
+                    <th class="text-right">Total déposé</th>
+                    <th class="text-right">Solde disponible</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let c of filteredClients">
+                    <td class="fw-bold">{{ c.nom }}</td>
+                    <td>{{ c.telephone || '—' }}</td>
+                    <td class="text-right">{{ totalDeposeFor(c.id_client) | number:'1.3-3' }} DT</td>
+                    <td class="text-right" [class.text-success]="(c.solde || 0) > 0">
+                        {{ (c.solde || 0) | number:'1.3-3' }} DT
+                    </td>
+                    <td class="text-center">
+                        <button class="btn-outline btn-sm" (click)="openDepotPanel(c)">💰 Dépôts</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Deposit panel modal -->
+    <div class="modal-overlay" *ngIf="selectedClient" (click)="closeDepotPanel()">
+        <div class="modal-content scale-in" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>💰 {{ selectedClient.nom }} — Dépôts</h3>
+                <button class="close-btn" (click)="closeDepotPanel()">✕</button>
+            </div>
+            <div class="modal-body custom-scroll">
+                <div class="solde-banner">
+                    <span>Solde disponible :</span>
+                    <strong>{{ (selectedClient.solde || 0) | number:'1.3-3' }} DT</strong>
+                </div>
+
+                <div class="depot-form">
+                    <div class="form-group">
+                        <label>Montant du dépôt</label>
+                        <input type="number" min="0" step="0.001" [(ngModel)]="depotMontant"
+                            placeholder="0.000" />
+                    </div>
+                    <div class="form-group">
+                        <label>Note (optionnel)</label>
+                        <input type="text" [(ngModel)]="depotNote" placeholder="Ex: Avance sur réparation" />
+                    </div>
+                    <button class="btn btn-success w-100" [disabled]="savingDepot" (click)="saveDepot()">
+                        {{ savingDepot ? 'Enregistrement…' : '＋ Enregistrer le dépôt' }}
+                    </button>
+                </div>
+
+                <div class="depot-history">
+                    <div class="depot-history-title">Historique des dépôts</div>
+                    <div class="depot-row" *ngFor="let d of clientDepots">
+                        <span class="depot-date">{{ d.date | date:'dd/MM/yyyy' }}</span>
+                        <span class="depot-note">{{ d.note || '—' }}</span>
+                        <span class="depot-montant">+ {{ d.montant | number:'1.3-3' }} DT</span>
+                    </div>
+                    <div *ngIf="clientDepots.length === 0" class="empty-state-sm">
+                        Aucun dépôt enregistré pour ce client.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" (click)="closeDepotPanel()">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>

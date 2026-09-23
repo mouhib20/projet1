@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsNumber, IsString, IsArray, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsNumber, IsString, IsArray, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateReparationItemDto {
@@ -35,6 +35,19 @@ export class CreateReparationDto {
     @IsOptional()
     @IsNumber()
     prix: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    acompte: number;
+
+    @IsOptional()
+    @IsNumber()
+    retour_de: number;
+
+    @IsOptional()
+    @IsString()
+    degre_dommage: string;
 
     @IsOptional()
     @IsString()

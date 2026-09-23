@@ -21,6 +21,7 @@ export interface FactureItem {
     marque?: string;
     modele?: string;
     type?: string;
+    image?: string;                 // chemin de l'image téléchargée
     tva_rate: number;               // TVA % (0, 7, 13, 19...)
     total_ttc: number;              // calculated: qte * prix * (1 + tva/100)
 }

@@ -1,0 +1,100 @@
+<div class="stats-page">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <div class="page-title">📊 Statistiques des Ventes</div>
+            <div class="page-subtitle">Performance des ventes, produits phares et rentabilité</div>
+        </div>
+        <div class="period-selector">
+            <button class="period-btn" [class.active]="periodDays === 7" (click)="setPeriod(7)">7 jours</button>
+            <button class="period-btn" [class.active]="periodDays === 14" (click)="setPeriod(14)">14 jours</button>
+            <button class="period-btn" [class.active]="periodDays === 30" (click)="setPeriod(30)">30 jours</button>
+        </div>
+    </div>
+
+    <!-- Loading / Error -->
+    <div class="loading-state" *ngIf="loading">
+        <div class="loading-icon">⟳</div>
+        <strong>Chargement…</strong>
+    </div>
+    <div class="alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg }}</div>
+
+    <ng-container *ngIf="!loading && stats">
+
+        <!-- KPI Cards -->
+        <div class="kpi-row">
+            <div class="kpi-card">
+                <div class="kpi-icon">💰</div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Chiffre d'affaires</span>
+                    <span class="kpi-value">{{ stats.totalRevenue | number:'1.3-3' }} DT</span>
+                    <span class="kpi-growth" *ngIf="stats.growthPercent !== null"
+                        [class.growth-up]="stats.growthPercent >= 0" [class.growth-down]="stats.growthPercent < 0">
+                        {{ stats.growthPercent >= 0 ? '▲' : '▼' }} {{ stats.growthPercent | number:'1.1-1' }}% vs
+                        période précédente
+                    </span>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🧾</div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Tickets de vente</span>
+                    <span class="kpi-value">{{ stats.totalTickets }}</span>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🛒</div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Panier moyen</span>
+                    <span class="kpi-value">{{ stats.avgBasket | number:'1.3-3' }} DT</span>
+                </div>
+            </div>
+            <div class="kpi-card kpi-profit">
+                <div class="kpi-icon">📈</div>
+                <div class="kpi-info">
+                    <span class="kpi-label">Bénéfice net estimé</span>
+                    <span class="kpi-value">{{ netProfit | number:'1.3-3' }} DT</span>
+                    <span class="kpi-sub">après {{ totalCharges | number:'1.3-3' }} DT de charges</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Revenue chart -->
+        <div class="chart-card">
+            <div class="chart-header">Chiffre d'affaires par jour</div>
+            <div class="bar-chart" *ngIf="stats.revenueByDay.length > 0">
+                <div class="bar-col" *ngFor="let d of stats.revenueByDay">
+                    <div class="bar-tooltip">{{ d.total | number:'1.3-3' }} DT</div>
+                    <div class="bar" [style.height.%]="barHeight(d.total)"
+                        [class.bar-zero]="d.total === 0"></div>
+                    <span class="bar-label">{{ formatDayLabel(d.date) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top products -->
+        <div class="chart-card">
+            <div class="chart-header">Produits les plus vendus</div>
+            <table class="stats-table" *ngIf="stats.topProducts.length > 0">
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th class="text-center">Qté vendue</th>
+                        <th class="text-right">Revenu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let p of stats.topProducts">
+                        <td class="fw-bold">{{ p.designation }}</td>
+                        <td class="text-center">{{ p.qte }}</td>
+                        <td class="text-right text-success">{{ p.revenue | number:'1.3-3' }} DT</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div *ngIf="stats.topProducts.length === 0" class="empty-state">
+                <p>Aucune vente sur cette période.</p>
+            </div>
+        </div>
+    </ng-container>
+</div>

@@ -13,6 +13,10 @@ export class Client {
     @Column({ type: 'varchar', length: 50, nullable: true })
     telephone: string;
 
+    // Solde créditeur : argent déposé par le client, utilisable sur ses futurs achats
+    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+    solde: number;
+
     @OneToMany(() => Vente, vente => vente.client)
     ventes: Vente[];
 

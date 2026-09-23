@@ -42,6 +42,11 @@
     white-space: nowrap;
 }
 
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .btn-primary {
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: #fff;
@@ -278,6 +283,48 @@ textarea {
     display: flex;
     gap: 0.75rem;
     justify-content: flex-end;
+}
+
+/* ─── Image Upload ────────────────────────────────────────────── */
+.image-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.image-preview {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    background: #0f1117;
+}
+
+.image-upload-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.text-muted {
+    color: #8b949e;
+    font-size: 0.82rem;
+}
+
+.alert-error-inline {
+    color: #fca5a5;
+    font-size: 0.82rem;
+}
+
+.td-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #30363d;
 }
 
 /* ─── Table Toolbar ───────────────────────────────────────────── */

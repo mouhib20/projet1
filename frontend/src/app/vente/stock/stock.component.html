@@ -46,7 +46,7 @@
             <!-- Row 3: Type + Sub-category -->
             <div class="form-group">
                 <label>Type</label>
-                <select [(ngModel)]="form.type">
+                <select [(ngModel)]="form.type" (ngModelChange)="onFormTypeChange()">
                     <option value="part">Pièce</option>
                     <option value="accessory">Accessoire</option>
                 </select>
@@ -85,12 +85,117 @@
                 <textarea [(ngModel)]="form.description" placeholder="Notes..."></textarea>
             </div>
 
+            <!-- Row 7: Image (full width) -->
+            <div class="form-group full">
+                <label>Image du produit</label>
+                <div class="image-upload-row">
+                    <img *ngIf="imageUrl(form.image)" [src]="imageUrl(form.image)" class="image-preview" alt="Aperçu" />
+                    <div class="image-upload-controls">
+                        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+                            (change)="onImageSelected($event)" />
+                        <button type="button" class="btn btn-secondary" *ngIf="form.image"
+                            (click)="removeImage()">Retirer l'image</button>
+                        <span *ngIf="imageUploading" class="text-muted">Téléchargement…</span>
+                        <span *ngIf="imageError" class="alert-error-inline">{{ imageError }}</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <div class="form-actions">
-            <button class="btn btn-secondary" (click)="cancelForm()">Annuler</button>
-            <button class="btn btn-success" (click)="saveProduct()">
-                {{ isEditing ? 'Enregistrer' : 'Créer' }}
+            <button class="btn btn-secondary" [disabled]="saving" (click)="cancelForm()">Annuler</button>
+            <button class="btn btn-success" [disabled]="saving" (click)="saveProduct()">
+                {{ saving ? 'Enregistrement…' : (isEditing ? 'Enregistrer' : 'Créer') }}
+            </button>
+        </div>
+    </div>
+
+    <!-- ─── Send-back card: return a defective accessory to its supplier ── -->
+    <div class="form-card" *ngIf="renvoiPiece">
+        <div class="form-card-header">↩ Renvoyer « {{ renvoiPiece.designation }} » au fournisseur</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Quantité renvoyée (en stock : {{ renvoiPiece.quantite }})</label>
+                <input type="number" min="1" [max]="renvoiPiece.quantite || 1" [(ngModel)]="renvoiQte" />
+            </div>
+            <div class="form-group">
+                <label>Problème *</label>
+                <input type="text" [(ngModel)]="renvoiProbleme" placeholder="ex: ne se charge pas, cassé à la réception…" />
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-secondary" [disabled]="renvoiEnCours" (click)="fermerRenvoi()">Annuler</button>
+            <button class="btn btn-success" [disabled]="renvoiEnCours" (click)="confirmerRenvoi()">
+                {{ renvoiEnCours ? 'Envoi…' : 'Renvoyer' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- ─── SAV card: declare a defective accessory brought back by a client ── -->
+    <div class="form-card" *ngIf="savFormOpen">
+        <div class="form-card-header">🛠 Accessoire défectueux — service après-vente client</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Accessoire *</label>
+                <select [(ngModel)]="savForm.id_article">
+                    <option [ngValue]="null">— Choisir —</option>
+                    <option *ngFor="let a of accessoires" [ngValue]="a.id_article">
+                        {{ a.designation }}{{ a.marque ? ' — ' + a.marque : '' }}{{ a.modele ? ' ' + a.modele : '' }}
+                    </option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Client</label>
+                <select [(ngModel)]="savForm.id_client">
+                    <option [ngValue]="null">— Non précisé —</option>
+                    <option *ngFor="let c of clients" [ngValue]="c.id_client">{{ c.nom }}{{ c.telephone ? ' - ' + c.telephone : '' }}</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantité</label>
+                <input type="number" min="1" [(ngModel)]="savForm.qte" />
+            </div>
+            <div class="form-group">
+                <label>Degré de dommage *</label>
+                <select [(ngModel)]="savForm.degre_dommage">
+                    <option value="">— Choisir —</option>
+                    <option value="Léger">Léger</option>
+                    <option value="Moyen">Moyen</option>
+                    <option value="Grave">Grave</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Problème *</label>
+                <input type="text" [(ngModel)]="savForm.probleme" placeholder="ex: ne se charge plus, cassé…" />
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-secondary" [disabled]="savEnCours" (click)="fermerSav()">Annuler</button>
+            <button class="btn btn-success" [disabled]="savEnCours" (click)="confirmerSav()">
+                {{ savEnCours ? 'Enregistrement…' : 'Enregistrer au SAV' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- ─── SAV replacement card: swap the defective accessory for one from stock ── -->
+    <div class="form-card" *ngIf="savRemplacer">
+        <div class="form-card-header">🔧 Remplacer « {{ savRemplacer.designation }} » (SAV #{{ savRemplacer.id }})</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Accessoire de remplacement en stock (quantité : {{ savRemplacer.qte }})</label>
+                <select [(ngModel)]="savRemplacementId">
+                    <option [ngValue]="null">— Choisir —</option>
+                    <option *ngFor="let a of accessoiresEnStock" [ngValue]="a.id_article">
+                        {{ a.designation }}{{ a.marque ? ' — ' + a.marque : '' }}{{ a.modele ? ' ' + a.modele : '' }} (stock : {{ a.quantite }})
+                    </option>
+                </select>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-secondary" [disabled]="savEnCours" (click)="fermerRemplacementSav()">Annuler</button>
+            <button class="btn btn-success" [disabled]="savEnCours" (click)="confirmerRemplacementSav()">
+                {{ savEnCours ? 'Remplacement…' : 'Remplacer' }}
             </button>
         </div>
     </div>
@@ -109,7 +214,87 @@
             <button class="tab-btn" [class.active]="activeTab === 'accessory'" (click)="setTab('accessory')">
                 🎧 Accessoires
             </button>
+            <button class="tab-btn" [class.active]="activeTab === 'retours'" (click)="setTab('retours')">
+                ↩ Retours <span class="tab-count">{{ retoursAccessoires.length }}</span>
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'sav'" (click)="setTab('sav')">
+                🛠 SAV client <span class="tab-count">{{ savPending }}</span>
+            </button>
         </div>
+
+        <!-- SAV client: defective accessories brought back by clients -->
+        <div class="table-wrapper" *ngIf="activeTab === 'sav'">
+            <div class="table-toolbar">
+                <button class="btn btn-success" (click)="ouvrirSav()">＋ Ajouter un accessoire défectueux</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Client</th>
+                        <th>Accessoire défectueux</th>
+                        <th class="text-center">Qté</th>
+                        <th>Dommage</th>
+                        <th>Problème</th>
+                        <th>Statut</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let s of savList">
+                        <td>{{ s.date_retour | date:'dd/MM/yyyy' }}</td>
+                        <td>{{ s.client_nom || '—' }}<small *ngIf="s.client_telephone" class="td-model">{{ s.client_telephone }}</small></td>
+                        <td class="td-name">{{ s.designation || ('Article #' + s.id_article) }}
+                            <small *ngIf="s.marque || s.modele" class="td-model">{{ s.marque }} {{ s.modele }}</small></td>
+                        <td class="text-center">{{ s.qte }}</td>
+                        <td>{{ s.degre_dommage || '—' }}</td>
+                        <td>{{ s.probleme }}</td>
+                        <td>
+                            <span [class]="'stock-badge ' + (s.statut === 'En attente' ? 'badge-low' : 'badge-ok')">{{ s.statut }}</span>
+                            <small *ngIf="s.remplacement" class="td-model">→ {{ s.remplacement }}</small>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn-icon" *ngIf="s.statut === 'En attente'" title="Remplacer par un accessoire du stock"
+                                (click)="ouvrirRemplacementSav(s)">🔧</button>
+                        </td>
+                    </tr>
+                    <tr *ngIf="savList.length === 0">
+                        <td colspan="8" class="text-center text-muted">Aucun accessoire au SAV.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Retours: accessories sent back to the supplier -->
+        <div class="table-wrapper" *ngIf="activeTab === 'retours'">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Article défectueux</th>
+                        <th>Marque / Modèle</th>
+                        <th class="text-center">Qté</th>
+                        <th>Problème</th>
+                        <th>Fournisseur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let r of retoursAccessoires">
+                        <td>{{ r.date_retour | date:'dd/MM/yyyy' }}</td>
+                        <td class="td-name">{{ r.designation || ('Article #' + r.id_article) }}</td>
+                        <td>{{ (r.marque || '') + ' ' + (r.modele || '') }}</td>
+                        <td class="text-center">{{ r.qte }}</td>
+                        <td>{{ r.probleme }}</td>
+                        <td>{{ nomFournisseur(r) || '—' }}</td>
+                    </tr>
+                    <tr *ngIf="retoursAccessoires.length === 0">
+                        <td colspan="6" class="text-center text-muted">Aucun accessoire renvoyé.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <ng-container *ngIf="activeTab !== 'retours' && activeTab !== 'sav'">
 
         <!-- Toolbar -->
         <div class="table-toolbar">
@@ -140,6 +325,7 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>Image</th>
                         <th>Barcode</th>
                         <th>Sous-cat</th>
                         <th>Marque</th>
@@ -154,6 +340,10 @@
                 <tbody>
                     <tr *ngFor="let p of filteredProducts; let i = index">
                         <td class="td-num">{{ i + 1 }}</td>
+                        <td>
+                            <img *ngIf="imageUrl(p.image)" [src]="imageUrl(p.image)" class="td-thumb" alt="" />
+                            <span *ngIf="!imageUrl(p.image)" class="text-muted">—</span>
+                        </td>
                         <td class="td-barcode">{{ p.barcode || '—' }}</td>
                         <td>
                             <span class="badge-cat" *ngIf="p.sous_categorie">{{ p.sous_categorie }}</span>
@@ -179,6 +369,8 @@
                         <td>
                             <div class="actions-cell">
                                 <button class="btn-icon edit" title="Modifier" (click)="openEditForm(p)">✏️</button>
+                                <button class="btn-icon" *ngIf="p.type === 'accessory' && (p.quantite ?? 0) > 0"
+                                    title="Renvoyer au fournisseur" (click)="ouvrirRenvoi(p)">↩</button>
                                 <button class="btn-icon delete" title="Supprimer"
                                     (click)="deleteProduct(p.id_article, p.designation)">🗑️</button>
                             </div>
@@ -187,5 +379,7 @@
                 </tbody>
             </table>
         </div>
+
+        </ng-container>
     </div>
 </div>

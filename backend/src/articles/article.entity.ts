@@ -40,6 +40,9 @@ export class Article {
     @Column({ type: 'text', nullable: true })
     description: string;
 
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    image: string;
+
     @OneToMany(() => MouvementAchat, mouvement => mouvement.article)
     mouvements_achat: MouvementAchat[];
 }

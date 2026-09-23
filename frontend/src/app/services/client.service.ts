@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Client } from '../models/client.model';
+import { Client, ClientDepot, ClientDepotSummary } from '../models/client.model';
 
 @Injectable({
     providedIn: 'root'
@@ -30,5 +30,17 @@ export class ClientService {
 
     deleteClient(id: number): Observable<any> {
         return this.http.delete(`${this.apiUrl}/${id}`);
+    }
+
+    deposer(id: number, montant: number, note?: string): Observable<Client> {
+        return this.http.post<Client>(`${this.apiUrl}/${id}/depots`, { montant, note });
+    }
+
+    getDepots(id: number): Observable<ClientDepot[]> {
+        return this.http.get<ClientDepot[]>(`${this.apiUrl}/${id}/depots`);
+    }
+
+    getDepotsSummary(): Observable<ClientDepotSummary[]> {
+        return this.http.get<ClientDepotSummary[]>(`${this.apiUrl}/depots/summary`);
     }
 }

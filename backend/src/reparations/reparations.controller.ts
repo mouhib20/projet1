@@ -11,6 +11,11 @@ export class ReparationsController {
         return this.reparationsService.findAll();
     }
 
+    @Get('retours')
+    findRetours() {
+        return this.reparationsService.findRetours();
+    }
+
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.reparationsService.findOne(+id);
@@ -21,9 +26,19 @@ export class ReparationsController {
         return this.reparationsService.create(createDto);
     }
 
+    @Post(':id/items')
+    addItem(@Param('id') id: string, @Body() body: { id_article: number; qte?: number; prix?: number }) {
+        return this.reparationsService.addItem(+id, body);
+    }
+
     @Patch(':id/statut')
     updateStatus(@Param('id') id: string, @Body('statut') statut: string) {
         return this.reparationsService.updateStatus(+id, statut);
+    }
+
+    @Patch(':id/finaliser-vente')
+    finaliserVente(@Param('id') id: string, @Body('montant_recu') montant_recu: number) {
+        return this.reparationsService.finaliserVente(+id, montant_recu);
     }
 
     @Delete(':id')

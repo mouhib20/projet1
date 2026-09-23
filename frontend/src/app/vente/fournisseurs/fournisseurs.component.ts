@@ -15,6 +15,7 @@ import { Fournisseur } from '../../models/fournisseur.model';
 export class FournisseursComponent implements OnInit {
   fournisseurs: Fournisseur[] = [];
   isModalOpen = false;
+  saving = false;
   editingFournisseur: Fournisseur | null = null;
 
   formData: Partial<Fournisseur> = {
@@ -54,6 +55,7 @@ export class FournisseursComponent implements OnInit {
       this.editingFournisseur = null;
       this.resetForm();
     }
+    this.saving = false;
     this.isModalOpen = true;
   }
 
@@ -76,21 +78,26 @@ export class FournisseursComponent implements OnInit {
   }
 
   saveFournisseur() {
+    if (this.saving) return; // Avoid duplicate submissions on repeated clicks
+    this.saving = true;
+
     if (this.editingFournisseur && this.editingFournisseur.id_fournisseur) {
       this.fournisseurService.updateFournisseur(this.editingFournisseur.id_fournisseur, this.formData as Fournisseur).subscribe({
         next: () => {
+          this.saving = false;
           this.loadFournisseurs();
           this.closeModal();
         },
-        error: (err: any) => console.error(err)
+        error: (err: any) => { this.saving = false; console.error(err); }
       });
     } else {
       this.fournisseurService.createFournisseur(this.formData as Fournisseur).subscribe({
         next: () => {
+          this.saving = false;
           this.loadFournisseurs();
           this.closeModal();
         },
-        error: (err: any) => console.error(err)
+        error: (err: any) => { this.saving = false; console.error(err); }
       });
     }
   }

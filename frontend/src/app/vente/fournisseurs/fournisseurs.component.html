@@ -98,22 +98,25 @@
                 </div>
 
                 <div class="form-group mt-3">
-                    <label>Articles fournis</label>
-                    <input type="text" name="type_articles" [(ngModel)]="formData.type_articles" class="form-control"
-                        list="type-articles-list" placeholder="Ex: Accessoires, Réparation, Autre..." />
-                    <datalist id="type-articles-list">
-                        <option value="Accessoires"></option>
-                        <option value="Réparation"></option>
-                        <option value="Autre"></option>
-                    </datalist>
+                    <label>Classification du fournisseur (facultatif)</label>
+                    <select name="type_articles" [(ngModel)]="formData.type_articles" class="form-control select-box">
+                        <option value="">-- Aucune --</option>
+                        <option value="Réparation">Réparation (Afficheur, Batterie, Vitre)</option>
+                        <option value="Accessoires">Accessoires (Ash, Glace)</option>
+                    </select>
+                    <small class="text-muted d-block mt-1">
+                        Détermine les catégories de pièces proposées lors des achats chez ce fournisseur.
+                        Tous les articles achetés, quel que soit le fournisseur, restent utilisables en vente et en
+                        réparation.
+                    </small>
                 </div>
             </form>
         </div>
 
         <div class="modal-footer">
             <button class="btn-secondary" (click)="closeModal()">{{ 'CANCEL' | translate }}</button>
-            <button class="btn-primary" [disabled]="!fForm.valid" (click)="saveFournisseur()">
-                {{ 'SAVE' | translate }}
+            <button class="btn-primary" [disabled]="!fForm.valid || saving" (click)="saveFournisseur()">
+                {{ saving ? 'Enregistrement…' : ('SAVE' | translate) }}
             </button>
         </div>
     </div>

@@ -6,6 +6,9 @@ dist/
 build/
 .angular/
 
+# Uploaded files
+backend/uploads/
+
 # Environment files
 .env
 .env.local

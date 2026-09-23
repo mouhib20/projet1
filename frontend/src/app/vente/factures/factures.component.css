@@ -401,6 +401,22 @@
     font-family: monospace;
 }
 
+.image-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.image-preview {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #3a4563;
+    background: #0f1117;
+}
+
 
 /* Specific Fields Box */
 .piece-details {
@@ -472,6 +488,16 @@
     background-color: #2563eb;
 }
 
+.btn-blue-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-green-add:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* Current Invoice Items Table */
 .current-invoice-section {
     background: #1a2030;
@@ -531,6 +557,41 @@
 
 .delete-sm:hover {
     color: #ef4444;
+}
+
+.edit-sm {
+    color: #8b949e;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.2s;
+    margin-right: 4px;
+}
+
+.edit-sm:hover {
+    color: #4da5ff;
+}
+
+.editing-row td {
+    background-color: rgba(77, 165, 255, 0.08) !important;
+    border-top: 1px solid rgba(77, 165, 255, 0.4);
+    border-bottom: 1px solid rgba(77, 165, 255, 0.4);
+}
+
+.btn-secondary-sm {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.btn-secondary-sm:hover {
+    background-color: rgba(255, 255, 255, 0.18);
 }
 
 /* Totals */

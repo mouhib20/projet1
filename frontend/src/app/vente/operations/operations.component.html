@@ -4,149 +4,404 @@
         <p class="subtitle">Gérez vos ventes et transactions clients</p>
         <div class="header-actions" *ngIf="auth.getRole() !== 'visiteur'">
             <button class="btn-outline" (click)="openClientModal()">+ Client</button>
-            <button class="btn-primary add-btn" (click)="openModal()">+ NOUVELLE VENTE</button>
         </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-icon">🧾</div>
-            <div class="stat-info">
-                <span class="stat-value">{{ ventes.length }}</span>
-                <span class="stat-label">Ventes</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">👥</div>
-            <div class="stat-info">
-                <span class="stat-value">{{ clients.length }}</span>
-                <span class="stat-label">Clients</span>
-            </div>
-        </div>
-        <div class="stat-card revenue">
-            <div class="stat-icon">💰</div>
-            <div class="stat-info">
-                <span class="stat-value">{{ totalRevenue | number:'1.3-3' }}</span>
-                <span class="stat-label">Chiffre d'affaires ({{ 'CURRENCY' | translate }})</span>
-            </div>
-        </div>
+    <!-- View Tabs -->
+    <div class="view-tab-bar">
+        <button class="view-tab-btn" [class.active]="activeView === 'list'" (click)="setView('list')">
+            📋 Historique
+        </button>
+        <button class="view-tab-btn" [class.active]="activeView === 'pos'" (click)="setView('pos')">
+            🖥️ Vente Rapide (POS)
+        </button>
+        <button class="view-tab-btn" [class.active]="activeView === 'caisse'" (click)="setView('caisse')">
+            💰 Caisse
+        </button>
     </div>
 
-    <!-- Search -->
-    <div class="search-bar">
-        <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 Rechercher par client, article..."
-            class="search-input" />
-    </div>
+    <ng-container *ngIf="activeView === 'list'">
+        <!-- Stats Cards -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon">🧾</div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ ventes.length }}</span>
+                    <span class="stat-label">Ventes</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ clients.length }}</span>
+                    <span class="stat-label">Clients</span>
+                </div>
+            </div>
+            <div class="stat-card revenue">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ totalRevenue | number:'1.3-3' }}</span>
+                    <span class="stat-label">Chiffre d'affaires ({{ 'CURRENCY' | translate }})</span>
+                </div>
+            </div>
+        </div>
 
-    <!-- Sales Table -->
-    <div class="table-container fade-in">
-        <table class="modern-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Client</th>
-                    <th>Article</th>
-                    <th>Qté</th>
-                    <th>Prix Unit.</th>
-                    <th>Total</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr *ngFor="let v of filteredVentes">
-                    <td>{{ v.date | date:'dd/MM/yyyy' }}</td>
-                    <td>{{ v.client?.nom || '—' }}</td>
-                    <td>
-                        <span class="badge">{{ v.article?.designation || v.designation }}</span>
-                    </td>
-                    <td class="text-center">{{ v.qte || 1 }}</td>
-                    <td class="text-right">{{ v.prix | number:'1.3-3' }}</td>
-                    <td class="fw-bold text-success text-right">
-                        {{ (v.qte || 1) * (v.prix || 0) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
-                    </td>
-                    <td class="text-center">
-                        <button *ngIf="auth.getRole() !== 'visiteur'" class="btn-icon delete-action" title="Supprimer"
-                            (click)="deleteVente(v.id_vente!)">🗑
+        <!-- Search -->
+        <div class="search-bar">
+            <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 Rechercher par client, article..."
+                class="search-input" />
+        </div>
+
+        <!-- Sales table, reused by every folder below -->
+        <ng-template #tableVentes let-liste>
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Client</th>
+                        <th>Article</th>
+                        <th>Qté</th>
+                        <th>Prix Unit.</th>
+                        <th>Total</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let v of liste">
+                        <td>{{ v.date | date:'dd/MM/yyyy' }}</td>
+                        <td>{{ v.client?.nom || '—' }}</td>
+                        <td>
+                            <span class="badge">{{ v.article?.designation || v.designation }}</span>
+                        </td>
+                        <td class="text-center">{{ v.qte || 1 }}</td>
+                        <td class="text-right">{{ v.prix | number:'1.3-3' }}</td>
+                        <td class="fw-bold text-success text-right">
+                            {{ (v.qte || 1) * (v.prix || 0) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                        </td>
+                        <td class="text-center">
+                            <button *ngIf="auth.getRole() !== 'visiteur'" class="btn-icon delete-action"
+                                title="Supprimer" (click)="deleteVente(v.id_vente!)">🗑
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </ng-template>
+
+        <!-- One sub-folder per day, used inside the month folders -->
+        <ng-template #dossiersJours let-jours>
+            <div class="dossier dossier-mois" *ngFor="let j of jours; trackBy: trackByKey">
+                <button type="button" class="dossier-header" (click)="basculerDossier(j.key)">
+                    <span>{{ estOuvert(j.key) ? '📂' : '📁' }} {{ j.label }}</span>
+                    <span class="dossier-info">{{ j.ventes.length }} vente(s) ·
+                        {{ j.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                </button>
+                <div class="table-container" *ngIf="estOuvert(j.key)">
+                    <ng-container *ngTemplateOutlet="tableVentes; context: { $implicit: j.ventes }"></ng-container>
+                </div>
+            </div>
+        </ng-template>
+
+        <div class="ventes-groupes fade-in" *ngIf="groupesVentes as g">
+            <!-- Today -->
+            <div class="dossier">
+                <button type="button" class="dossier-header" (click)="basculerDossier('aujourdhui')">
+                    <span>{{ estOuvert('aujourdhui') ? '📂' : '📁' }} Aujourd'hui</span>
+                    <span class="dossier-info">{{ g.aujourdhui.ventes.length }} vente(s) ·
+                        {{ g.aujourdhui.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                </button>
+                <div class="table-container" *ngIf="estOuvert('aujourdhui')">
+                    <ng-container *ngIf="g.aujourdhui.ventes.length > 0; else aucuneVenteJour">
+                        <ng-container *ngTemplateOutlet="tableVentes; context: { $implicit: g.aujourdhui.ventes }"></ng-container>
+                    </ng-container>
+                    <ng-template #aucuneVenteJour><div class="empty-state"><p>Aucune vente aujourd'hui.</p></div></ng-template>
+                </div>
+            </div>
+
+            <!-- Earlier days of the current month -->
+            <div class="dossier" *ngIf="g.ceMois.ventes.length > 0">
+                <button type="button" class="dossier-header" (click)="basculerDossier('ce-mois')">
+                    <span>{{ estOuvert('ce-mois') ? '📂' : '📁' }} Ce mois-ci</span>
+                    <span class="dossier-info">{{ g.ceMois.ventes.length }} vente(s) ·
+                        {{ g.ceMois.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                </button>
+                <div class="dossier-contenu" *ngIf="estOuvert('ce-mois')">
+                    <ng-container *ngTemplateOutlet="dossiersJours; context: { $implicit: g.ceMois.jours }"></ng-container>
+                </div>
+            </div>
+
+            <!-- One folder per year, each holding its months -->
+            <div class="dossier" *ngFor="let a of g.annees; trackBy: trackByKey">
+                <button type="button" class="dossier-header" (click)="basculerDossier(a.key)">
+                    <span>{{ estOuvert(a.key) ? '📂' : '📁' }} {{ a.label }}</span>
+                    <span class="dossier-info">{{ a.ventes.length }} vente(s) ·
+                        {{ a.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                </button>
+                <div class="dossier-contenu" *ngIf="estOuvert(a.key)">
+                    <div class="dossier dossier-mois" *ngFor="let m of a.mois; trackBy: trackByKey">
+                        <button type="button" class="dossier-header" (click)="basculerDossier(m.key)">
+                            <span>{{ estOuvert(m.key) ? '📂' : '📁' }} {{ m.label }}</span>
+                            <span class="dossier-info">{{ m.ventes.length }} vente(s) ·
+                                {{ m.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
                         </button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        <div *ngIf="filteredVentes.length === 0" class="empty-state">
-            <p>Aucune vente trouvée.</p>
-        </div>
-    </div>
-</div>
-
-<!-- =========================================================
-     Modal Nouvelle Vente
-     ========================================================= -->
-<div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
-    <div class="modal-content scale-in" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-            <h3>Nouvelle Vente</h3>
-            <button class="close-btn" (click)="closeModal()">✕</button>
-        </div>
-
-        <div class="modal-body custom-scroll">
-            <div class="modern-form">
-                <!-- Date -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Date <span class="required">*</span></label>
-                        <input type="date" [(ngModel)]="formData.date" class="form-control" />
+                        <div class="dossier-contenu" *ngIf="estOuvert(m.key)">
+                            <ng-container *ngTemplateOutlet="dossiersJours; context: { $implicit: m.jours }"></ng-container>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Client</label>
-                        <select [(ngModel)]="formData.clientId" class="form-control select-box">
-                            <option [ngValue]="undefined">Sans client</option>
-                            <option *ngFor="let c of clients" [ngValue]="c.id_client">
-                                {{ c.nom }} {{ c.telephone ? '(' + c.telephone + ')' : '' }}
-                            </option>
+                </div>
+            </div>
+
+            <div *ngIf="filteredVentes.length === 0" class="empty-state">
+                <p>Aucune vente trouvée.</p>
+            </div>
+        </div>
+    </ng-container>
+
+    <!-- =========================================================
+         POS (Vente Rapide)
+         ========================================================= -->
+    <ng-container *ngIf="activeView === 'pos'">
+        <div class="pos-alert pos-alert-info" *ngIf="caisseStatus?.isClosed">
+            ℹ️ Les statistiques d'aujourd'hui ({{ caisseStatus?.date }}) ont été clôturées. Vous pouvez continuer à
+            vendre normalement.
+        </div>
+        <div class="pos-alert" *ngIf="posLowStockArticles.length > 0">
+            ⚠️ Attention : {{ posLowStockArticles.length }} pièce(s)/accessoire(s) proche(s) de la rupture de stock.
+        </div>
+
+        <div class="pos-layout">
+            <!-- Cart / Checkout panel -->
+            <div class="pos-cart-panel">
+                <div class="pos-cart-header">Facture Actuelle</div>
+
+                <div class="pos-cart-items">
+                    <div class="pos-cart-item" [class.pos-cart-item-repair]="isReparationItem(item)"
+                        *ngFor="let item of posCart; let i = index">
+                        <img *ngIf="imageUrl(item.image)" [src]="imageUrl(item.image)" class="pos-cart-item-img"
+                            alt="" />
+                        <span *ngIf="isReparationItem(item)" class="pos-cart-item-repair-icon"
+                            title="Réparation">🔧</span>
+                        <div class="pos-cart-item-info">
+                            <span class="pos-cart-item-name">{{ item.designation }}</span>
+                            <span class="pos-cart-item-price">{{ item.prix | number:'1.3-3' }} {{ 'CURRENCY' |
+                                translate }} / unité</span>
+                        </div>
+                        <input *ngIf="!isReparationItem(item)" type="number" min="1" [max]="item.maxStock"
+                            [(ngModel)]="item.qte" (ngModelChange)="posUpdateQty(item, item.qte)"
+                            class="pos-cart-item-qty" />
+                        <span *ngIf="isReparationItem(item)" class="pos-cart-item-qty-fixed">× 1</span>
+                        <span class="pos-cart-item-total">{{ (item.qte * item.prix) | number:'1.3-3' }}</span>
+                        <button class="pos-cart-item-remove" (click)="posRemoveFromCart(i)">✕</button>
+                    </div>
+                    <div *ngIf="posCart.length === 0" class="pos-cart-empty">
+                        Le panier est vide. Recherchez un article à droite pour commencer.
+                    </div>
+                </div>
+
+                <div class="pos-summary">
+                    <div class="pos-summary-row">
+                        <span>Total prix d'achat :</span>
+                        <span>{{ posTotalAchat | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                    </div>
+                    <div class="pos-summary-row">
+                        <span>Total prix de vente :</span>
+                        <span>{{ posTotalVente | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                    </div>
+                    <div class="pos-summary-row">
+                        <span>Remise :</span>
+                        <span>- {{ posRemiseValue | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                    </div>
+                    <div class="pos-summary-row pos-profit">
+                        <span>Bénéfice net attendu :</span>
+                        <span>{{ posNetProfit | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                    </div>
+                </div>
+
+                <div class="pos-form-row">
+                    <label>Client (optionnel)</label>
+                    <select [(ngModel)]="posClientId" (ngModelChange)="onPosClientChange()"
+                        class="form-control select-box">
+                        <option [ngValue]="undefined">Sans client</option>
+                        <option *ngFor="let c of clients" [ngValue]="c.id_client">{{ c.nom }}</option>
+                    </select>
+                </div>
+
+                <div class="pos-form-row" *ngIf="posClientId && posClientSolde > 0">
+                    <label>Solde client disponible : {{ posClientSolde | number:'1.3-3' }} {{ 'CURRENCY' | translate
+                        }}</label>
+                    <input type="number" min="0" [max]="posClientSolde" step="0.001" [(ngModel)]="posMontantSolde"
+                        class="form-control" placeholder="Montant à utiliser du solde" />
+                    <small class="pos-solde-hint" *ngIf="posMontantSoldeEffectif > 0">
+                        {{ posMontantSoldeEffectif | number:'1.3-3' }} {{ 'CURRENCY' | translate }} seront déduits du
+                        solde du client.
+                    </small>
+                </div>
+
+                <div class="pos-form-row">
+                    <label>Remise</label>
+                    <div class="pos-remise-row">
+                        <input type="number" min="0" step="0.001" [(ngModel)]="posRemiseAmount"
+                            class="form-control" />
+                        <select [(ngModel)]="posRemiseType" class="form-control select-box pos-remise-type">
+                            <option value="fixed">Montant fixe ({{ 'CURRENCY' | translate }})</option>
+                            <option value="percent">Pourcentage (%)</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Article -->
-                <div class="form-group mb-4">
-                    <label>Article <span class="required">*</span></label>
-                    <select [(ngModel)]="formData.articleId" (ngModelChange)="onArticleChange()"
-                        class="form-control select-box">
-                        <option [ngValue]="undefined" disabled>Sélectionner un article...</option>
-                        <option *ngFor="let art of availableArticles" [ngValue]="art.id_article">
-                            {{ art.designation }} {{ art.marque ? '(' + art.marque + ')' : '' }}
-                            — Stock: {{ art.quantite }}
-                        </option>
+                <div class="pos-form-row">
+                    <label>Méthode de paiement</label>
+                    <select class="form-control select-box">
+                        <option value="cash">Cash</option>
                     </select>
                 </div>
 
-                <!-- Qty + Price -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Quantité <span class="required">*</span></label>
-                        <input type="number" min="1" [(ngModel)]="formData.qte" class="form-control" />
-                    </div>
-                    <div class="form-group">
-                        <label>Prix Unitaire <span class="required">*</span></label>
-                        <input type="number" min="0" step="0.001" [(ngModel)]="formData.prix" class="form-control" />
+                <button class="btn-primary pos-checkout-btn"
+                    [disabled]="posSaving || posCart.length === 0"
+                    (click)="posCheckout()">
+                    {{ posSaving ? 'Enregistrement…' : '✅ Terminer la Facture' }}
+                </button>
+
+                <div class="pos-summary-row" *ngIf="posMontantSoldeEffectif > 0">
+                    <span>Total avant solde :</span>
+                    <span>{{ posTotalAPayer | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                </div>
+                <div class="pos-summary-row" *ngIf="posMontantSoldeEffectif > 0">
+                    <span>Payé via le solde client :</span>
+                    <span>- {{ posMontantSoldeEffectif | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                </div>
+
+                <div class="pos-total-row">
+                    <span>{{ posMontantSoldeEffectif > 0 ? 'Reste à payer (cash)' : 'Total de la Facture' }}</span>
+                    <span class="pos-total-value">{{ posResteAPayer | number:'1.3-3' }} {{ 'CURRENCY' | translate
+                        }}</span>
+                </div>
+
+            </div>
+
+            <!-- Search / products panel -->
+            <div class="pos-search-panel">
+                <div class="pos-search-wrapper">
+                    <input type="text" [(ngModel)]="posSearchTerm" (input)="posSearchInput()"
+                        (focus)="posShowResults = true" (blur)="posHideResults()"
+                        (keyup.enter)="posHandleSearchEnter()" class="pos-search-input"
+                        placeholder="🔍 Scanner le code-barres ou chercher par nom…" />
+                    <div class="pos-search-results" *ngIf="posShowResults && posFilteredArticles.length > 0">
+                        <div class="pos-search-item" *ngFor="let art of posFilteredArticles"
+                            (click)="posAddToCart(art)">
+                            <img *ngIf="imageUrl(art.image)" [src]="imageUrl(art.image)" class="pos-search-item-img"
+                                alt="" />
+                            <div class="pos-search-item-info">
+                                <span>{{ art.designation }}</span>
+                                <small>Stock: {{ art.quantite }}</small>
+                            </div>
+                            <span class="pos-search-item-price">{{ art.prix_vente | number:'1.3-3' }}</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Computed total -->
-                <div class="sale-total">
-                    <span>Total :</span>
-                    <span class="total-value">{{ (formData.qte || 0) * (formData.prix || 0) | number:'1.3-3' }} {{
-                        'CURRENCY' | translate }}</span>
+                <div class="pos-bestsellers" *ngIf="posBestSellers.length > 0">
+                    <div class="pos-bestsellers-title">⚡ Produits les plus vendus</div>
+                    <div class="pos-bestsellers-grid">
+                        <div class="pos-product-tile" *ngFor="let art of posBestSellers" (click)="posAddToCart(art)">
+                            <img *ngIf="imageUrl(art.image)" [src]="imageUrl(art.image)" class="pos-product-img"
+                                alt="" />
+                            <div *ngIf="!imageUrl(art.image)" class="pos-product-img pos-product-img-placeholder">📦
+                            </div>
+                            <span class="pos-product-name">{{ art.designation }}</span>
+                            <span class="pos-product-price">{{ art.prix_vente | number:'1.3-3' }} {{ 'CURRENCY' |
+                                translate }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </ng-container>
 
-        <div class="modal-footer">
-            <button class="btn-secondary" (click)="closeModal()">{{ 'CANCEL' | translate }}</button>
-            <button class="btn-primary" (click)="saveVente()">VALIDER LA VENTE</button>
+    <!-- =========================================================
+         Caisse (fermeture de journée)
+         ========================================================= -->
+    <ng-container *ngIf="activeView === 'caisse'">
+        <div class="caisse-layout">
+
+            <!-- Today's status card -->
+            <div class="caisse-card" *ngIf="caisseStatus">
+                <div class="caisse-card-header">Caisse du {{ caisseStatus.date }}</div>
+
+                <div class="caisse-status-row" *ngIf="!caisseStatus.isClosed">
+                    <div class="caisse-status-badge caisse-open">🟢 Ouverte</div>
+                    <div class="caisse-jour-appel">
+                        <span>Jour d'appel (total des ventes du jour) :</span>
+                        <strong>{{ caisseStatus.totalVentesDuJour | number:'1.3-3' }} {{ 'CURRENCY' | translate
+                            }}</strong>
+                    </div>
+                    <button class="btn-primary caisse-close-btn" [disabled]="caisseClosing" (click)="fermerCaisse()">
+                        {{ caisseClosing ? 'Fermeture…' : '🔒 Fermer la Caisse' }}
+                    </button>
+                    <p class="caisse-hint">Fermeture immédiate en cliquant ci-dessus, ou automatique à minuit si vous
+                        oubliez.</p>
+                </div>
+
+                <div class="caisse-status-row" *ngIf="caisseStatus.isClosed">
+                    <div class="caisse-status-badge caisse-closed">🔒 Clôturée</div>
+                    <div class="caisse-jour-appel">
+                        <span>Jour d'appel (total des ventes au moment de la clôture) :</span>
+                        <strong>{{ caisseStatus.cloture?.total_ventes | number:'1.3-3' }} {{ 'CURRENCY' | translate
+                            }}</strong>
+                    </div>
+                    <p class="caisse-hint">Les ventes continuent normalement. Vous pourrez saisir le montant compté
+                        en caisse ci-dessous dès demain.</p>
+                </div>
+            </div>
+
+            <!-- Pending comptage -->
+            <div class="caisse-card" *ngIf="caissePendingComptage.length > 0">
+                <div class="caisse-card-header">Comptage en attente</div>
+                <div class="caisse-pending-row" *ngFor="let c of caissePendingComptage">
+                    <div class="caisse-pending-date">{{ c.date }}</div>
+                    <div class="caisse-pending-appel">
+                        <span>Jour d'appel :</span>
+                        <strong>{{ c.total_ventes | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</strong>
+                    </div>
+                    <input type="number" step="0.001" min="0" placeholder="Montant compté"
+                        [(ngModel)]="caisseComptageInputs[c.id_cloture]" class="form-control caisse-comptage-input" />
+                    <button class="btn-primary" [disabled]="caisseComptageSavingId === c.id_cloture"
+                        (click)="saisirComptage(c)">
+                        {{ caisseComptageSavingId === c.id_cloture ? 'Enregistrement…' : 'Valider' }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- History -->
+            <div class="caisse-card">
+                <div class="caisse-card-header">Historique des clôtures</div>
+                <table class="modern-table" *ngIf="caisseComptees.length > 0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th class="text-right">Jour d'appel</th>
+                            <th class="text-right">Montant compté</th>
+                            <th class="text-right">Écart</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let c of caisseComptees">
+                            <td>{{ c.date }}</td>
+                            <td class="text-right">{{ c.total_ventes | number:'1.3-3' }}</td>
+                            <td class="text-right">{{ c.montant_compte | number:'1.3-3' }}</td>
+                            <td class="text-right" [class.caisse-ecart-ok]="ecart(c) === 0"
+                                [class.caisse-ecart-bad]="ecart(c) !== 0">
+                                {{ ecart(c) > 0 ? '+' : '' }}{{ ecart(c) | number:'1.3-3' }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div *ngIf="caisseComptees.length === 0" class="empty-state">
+                    <p>Aucune clôture comptée pour l'instant.</p>
+                </div>
+            </div>
         </div>
-    </div>
+    </ng-container>
 </div>
 
 <!-- =========================================================
