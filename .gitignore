@@ -34,3 +34,5 @@ database/
 backend/seed-users.js
 backend/backend_log.txt
 frontend/build_output.txt
+backend/backend_log*.txt
+frontend/build_output*.txt
