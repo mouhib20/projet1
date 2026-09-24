@@ -31,7 +31,7 @@ import { ChargesModule } from './charges/charges.module';
 import { Charge } from './charges/charge.entity';
 import { ReparationsModule } from './reparations/reparations.module';
 import { CaisseModule } from './caisse/caisse.module';
-import { CaisseCloture } from './caisse/caisse.entity';
+import { PaiementsFournisseurModule } from './paiements-fournisseur/paiements-fournisseur.module';
 
 @Module({
     imports: [
@@ -49,7 +49,7 @@ import { CaisseCloture } from './caisse/caisse.entity';
                 username: configService.get<string>('DB_USERNAME', 'postgres'),
                 password: configService.get<string>('DB_PASSWORD', ''),
                 database: configService.get<string>('DB_DATABASE', 'postgres'),
-                entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, ProductEntity, FactureAchat, Charge, Utilisateur, CaisseCloture],
+                entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, ProductEntity, FactureAchat, Charge, Utilisateur],
                 synchronize: configService.get<string>('DB_SYNC', 'false') === 'true',
                 ssl: configService.get<string>('DB_SSL', 'true') === 'true' ? { rejectUnauthorized: false } : false,
             }),
@@ -68,6 +68,7 @@ import { CaisseCloture } from './caisse/caisse.entity';
         UsersModule,
         ReparationsModule,
         CaisseModule,
+        PaiementsFournisseurModule,
     ],
     controllers: [AppController],
     providers: [AppService],

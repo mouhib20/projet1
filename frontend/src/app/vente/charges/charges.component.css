@@ -425,3 +425,344 @@
         opacity: 1;
     }
 }
+
+/* Synthèse mensuelle */
+.synthese {
+    background: #161b27;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.synthese-titre {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 16px;
+}
+
+.synthese-cartes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.synthese-carte {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: #0f1117;
+    border: 1px solid #21263a;
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.synthese-principale {
+    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.synthese-valeur {
+    font-size: 20px;
+    font-weight: 700;
+    color: #e1e4e8;
+}
+
+.synthese-principale .synthese-valeur {
+    color: #4ade80;
+    font-size: 24px;
+}
+
+.synthese-label {
+    font-size: 13px;
+    color: #8b949e;
+}
+
+.synthese-note {
+    font-size: 12.5px;
+    color: #8b949e;
+    margin: 12px 0;
+}
+
+.synthese-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.synthese-table th {
+    text-align: left;
+    color: #8b949e;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    border-bottom: 1px solid #272e42;
+}
+
+.synthese-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #21263a;
+    color: #c9d1d9;
+}
+
+.synthese-table .text-right {
+    text-align: right;
+}
+
+.synthese-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.15);
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-left: 6px;
+}
+
+
+.synthese-detail {
+    margin-top: 14px;
+    background: #0f1117;
+    border: 1px solid #21263a;
+    border-radius: 12px;
+    padding: 6px 16px;
+}
+
+.synthese-ligne {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    font-size: 14px;
+    color: #c9d1d9;
+}
+
+.synthese-ligne + .synthese-ligne {
+    border-top: 1px solid #21263a;
+}
+
+.synthese-ligne small {
+    color: #8b949e;
+}
+
+.type-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+.type-badge.type-journaliere {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+.type-choix {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.type-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    background: #0f1117;
+    color: #c9d1d9;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.type-option.actif {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+}
+
+.type-option small {
+    color: #8b949e;
+}
+
+.type-note {
+    font-size: 13px;
+    color: #8b949e;
+    margin: 4px 0 0;
+}
+
+
+/* Paiements aux fournisseurs */
+.fourn {
+    background: #161b27;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.fourn-titre {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.fourn-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+.synthese-due {
+    border-color: rgba(245, 158, 11, 0.4);
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.synthese-due .synthese-valeur {
+    color: #fbbf24;
+    font-size: 24px;
+}
+
+.fourn .synthese-cartes {
+    margin-bottom: 16px;
+}
+
+.sous-carte {
+    margin: 0 0 16px;
+    padding: 16px;
+    background: #0f1117;
+    border: 1px solid #21263a;
+    border-radius: 12px;
+}
+
+.fourn .form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.fourn .form-row .form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.fourn .form-control {
+    width: 100%;
+    box-sizing: border-box;
+    background: #161b27;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #c9d1d9;
+    font-size: 14px;
+}
+
+.fourn .form-group label {
+    display: block;
+    font-size: 13px;
+    color: #8b949e;
+    margin-bottom: 6px;
+}
+
+.montant-ligne {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-lien {
+    background: none;
+    border: none;
+    color: #60a5fa;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.case-caisse {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #c9d1d9;
+    margin: 6px 0;
+}
+
+.fourn-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.alerte-ok,
+.alerte-erreur {
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.alerte-ok {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+}
+
+.alerte-erreur {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+.du-positif {
+    color: #fbbf24;
+}
+
+.negatif {
+    color: #f87171;
+}
+
+.fourn-historique {
+    margin-top: 20px;
+}
+
+.fourn-sous-titre {
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.cat-badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-right: 4px;
+}
+
+.cat-reparation {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.cat-accessoires {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.cat-aucune {
+    background: rgba(139, 148, 158, 0.12);
+    color: #8b949e;
+    border: 1px solid rgba(139, 148, 158, 0.3);
+}

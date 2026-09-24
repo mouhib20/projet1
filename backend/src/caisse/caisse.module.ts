@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { CaisseCloture } from './caisse.entity';
-import { Vente } from '../ventes/vente.entity';
+import { JwtModule } from '@nestjs/jwt';
 import { CaisseService } from './caisse.service';
 import { CaisseController } from './caisse.controller';
+import { JWT_SECRET } from '../auth/jwt.constants';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([CaisseCloture, Vente])],
+    imports: [JwtModule.register({ secret: JWT_SECRET })],
     controllers: [CaisseController],
     providers: [CaisseService],
     exports: [CaisseService],

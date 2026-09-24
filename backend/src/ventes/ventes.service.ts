@@ -6,6 +6,7 @@ import { Article } from '../articles/article.entity';
 import { Reparation } from '../reparations/reparation.entity';
 import { StocksService } from '../stocks/stocks.service';
 import { ClientsService } from '../clients/clients.service';
+import { CaisseService } from '../caisse/caisse.service';
 
 @Injectable()
 export class VentesService {
@@ -15,6 +16,7 @@ export class VentesService {
         private readonly dataSource: DataSource,
         private readonly stocksService: StocksService,
         private readonly clientsService: ClientsService,
+        private readonly caisseService: CaisseService,
     ) { }
 
     findAll(): Promise<Vente[]> {
@@ -33,7 +35,7 @@ export class VentesService {
         return vente;
     }
 
-    async create(data: any): Promise<Vente> {
+    async create(data: any, authorization?: string): Promise<Vente> {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -52,9 +54,7 @@ export class VentesService {
                 );
             }
 
-            // 2. Decrement stock via StocksService
-            await this.stocksService.decreaseStock(article.id_article, qte);
-            // Ensure article entity reflects updated quantity for the sale record
+            // 2. Decrement stock inside this transaction, so a failed sale gives it back
             article.quantite -= qte;
             await queryRunner.manager.save(article);
 
@@ -71,6 +71,15 @@ export class VentesService {
             const savedVente = await queryRunner.manager.save(vente);
 
             await queryRunner.commitTransaction();
+
+            const acteur = await this.caisseService.acteurOuSysteme(authorization);
+            await this.caisseService.enregistrerAuto(acteur, {
+                type: 'entree',
+                source: 'vente',
+                montant: qte * Number(savedVente.prix || 0),
+                motif: `Vente #${savedVente.id_vente}`,
+                reference: 'vente:' + savedVente.id_vente,
+            });
             return this.findOne(savedVente.id_vente);
         } catch (err) {
             await queryRunner.rollbackTransaction();
@@ -91,10 +100,11 @@ export class VentesService {
         montantSolde?: number;
         date?: string;
         items: { articleId?: number | null; reparationId?: number | null; designation?: string; qte: number; prix: number }[];
-    }): Promise<Vente[]> {
+    }, authorization?: string): Promise<Vente[]> {
         if (!data.items || data.items.length === 0) {
             throw new BadRequestException('Le panier est vide.');
         }
+        let montantSoldeUtilise = 0;
 
         if (data.montantSolde && data.montantSolde > 0 && !data.clientId) {
             throw new BadRequestException('Un client doit être sélectionné pour utiliser un solde.');
@@ -151,7 +161,7 @@ export class VentesService {
                     );
                 }
 
-                await this.stocksService.decreaseStock(article.id_article, qte);
+                // Decrement inside this transaction only, so a refused sale gives the stock back
                 article.quantite -= qte;
                 await queryRunner.manager.save(article);
 
@@ -175,10 +185,28 @@ export class VentesService {
                 const netTotal = Math.max(0, totalHt - remise);
                 const montantSolde = Math.min(data.montantSolde, netTotal);
                 await this.clientsService.utiliserSolde(data.clientId, montantSolde);
+                montantSoldeUtilise = montantSolde;
+                // Paid from the client's balance, not cash: the caisse must not expect it in the drawer
+                await queryRunner.query(
+                    `INSERT INTO client_solde_usage (id_client, montant, date) VALUES ($1, $2, $3)`,
+                    [data.clientId, montantSolde, date],
+                );
             }
 
             await queryRunner.commitTransaction();
-            return Promise.all(savedIds.map(id => this.findOne(id)));
+            const ventes = await Promise.all(savedIds.map(id => this.findOne(id)));
+
+            // Cash that actually entered the drawer: the sale total minus the part paid from a client balance
+            const total = ventes.reduce((s, v) => s + (v.qte || 1) * Number(v.prix || 0), 0);
+            const acteur = await this.caisseService.acteurOuSysteme(authorization);
+            await this.caisseService.enregistrerAuto(acteur, {
+                type: 'entree',
+                source: 'vente',
+                montant: total - montantSoldeUtilise,
+                motif: `Vente ${ventes.map(v => '#' + v.id_vente).join(', ')}`,
+                reference: 'vente:' + savedIds.join(','),
+            });
+            return ventes;
         } catch (err) {
             await queryRunner.rollbackTransaction();
             throw err;
@@ -267,10 +295,11 @@ export class VentesService {
         };
     }
 
-    async remove(id: number): Promise<void> {
+    async remove(id: number, authorization?: string): Promise<void> {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
+        let remboursement = 0;
 
         try {
             const vente = await queryRunner.manager.findOne(Vente, {
@@ -290,6 +319,7 @@ export class VentesService {
                 }
             }
 
+            remboursement = (vente.qte || 1) * Number(vente.prix || 0);
             await queryRunner.manager.delete(Vente, id);
             await queryRunner.commitTransaction();
         } catch (err) {
@@ -298,5 +328,15 @@ export class VentesService {
         } finally {
             await queryRunner.release();
         }
+
+        // Cancelling a sale gives the money back: it leaves the drawer
+        const acteur = await this.caisseService.acteurOuSysteme(authorization);
+        await this.caisseService.enregistrerAuto(acteur, {
+            type: 'sortie',
+            source: 'retour',
+            montant: remboursement,
+            motif: `Annulation vente #${id}`,
+            reference: 'vente-annul:' + id,
+        });
     }
 }

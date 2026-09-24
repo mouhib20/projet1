@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Client } from './client.entity';
 import { ClientDepot } from './client-depot.entity';
+import { CaisseService } from '../caisse/caisse.service';
 
 @Injectable()
 export class ClientsService {
@@ -12,6 +13,7 @@ export class ClientsService {
         @InjectRepository(ClientDepot)
         private readonly depotRepo: Repository<ClientDepot>,
         private readonly dataSource: DataSource,
+        private readonly caisseService: CaisseService,
     ) { }
 
     findAll(): Promise<Client[]> {
@@ -44,7 +46,7 @@ export class ClientsService {
     }
 
     /** Records a deposit and credits the client's balance (solde) accordingly. */
-    async deposer(clientId: number, montant: number, note?: string, date?: string): Promise<Client> {
+    async deposer(clientId: number, montant: number, note?: string, date?: string, authorization?: string): Promise<Client> {
         if (!montant || montant <= 0) {
             throw new BadRequestException('Le montant du dépôt doit être positif.');
         }
@@ -69,6 +71,15 @@ export class ClientsService {
             await queryRunner.manager.save(client);
 
             await queryRunner.commitTransaction();
+
+            const acteur = await this.caisseService.acteurOuSysteme(authorization);
+            await this.caisseService.enregistrerAuto(acteur, {
+                type: 'entree',
+                source: 'depot_client',
+                montant: Number(montant),
+                motif: `Dépôt client ${client.nom}`,
+                reference: 'depot-client:' + clientId,
+            });
             return this.findOne(clientId);
         } catch (err) {
             await queryRunner.rollbackTransaction();

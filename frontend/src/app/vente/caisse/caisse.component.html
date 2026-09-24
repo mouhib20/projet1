@@ -1,0 +1,276 @@
+<div class="caisse" *ngIf="!peutUtiliser">
+    <div class="carte">
+        <p class="aide">Votre rôle ne permet pas d'utiliser la caisse.</p>
+    </div>
+</div>
+
+<div class="caisse" *ngIf="peutUtiliser">
+
+    <div class="alerte alerte-ok" *ngIf="message">✅ {{ message }}</div>
+    <div class="alerte alerte-erreur" *ngIf="erreur">⚠️ {{ erreur }}</div>
+
+    <!-- ─── Closed: open the drawer with a counted float ─── -->
+    <div class="carte" *ngIf="status && !status.ouverte">
+        <div class="carte-titre">
+            <span>Caisse fermée</span>
+            <span class="pastille pastille-fermee">🔒 Fermée</span>
+        </div>
+        <div class="lignes">
+            <div class="ligne"><span>Fond attendu à l'ouverture</span>
+                <strong>{{ status.fondAttenduOuverture | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</strong></div>
+        </div>
+        <p class="aide">
+            C'est ce qui a été laissé dans le tiroir à la dernière fermeture
+            <ng-container *ngIf="num(status.horsSession) !== 0">, plus l'argent encaissé pendant que la caisse était
+                fermée ({{ status.horsSession | number:'1.3-3' }})</ng-container>.
+            Comptez le tiroir et saisissez le montant réel.
+        </p>
+        <div class="formulaire">
+            <input type="number" step="0.001" min="0" class="champ" placeholder="Fond de caisse compté"
+                [(ngModel)]="fondCompte" />
+            <button class="btn btn-principal" [disabled]="enCours" (click)="ouvrir()">
+                {{ enCours ? 'Ouverture…' : '🔓 Ouvrir la caisse' }}
+            </button>
+        </div>
+        <div class="ecart" *ngIf="fondCompte !== null" [class.ecart-ok]="ecartOuverture === 0"
+            [class.ecart-mauvais]="ecartOuverture !== 0">
+            {{ libelleEcart(ecartOuverture) }}<ng-container *ngIf="ecartOuverture !== 0"> à l'ouverture :
+                {{ ecartOuverture > 0 ? '+' : '' }}{{ ecartOuverture | number:'1.3-3' }}</ng-container>
+        </div>
+    </div>
+
+    <!-- ─── Open: balance, manual movements, closing ─── -->
+    <ng-container *ngIf="status?.ouverte && status?.session as s">
+        <div class="carte">
+            <div class="carte-titre">
+                <span>Caisse ouverte</span>
+                <span class="pastille pastille-ouverte">🟢 Ouverte</span>
+            </div>
+            <p class="aide">Par <strong>{{ s.ouvert_par_nom }}</strong> le {{ s.ouvert_le | date:'dd/MM/yyyy HH:mm' }}</p>
+
+            <div class="lignes">
+                <div class="ligne"><span>Fond d'ouverture (compté)</span>
+                    <strong>{{ s.fond_ouverture | number:'1.3-3' }}</strong></div>
+                <div class="ligne"><span>+ Entrées (ventes, acomptes, dépôts, manuel)</span>
+                    <strong>{{ status!.entrees | number:'1.3-3' }}</strong></div>
+                <div class="ligne"><span>− Sorties (dépenses, retours, manuel)</span>
+                    <strong>{{ status!.sorties | number:'1.3-3' }}</strong></div>
+                <div class="ligne ligne-total"><span>= Montant attendu dans la caisse</span>
+                    <strong>{{ status!.attendu | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</strong></div>
+            </div>
+
+            <div class="ecart ecart-mauvais" *ngIf="num(s.fond_ouverture) !== num(s.fond_attendu_ouverture)">
+                À l'ouverture : attendu {{ s.fond_attendu_ouverture | number:'1.3-3' }}, compté
+                {{ s.fond_ouverture | number:'1.3-3' }}
+                ({{ num(s.fond_ouverture) > num(s.fond_attendu_ouverture) ? 'excédent' : 'déficit' }} de
+                {{ (num(s.fond_ouverture) > num(s.fond_attendu_ouverture)
+                    ? num(s.fond_ouverture) - num(s.fond_attendu_ouverture)
+                    : num(s.fond_attendu_ouverture) - num(s.fond_ouverture)) | number:'1.3-3' }})
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-entree" (click)="ouvrirMouvement('entree')">＋ Entrée d'argent</button>
+                <button class="btn btn-sortie" (click)="ouvrirMouvement('sortie')">− Sortie d'argent</button>
+                <button class="btn btn-fermer" *ngIf="peutFermer" (click)="ouvrirFermeture()">🔒 Fermer la caisse</button>
+            </div>
+            <p class="aide" *ngIf="!peutFermer">Seul {{ s.ouvert_par_nom }} (ou un administrateur) peut fermer cette
+                caisse.</p>
+
+            <!-- Manual movement -->
+            <div class="sous-carte" *ngIf="mouvementType">
+                <div class="sous-titre">{{ mouvementType === 'entree' ? 'Entrée d\'argent dans la caisse' : 'Sortie d\'argent de la caisse' }}</div>
+                <div class="formulaire">
+                    <input type="number" step="0.001" min="0" class="champ" placeholder="Montant"
+                        [(ngModel)]="mouvementMontant" />
+                    <input type="text" class="champ champ-large" list="motifs" placeholder="Motif (obligatoire)"
+                        [(ngModel)]="mouvementMotif" />
+                    <datalist id="motifs"><option *ngFor="let m of motifsSuggeres" [value]="m"></option></datalist>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-secondaire" (click)="annulerMouvement()">Annuler</button>
+                    <button class="btn btn-principal" [disabled]="enCours" (click)="enregistrerMouvement()">
+                        {{ enCours ? 'Enregistrement…' : 'Enregistrer' }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Closing -->
+            <div class="sous-carte" *ngIf="fermetureOuverte">
+                <div class="sous-titre">Fermer la caisse : videz le tiroir et comptez</div>
+                <div class="formulaire">
+                    <input type="number" step="0.001" min="0" class="champ" placeholder="Montant compté"
+                        [(ngModel)]="montantCompte" />
+                    <input type="number" step="0.001" min="0" class="champ" placeholder="Fond remis en caisse"
+                        [(ngModel)]="fondLaisse" />
+                    <input type="text" class="champ champ-large" placeholder="Note (facultatif)" [(ngModel)]="note" />
+                </div>
+                <div class="ecart" *ngIf="montantCompte !== null" [class.ecart-ok]="ecartFermeture === 0"
+                    [class.ecart-mauvais]="ecartFermeture !== 0">
+                    Attendu {{ status!.attendu | number:'1.3-3' }} · compté {{ montantCompte | number:'1.3-3' }} →
+                    <strong>{{ libelleEcart(ecartFermeture) }}</strong>
+                    <ng-container *ngIf="ecartFermeture !== 0"> de {{ (ecartFermeture < 0 ? -ecartFermeture : ecartFermeture) | number:'1.3-3' }}</ng-container>
+                </div>
+                <p class="aide" *ngIf="montantCompte !== null">
+                    Retiré du tiroir : {{ (montantCompte - (fondLaisse || 0)) | number:'1.3-3' }} · le fond remis
+                    ({{ fondLaisse || 0 | number:'1.3-3' }}) sera le fond attendu à la prochaine ouverture.
+                </p>
+                <div class="actions">
+                    <button class="btn btn-secondaire" (click)="annulerFermeture()">Annuler</button>
+                    <button class="btn btn-fermer" [disabled]="enCours" (click)="fermer()">
+                        {{ enCours ? 'Fermeture…' : 'Confirmer la fermeture' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="carte">
+            <div class="carte-titre"><span>Mouvements de la session</span></div>
+            <ng-container *ngTemplateOutlet="tableMouvements; context: { $implicit: status!.mouvements }"></ng-container>
+        </div>
+    </ng-container>
+
+    <!-- ─── Daily report per employee ─── -->
+    <div class="carte">
+        <div class="carte-titre">
+            <span>Rapport quotidien</span>
+            <input type="date" class="champ champ-date" [(ngModel)]="rapportDate" (ngModelChange)="chargerRapport()" />
+        </div>
+        <div class="table-wrap" *ngIf="rapport && rapport.employes.length > 0">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employé</th>
+                        <th class="droite">Ventes</th>
+                        <th class="droite">Acomptes / dépôts</th>
+                        <th class="droite">Entrées manuelles</th>
+                        <th class="droite">Sorties manuelles</th>
+                        <th class="droite">Dépenses</th>
+                        <th class="droite">Retours</th>
+                        <th class="droite">Solde du jour</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let e of rapport.employes">
+                        <td>{{ e.employe }}</td>
+                        <td class="droite">{{ e.ventes | number:'1.3-3' }}</td>
+                        <td class="droite">{{ e.acomptes_depots | number:'1.3-3' }}</td>
+                        <td class="droite">{{ e.entrees_manuelles | number:'1.3-3' }}</td>
+                        <td class="droite">{{ e.sorties_manuelles | number:'1.3-3' }}</td>
+                        <td class="droite">{{ e.depenses | number:'1.3-3' }}</td>
+                        <td class="droite">{{ e.retours | number:'1.3-3' }}</td>
+                        <td class="droite fort">{{ e.net | number:'1.3-3' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="table-wrap" *ngIf="rapport && rapport.sessions.length > 0">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Session</th>
+                        <th>Ouverte par</th>
+                        <th>Fermée par</th>
+                        <th class="droite">Attendu</th>
+                        <th class="droite">Compté</th>
+                        <th class="droite">Écart</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let x of rapport.sessions">
+                        <td>#{{ x.id }} · {{ x.ouvert_le | date:'HH:mm' }}{{ x.ferme_le ? ' → ' + (x.ferme_le | date:'HH:mm') : '' }}</td>
+                        <td>{{ x.ouvert_par_nom }}</td>
+                        <td>{{ x.ferme_par_nom || '—' }}</td>
+                        <td class="droite">{{ x.montant_attendu !== null ? (x.montant_attendu | number:'1.3-3') : '—' }}</td>
+                        <td class="droite">{{ x.montant_compte !== null ? (x.montant_compte | number:'1.3-3') : '—' }}</td>
+                        <td class="droite" [class.ecart-ok]="x.ecart !== null && num(x.ecart) === 0"
+                            [class.ecart-mauvais]="x.ecart !== null && num(x.ecart) !== 0">
+                            {{ x.ecart !== null ? ((num(x.ecart) > 0 ? '+' : '') + (x.ecart | number:'1.3-3')) : 'en cours' }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="aide" *ngIf="rapport && rapport.employes.length === 0 && rapport.sessions.length === 0">
+            Aucun mouvement ce jour-là.
+        </p>
+    </div>
+
+    <!-- ─── History of closed sessions ─── -->
+    <div class="carte">
+        <div class="carte-titre"><span>Historique des fermetures</span></div>
+        <div class="table-wrap" *ngIf="historique.length > 0">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ouverte</th>
+                        <th>Par</th>
+                        <th>Fermée</th>
+                        <th class="droite">Fond</th>
+                        <th class="droite">Attendu</th>
+                        <th class="droite">Compté</th>
+                        <th class="droite">Écart</th>
+                        <th class="droite">Retiré</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let h of historique">
+                        <td>{{ h.ouvert_le | date:'dd/MM HH:mm' }}</td>
+                        <td>{{ h.ouvert_par_nom }}</td>
+                        <td>{{ h.ferme_le | date:'dd/MM HH:mm' }}<small *ngIf="h.ferme_par_nom !== h.ouvert_par_nom"> ({{ h.ferme_par_nom }})</small></td>
+                        <td class="droite">{{ h.fond_ouverture | number:'1.3-3' }}</td>
+                        <td class="droite">{{ h.montant_attendu | number:'1.3-3' }}</td>
+                        <td class="droite">{{ h.montant_compte | number:'1.3-3' }}</td>
+                        <td class="droite" [class.ecart-ok]="num(h.ecart) === 0" [class.ecart-mauvais]="num(h.ecart) !== 0">
+                            {{ num(h.ecart) > 0 ? '+' : '' }}{{ h.ecart | number:'1.3-3' }}
+                            <small>{{ num(h.ecart) < 0 ? 'déficit' : (num(h.ecart) > 0 ? 'excédent' : '') }}</small>
+                        </td>
+                        <td class="droite">{{ (num(h.montant_compte) - num(h.fond_laisse)) | number:'1.3-3' }}</td>
+                        <td class="droite"><button class="btn-lien" (click)="voirSession(h)">
+                                {{ detail?.session?.id === h.id ? 'Masquer' : 'Détail' }}</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="aide" *ngIf="historique.length === 0">Aucune fermeture pour l'instant.</p>
+
+        <div class="sous-carte" *ngIf="detail">
+            <div class="sous-titre">Session #{{ detail.session.id }}
+                <ng-container *ngIf="detail.session.note"> — {{ detail.session.note }}</ng-container></div>
+            <ng-container *ngTemplateOutlet="tableMouvements; context: { $implicit: detail.mouvements }"></ng-container>
+        </div>
+    </div>
+</div>
+
+<!-- Movements table, shared by the open session and the history detail -->
+<ng-template #tableMouvements let-mouvements>
+    <div class="table-wrap" *ngIf="mouvements && mouvements.length > 0">
+        <table>
+            <thead>
+                <tr>
+                    <th>Heure</th>
+                    <th>Type</th>
+                    <th>Source</th>
+                    <th>Motif</th>
+                    <th>Par</th>
+                    <th class="droite">Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let m of mouvements">
+                    <td>{{ m.cree_le | date:'HH:mm' }}</td>
+                    <td><span class="etiquette" [class.etiquette-entree]="m.type === 'entree'"
+                            [class.etiquette-sortie]="m.type === 'sortie'">{{ m.type === 'entree' ? 'Entrée' : 'Sortie' }}</span></td>
+                    <td>{{ source(m.source) }}<small *ngIf="m.avant_ouverture"> (avant ouverture)</small></td>
+                    <td>{{ m.motif }}</td>
+                    <td>{{ m.par_nom }}</td>
+                    <td class="droite fort" [class.montant-entree]="m.type === 'entree'"
+                        [class.montant-sortie]="m.type === 'sortie'">
+                        {{ m.type === 'entree' ? '+' : '−' }}{{ m.montant | number:'1.3-3' }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p class="aide" *ngIf="!mouvements || mouvements.length === 0">Aucun mouvement.</p>
+</ng-template>

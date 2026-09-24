@@ -100,8 +100,9 @@ export class FacturesAchatService {
                         });
                         if (!article) throw new Error(`Article ${item.articleId} introuvable`);
 
-                        // Increment stock quantity via StocksService
-                        await this.stocksService.increaseStock(article.id_article, item.qte);
+                        // Increment stock inside this transaction. (Doing it through StocksService used
+                        // another connection, and the save below then wrote the old quantity back.)
+                        article.quantite = Number(article.quantite || 0) + Number(item.qte || 0);
                         if (item.prix > 0) {
                             article.prix_achat = item.prix; // update purchase price to latest
                         }

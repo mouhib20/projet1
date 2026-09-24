@@ -33,6 +33,11 @@ export class FournisseursComponent implements OnInit {
     private fournisseurService: FournisseurService
   ) { }
 
+  /** Categories of a supplier (the field can hold several, comma separated). */
+  categories(f: Fournisseur): string[] {
+    return (f.type_articles || '').split(',').map(s => s.trim()).filter(Boolean);
+  }
+
   ngOnInit(): void {
     this.loadFournisseurs();
   }

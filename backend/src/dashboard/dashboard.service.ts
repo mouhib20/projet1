@@ -40,7 +40,7 @@ export class DashboardService {
         // Low stock articles (quantite <= qte_min)
         const lowStockArticles = await this.articleRepo
             .createQueryBuilder('a')
-            .where('a.quantite <= a.qte_min')
+            .where('a.qte_min > 0 AND a.quantite <= a.qte_min')
             .orderBy('a.quantite', 'ASC')
             .take(10)
             .getMany();

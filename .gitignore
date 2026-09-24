@@ -25,3 +25,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Clé de connexion générée en local (développement)
+.jwt-secret

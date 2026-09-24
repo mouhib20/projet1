@@ -1,3 +1,4 @@
+import { CaisseModule } from '../caisse/caisse.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vente } from './vente.entity';
@@ -8,7 +9,7 @@ import { StocksModule } from '../stocks/stocks.module';
 import { ClientsModule } from '../clients/clients.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Vente, Article]), StocksModule, ClientsModule],
+    imports: [TypeOrmModule.forFeature([Vente, Article]), StocksModule, ClientsModule, CaisseModule],
     controllers: [VentesController],
     providers: [VentesService],
     exports: [VentesService],

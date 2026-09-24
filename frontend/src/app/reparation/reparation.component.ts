@@ -250,7 +250,14 @@ export class ReparationComponent implements OnInit {
     }
 
     nomFournisseur(f: any): string {
-        return f?.entreprise || `${f?.nom || ''} ${f?.prenom || ''}`.trim();
+        return (f?.entreprise || `${f?.nom || ''} ${f?.prenom || ''}`.trim()) + (f?.type_articles ? ` · ${f.type_articles}` : '');
+    }
+
+    /** Brand/model of a part, unless the part's name already contains them (occasion parts do). */
+    marqueModeleAAjouter(article: any): string {
+        const texte = [article?.marque, article?.modele].filter(Boolean).join(' ').trim();
+        if (!texte) return '';
+        return (article?.designation || '').toLowerCase().includes(texte.toLowerCase()) ? '' : texte;
     }
 
     /** The "Stock de Pièces" tab only lists what is actually in stock. */
@@ -357,7 +364,7 @@ export class ReparationComponent implements OnInit {
     /** Names of the fournisseur(s) of a retour's defective part. */
     fournisseursDe(retour: any): string {
         const liste = retour.piece_defectueuse?.fournisseurs || [];
-        return liste.map((f: any) => f.entreprise || `${f.nom} ${f.prenom || ''}`.trim()).join(', ');
+        return liste.map((f: any) => (f.entreprise || `${f.nom} ${f.prenom || ''}`.trim()) + (f.type_articles ? ` · ${f.type_articles}` : '')).join(', ');
     }
 
     loadClients() {
@@ -502,6 +509,7 @@ export class ReparationComponent implements OnInit {
 
         this.articleService.createArticle({
             designation,
+            qte_min: 0,
             marque: connu?.marque || undefined,
             modele: connu?.modele || undefined,
             prix_achat: this.customPart.prix_achat,
@@ -799,6 +807,7 @@ export class ReparationComponent implements OnInit {
 
         this.articleService.createArticle({
             designation,
+            qte_min: 0,
             marque: marque || undefined,
             modele: modele || undefined,
             prix_achat: this.occasionPrix,

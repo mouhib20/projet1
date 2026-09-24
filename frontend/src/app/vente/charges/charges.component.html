@@ -25,6 +25,189 @@
         </div>
     </div>
 
+    <!-- Summary: what must be earned to cover the expenses -->
+    <div class="synthese" *ngIf="charges.length > 0">
+        <div class="synthese-titre">📅 Combien gagner pour couvrir mes dépenses</div>
+        <div class="synthese-cartes">
+            <div class="synthese-carte synthese-principale">
+                <span class="synthese-valeur">{{ objectifMensuel | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                <span class="synthese-label">à gagner chaque mois</span>
+            </div>
+            <div class="synthese-carte">
+                <span class="synthese-valeur">{{ objectifJournalier | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                <span class="synthese-label">à gagner chaque jour (sur 30 jours)</span>
+            </div>
+            <div class="synthese-carte">
+                <span class="synthese-valeur">{{ depensesMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                <span class="synthese-label">déjà dépensé ce mois-ci</span>
+            </div>
+        </div>
+
+        <div class="synthese-detail">
+            <div class="synthese-ligne">
+                <span>📆 Dépenses mensuelles <small>(loyer, salaires…)</small></span>
+                <strong>{{ moyenneMensuelles.moyenne | number:'1.3-3' }} {{ 'CURRENCY' | translate }} / mois</strong>
+            </div>
+            <div class="synthese-ligne">
+                <span>🗓️ Dépenses journalières <small>({{ moyenneJournalieres.parJour | number:'1.3-3' }} par jour × 30)</small></span>
+                <strong>{{ moyenneJournalieres.parJour * 30 | number:'1.3-3' }} {{ 'CURRENCY' | translate }} / mois</strong>
+            </div>
+        </div>
+        <p class="synthese-note">
+            <ng-container *ngIf="moyenneMensuelles.nbMois > 0 && !moyenneMensuelles.provisoire">Mensuelles : moyenne sur
+                {{ moyenneMensuelles.nbMois }} mois complet(s). </ng-container>
+            <ng-container *ngIf="moyenneMensuelles.provisoire">Mensuelles : seul le mois en cours existe, chiffre provisoire. </ng-container>
+            <ng-container *ngIf="moyenneJournalieres.nbJours > 0 && !moyenneJournalieres.provisoire">Journalières : moyenne sur
+                {{ moyenneJournalieres.nbJours }} jour(s) complet(s). </ng-container>
+            <ng-container *ngIf="moyenneJournalieres.provisoire">Journalières : seul aujourd'hui existe, chiffre provisoire. </ng-container>
+            Le mois et le jour en cours ne sont pas comptés tant qu'ils ne sont pas terminés.
+        </p>
+
+        <table class="synthese-table">
+            <thead>
+                <tr>
+                    <th>Mois</th>
+                    <th class="text-right">Mensuelles</th>
+                    <th class="text-right">Journalières</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let m of depensesParMois">
+                    <td>{{ m.label }} <span class="synthese-badge" *ngIf="m.enCours">en cours</span></td>
+                    <td class="text-right">{{ m.mensuelles | number:'1.3-3' }}</td>
+                    <td class="text-right">{{ m.journalieres | number:'1.3-3' }}</td>
+                    <td class="text-right fw-bold">{{ m.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Supplier payments: amount owed to each supplier -->
+    <div class="fourn">
+        <div class="synthese-titre fourn-titre">
+            <span>🤝 Paiements aux fournisseurs</span>
+            <button class="btn-primary fourn-btn" (click)="ouvrirPaiement()">+ Payer un fournisseur</button>
+        </div>
+
+        <div class="alerte-ok" *ngIf="paiementMessage">✅ {{ paiementMessage }}</div>
+        <div class="alerte-erreur" *ngIf="paiementErreur && !paiementOuvert">⚠️ {{ paiementErreur }}</div>
+
+        <div class="synthese-cartes">
+            <div class="synthese-carte synthese-due">
+                <span class="synthese-valeur">{{ totalDu | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                <span class="synthese-label">dû au total à mes fournisseurs</span>
+            </div>
+        </div>
+
+        <!-- Payment form -->
+        <div class="sous-carte" *ngIf="paiementOuvert">
+            <div class="alerte-erreur" *ngIf="paiementErreur">⚠️ {{ paiementErreur }}</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Fournisseur <span class="required">*</span></label>
+                    <select class="form-control" [(ngModel)]="paiement.id_fournisseur" (ngModelChange)="onFournisseurPaiementChange()">
+                        <option [ngValue]="null">— Choisir —</option>
+                        <option *ngFor="let f of fournisseursDus" [ngValue]="f.id_fournisseur">
+                            {{ nomFournisseur(f) }} — dû : {{ f.solde | number:'1.3-3' }}
+                        </option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Montant payé <span class="required">*</span></label>
+                    <div class="montant-ligne">
+                        <input type="number" min="0" step="0.001" class="form-control" [(ngModel)]="paiement.montant" />
+                        <button type="button" class="btn-lien" *ngIf="fournisseurChoisi" (click)="toutPayer()">Tout payer</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" class="form-control" [(ngModel)]="paiement.date" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Note (facultatif)</label>
+                <input type="text" class="form-control" [(ngModel)]="paiement.note" placeholder="Ex: virement, chèque n°…" />
+            </div>
+            <label class="case-caisse">
+                <input type="checkbox" [(ngModel)]="paiement.paye_caisse" />
+                Payé en espèces depuis la caisse (sort du montant attendu en caisse)
+            </label>
+            <p class="synthese-note" *ngIf="fournisseurChoisi">
+                Il restera <strong [class.negatif]="resteApresPaiement < 0">{{ resteApresPaiement | number:'1.3-3' }}</strong>
+                à payer à {{ nomFournisseur(fournisseurChoisi) }} après ce paiement.
+            </p>
+            <div class="fourn-actions">
+                <button class="btn-secondary" (click)="fermerPaiement()">Annuler</button>
+                <button class="btn-primary" [disabled]="paiementEnCours" (click)="enregistrerPaiement()">
+                    {{ paiementEnCours ? 'Enregistrement…' : 'Enregistrer le paiement' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Amount owed to each supplier -->
+        <table class="synthese-table">
+            <thead>
+                <tr>
+                    <th>Fournisseur</th>
+                    <th>Catégorie</th>
+                    <th class="text-right">Reste dû</th>
+                    <th class="text-right">Déjà payé</th>
+                    <th class="text-right">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let f of fournisseursDus">
+                    <td class="fw-bold">{{ nomFournisseur(f) }}</td>
+                    <td>
+                        <span *ngFor="let cat of categories(f)" class="cat-badge"
+                            [class.cat-reparation]="cat === 'Réparation'"
+                            [class.cat-accessoires]="cat === 'Accessoires'">{{ cat }}</span>
+                        <span *ngIf="categories(f).length === 0" class="cat-badge cat-aucune">Non classé</span>
+                    </td>
+                    <td class="text-right fw-bold" [class.du-positif]="Number(f.solde) > 0">
+                        {{ f.solde | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                    </td>
+                    <td class="text-right">{{ f.total_paye | number:'1.3-3' }}</td>
+                    <td class="text-right">
+                        <button class="btn-lien" *ngIf="Number(f.solde) > 0" (click)="ouvrirPaiement(f)">Payer</button>
+                        <span class="text-muted" *ngIf="Number(f.solde) <= 0">Soldé</span>
+                    </td>
+                </tr>
+                <tr *ngIf="fournisseursDus.length === 0">
+                    <td colspan="5" class="text-center text-muted">Aucun fournisseur.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- History -->
+        <div class="fourn-historique" *ngIf="paiements.length > 0">
+            <div class="fourn-sous-titre">Historique des paiements</div>
+            <table class="synthese-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Fournisseur</th>
+                        <th>Note</th>
+                        <th>Mode</th>
+                        <th class="text-right">Montant</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let p of paiements">
+                        <td>{{ p.date | date:'dd/MM/yyyy' }}</td>
+                        <td>{{ nomFournisseur(p) }}</td>
+                        <td>{{ p.note || '—' }}</td>
+                        <td>{{ p.paye_caisse ? 'Caisse' : 'Hors caisse' }}</td>
+                        <td class="text-right fw-bold">{{ p.montant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
+                        <td class="text-right"><button class="btn-icon delete-action" title="Annuler ce paiement" (click)="annulerPaiement(p)">🗑</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- Search -->
     <div class="search-bar">
         <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 Rechercher par description..."
@@ -36,8 +219,9 @@
         <table class="modern-table">
             <thead>
                 <tr>
-                    <th width="20%">Date</th>
-                    <th width="40%">Description</th>
+                    <th width="15%">Date</th>
+                    <th width="15%">Type</th>
+                    <th width="35%">Description</th>
                     <th width="20%" class="text-right">Montant</th>
                     <th width="20%" class="text-center">Actions</th>
                 </tr>
@@ -45,6 +229,7 @@
             <tbody>
                 <tr *ngFor="let c of filteredCharges">
                     <td>{{ c.date_charge | date:'dd/MM/yyyy' }}</td>
+                    <td><span class="type-badge" [class.type-journaliere]="c.type_depense === 'journaliere'">{{ c.type_depense === 'journaliere' ? 'Journalière' : 'Mensuelle' }}</span></td>
                     <td class="fw-bold">{{ c.description }}</td>
                     <td class="text-right text-danger fw-bold">
                         - {{ c.montant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
@@ -88,6 +273,28 @@
                         <input type="number" min="0" step="0.001" [(ngModel)]="formData.montant" class="form-control" />
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>Type de dépense <span class="required">*</span></label>
+                    <div class="type-choix">
+                        <label class="type-option" [class.actif]="formData.type_depense === 'journaliere'">
+                            <input type="radio" name="type_depense" value="journaliere" [(ngModel)]="formData.type_depense" />
+                            Journalière <small>(dépense du jour)</small>
+                        </label>
+                        <label class="type-option" [class.actif]="formData.type_depense === 'mensuelle'">
+                            <input type="radio" name="type_depense" value="mensuelle" [(ngModel)]="formData.type_depense" />
+                            Mensuelle <small>(loyer, salaires…)</small>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group" *ngIf="formData.type_depense === 'journaliere'">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" [(ngModel)]="formData.paye_caisse" />
+                        Payée en espèces depuis la caisse (sort du montant attendu en caisse)
+                    </label>
+                </div>
+                <p class="type-note" *ngIf="formData.type_depense === 'mensuelle'">
+                    Une dépense mensuelle (loyer, salaires…) ne sort pas de la caisse du jour.
+                </p>
             </div>
         </div>
         <div class="modal-footer">

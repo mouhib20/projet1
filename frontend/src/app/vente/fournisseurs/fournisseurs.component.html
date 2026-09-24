@@ -13,6 +13,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Entreprise</th>
+                    <th>Catégorie</th>
                     <th>Nom Contact</th>
                     <th>Téléphone</th>
                     <th>Matricule Fiscal</th>
@@ -24,6 +25,12 @@
                 <tr *ngFor="let f of fournisseurs">
                     <td>#{{ f.id_fournisseur }}</td>
                     <td>{{ f.entreprise || 'N/A' }}</td>
+                    <td>
+                        <span *ngFor="let cat of categories(f)" class="cat-badge"
+                            [class.cat-reparation]="cat === 'Réparation'"
+                            [class.cat-accessoires]="cat === 'Accessoires'">{{ cat }}</span>
+                        <span *ngIf="categories(f).length === 0" class="cat-badge cat-aucune">Non classé</span>
+                    </td>
                     <td>{{ f.nom }} {{ f.prenom }}</td>
                     <td>{{ f.tel || 'N/A' }}</td>
                     <td>{{ f.matricule_fiscal || 'N/A' }}</td>
@@ -98,7 +105,7 @@
                 </div>
 
                 <div class="form-group mt-3">
-                    <label>Classification du fournisseur (facultatif)</label>
+                    <label>Catégorie du fournisseur (facultatif)</label>
                     <select name="type_articles" [(ngModel)]="formData.type_articles" class="form-control select-box">
                         <option value="">-- Aucune --</option>
                         <option value="Réparation">Réparation (Afficheur, Batterie, Vitre)</option>

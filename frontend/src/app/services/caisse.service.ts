@@ -1,31 +1,44 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CaisseCloture, CaisseStatus } from '../models/caisse.model';
+import { CaisseMouvement, CaisseRapport, CaisseSession, CaisseStatus } from '../models/caisse.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
     providedIn: 'root'
 })
 export class CaisseService {
 
-    private apiUrl = 'http://localhost:3001/api/caisse';
+    private apiUrl = `${environment.apiUrl}/caisse`;
 
     constructor(private http: HttpClient) { }
 
-    getStatus(date?: string): Observable<CaisseStatus> {
-        const url = date ? `${this.apiUrl}/status?date=${date}` : `${this.apiUrl}/status`;
-        return this.http.get<CaisseStatus>(url);
+    getStatus(): Observable<CaisseStatus> {
+        return this.http.get<CaisseStatus>(`${this.apiUrl}/status`);
     }
 
-    getHistorique(): Observable<CaisseCloture[]> {
-        return this.http.get<CaisseCloture[]>(this.apiUrl);
+    ouvrir(fond_compte: number): Observable<CaisseSession> {
+        return this.http.post<CaisseSession>(`${this.apiUrl}/ouvrir`, { fond_compte });
     }
 
-    cloturer(date?: string): Observable<CaisseCloture> {
-        return this.http.post<CaisseCloture>(`${this.apiUrl}/cloturer`, date ? { date } : {});
+    fermer(data: { montant_compte: number; fond_laisse: number; note?: string }): Observable<CaisseSession> {
+        return this.http.post<CaisseSession>(`${this.apiUrl}/fermer`, data);
     }
 
-    saisirComptage(id: number, montant_compte: number): Observable<CaisseCloture> {
-        return this.http.put<CaisseCloture>(`${this.apiUrl}/${id}/comptage`, { montant_compte });
+    mouvement(data: { type: 'entree' | 'sortie'; montant: number; motif: string }): Observable<CaisseMouvement> {
+        return this.http.post<CaisseMouvement>(`${this.apiUrl}/mouvements`, data);
+    }
+
+    getHistorique(): Observable<CaisseSession[]> {
+        return this.http.get<CaisseSession[]>(`${this.apiUrl}/historique`);
+    }
+
+    getSession(id: number): Observable<{ session: CaisseSession; mouvements: CaisseMouvement[] }> {
+        return this.http.get<{ session: CaisseSession; mouvements: CaisseMouvement[] }>(`${this.apiUrl}/sessions/${id}`);
+    }
+
+    getRapport(date: string): Observable<CaisseRapport> {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        return this.http.get<CaisseRapport>(`${this.apiUrl}/rapport`, { params: { date, tz } });
     }
 }

@@ -7,7 +7,9 @@
     "build": "nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
-    "start:prod": "node dist/main"
+    "start:prod": "node dist/main",
+    "db:schema": "node db/export-schema.js",
+    "db:seed": "node db/seed-users.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -23,6 +25,7 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "dotenv": "^18.0.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.13.1",

@@ -6,11 +6,10 @@ import { VenteService } from '../../services/vente.service';
 import { ClientService } from '../../services/client.service';
 import { ArticleService, ArticleForm, articleImageUrl } from '../../services/article.service';
 import { AuthService } from '../../services/auth.service';
-import { CaisseService } from '../../services/caisse.service';
 import { PosBridgeService } from '../../services/pos-bridge.service';
 import { Vente } from '../../models/vente.model';
 import { Client } from '../../models/client.model';
-import { CaisseCloture, CaisseStatus } from '../../models/caisse.model';
+import { CaisseComponent } from '../caisse/caisse.component';
 
 export interface PosCartItem {
   articleId?: number;
@@ -26,7 +25,7 @@ export interface PosCartItem {
 @Component({
   selector: 'app-operations',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe],
+  imports: [CommonModule, FormsModule, TranslatePipe, CaisseComponent],
   templateUrl: './operations.component.html',
   styleUrls: ['./operations.component.css']
 })
@@ -51,18 +50,10 @@ export class OperationsComponent implements OnInit {
   posMontantSolde = 0;
   posSaving = false;
 
-  // ── Caisse (fermeture de journée) ────────────────────────────
-  caisseStatus: CaisseStatus | null = null;
-  caisseHistorique: CaisseCloture[] = [];
-  caisseClosing = false;
-  caisseComptageInputs: { [id: number]: number } = {};
-  caisseComptageSavingId: number | null = null;
-
   constructor(
     private venteService: VenteService,
     private clientService: ClientService,
     private articleService: ArticleService,
-    private caisseService: CaisseService,
     private posBridge: PosBridgeService,
     public auth: AuthService
   ) { }
@@ -71,7 +62,6 @@ export class OperationsComponent implements OnInit {
     this.loadVentes();
     this.loadClients();
     this.loadArticles();
-    this.loadCaisseStatus();
     this.consumePendingRepair();
   }
 
@@ -262,10 +252,6 @@ export class OperationsComponent implements OnInit {
 
   setView(view: 'list' | 'pos' | 'caisse'): void {
     this.activeView = view;
-    if (view === 'caisse') {
-      this.loadCaisseStatus();
-      this.loadCaisseHistorique();
-    }
   }
 
   imageUrl(image?: string | null): string | null {
@@ -273,7 +259,8 @@ export class OperationsComponent implements OnInit {
   }
 
   get posLowStockArticles(): ArticleForm[] {
-    return this.articles.filter(a => (a.quantite ?? 0) <= (a.qte_min ?? 3));
+    // qte_min = 0 means "no alert" (one-off parts made for a single repair)
+    return this.articles.filter(a => (a.qte_min ?? 3) > 0 && (a.quantite ?? 0) <= (a.qte_min ?? 3));
   }
 
   get posFilteredArticles(): ArticleForm[] {
@@ -442,75 +429,11 @@ export class OperationsComponent implements OnInit {
         this.posResetCart();
         this.loadVentes();
         this.loadArticles();
-        this.loadCaisseStatus();
         this.loadClients();
       },
       error: (err) => {
         this.posSaving = false;
         alert(err.error?.message || 'Erreur lors de la vente.');
-      }
-    });
-  }
-
-  // ── Caisse (fermeture de journée) ────────────────────────────
-
-  loadCaisseStatus(): void {
-    this.caisseService.getStatus().subscribe({
-      next: (status) => this.caisseStatus = status,
-      error: (err) => console.error(err)
-    });
-  }
-
-  loadCaisseHistorique(): void {
-    this.caisseService.getHistorique().subscribe({
-      next: (data) => this.caisseHistorique = data,
-      error: (err) => console.error(err)
-    });
-  }
-
-  fermerCaisse(): void {
-    if (this.caisseClosing) return;
-    this.caisseClosing = true;
-    this.caisseService.cloturer().subscribe({
-      next: () => {
-        this.caisseClosing = false;
-        this.loadCaisseStatus();
-        this.loadCaisseHistorique();
-      },
-      error: (err) => {
-        this.caisseClosing = false;
-        alert(err.error?.message || 'Erreur lors de la fermeture de la caisse.');
-      }
-    });
-  }
-
-  get caissePendingComptage(): CaisseCloture[] {
-    return this.caisseHistorique.filter(c => c.montant_compte === null);
-  }
-
-  get caisseComptees(): CaisseCloture[] {
-    return this.caisseHistorique.filter(c => c.montant_compte !== null);
-  }
-
-  ecart(c: CaisseCloture): number {
-    return (c.montant_compte ?? 0) - (c.total_ventes ?? 0);
-  }
-
-  saisirComptage(cloture: CaisseCloture): void {
-    const montant = this.caisseComptageInputs[cloture.id_cloture];
-    if (montant === undefined || montant === null || isNaN(montant)) {
-      alert('Veuillez saisir le montant compté en caisse.');
-      return;
-    }
-    this.caisseComptageSavingId = cloture.id_cloture;
-    this.caisseService.saisirComptage(cloture.id_cloture, montant).subscribe({
-      next: () => {
-        this.caisseComptageSavingId = null;
-        this.loadCaisseHistorique();
-      },
-      error: (err) => {
-        this.caisseComptageSavingId = null;
-        alert(err.error?.message || 'Erreur lors de la saisie du comptage.');
       }
     });
   }

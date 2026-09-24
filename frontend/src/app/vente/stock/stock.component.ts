@@ -246,7 +246,7 @@ export class StockComponent implements OnInit {
     }
 
     nomFournisseur(f: any): string {
-        return f?.entreprise || `${f?.nom || ''} ${f?.prenom || ''}`.trim();
+        return (f?.entreprise || `${f?.nom || ''} ${f?.prenom || ''}`.trim()) + (f?.type_articles ? ` · ${f.type_articles}` : '');
     }
 
     ouvrirRenvoi(product: ArticleForm): void {

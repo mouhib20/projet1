@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Patch, Headers } from '@nestjs/common';
 import { ReparationsService } from './reparations.service';
 import { CreateReparationDto } from './dtos/create-reparation.dto';
 
@@ -22,8 +22,8 @@ export class ReparationsController {
     }
 
     @Post()
-    create(@Body() createDto: CreateReparationDto) {
-        return this.reparationsService.create(createDto);
+    create(@Body() createDto: CreateReparationDto, @Headers('authorization') auth?: string) {
+        return this.reparationsService.create(createDto, auth);
     }
 
     @Post(':id/items')

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, Headers } from '@nestjs/common';
 import { ChargesService } from './charges.service';
 
 @Controller('charges')
@@ -16,17 +16,17 @@ export class ChargesController {
     }
 
     @Post()
-    create(@Body() body: any) {
-        return this.service.create(body);
+    create(@Body() body: any, @Headers('authorization') auth?: string) {
+        return this.service.create(body, auth);
     }
 
     @Put(':id')
-    update(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
-        return this.service.update(id, body);
+    update(@Param('id', ParseIntPipe) id: number, @Body() body: any, @Headers('authorization') auth?: string) {
+        return this.service.update(id, body, auth);
     }
 
     @Delete(':id')
-    remove(@Param('id', ParseIntPipe) id: number) {
-        return this.service.remove(id);
+    remove(@Param('id', ParseIntPipe) id: number, @Headers('authorization') auth?: string) {
+        return this.service.remove(id, auth);
     }
 }

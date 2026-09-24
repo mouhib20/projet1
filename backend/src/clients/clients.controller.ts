@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, Headers } from '@nestjs/common';
 import { ClientsService } from './clients.service';
 
 @Controller('clients')
@@ -26,8 +26,12 @@ export class ClientsController {
     }
 
     @Post(':id/depots')
-    deposer(@Param('id', ParseIntPipe) id: number, @Body() body: { montant: number; note?: string; date?: string }) {
-        return this.service.deposer(id, body.montant, body.note, body.date);
+    deposer(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: { montant: number; note?: string; date?: string },
+        @Headers('authorization') auth?: string,
+    ) {
+        return this.service.deposer(id, body.montant, body.note, body.date, auth);
     }
 
     @Post()

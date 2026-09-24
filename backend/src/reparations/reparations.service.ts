@@ -7,6 +7,7 @@ import { CreateReparationDto } from './dtos/create-reparation.dto';
 import { Client } from '../clients/client.entity';
 import { Article } from '../articles/article.entity';
 import { Vente } from '../ventes/vente.entity';
+import { CaisseService } from '../caisse/caisse.service';
 
 @Injectable()
 export class ReparationsService {
@@ -14,6 +15,7 @@ export class ReparationsService {
         @InjectRepository(Reparation)
         private readonly reparationRepo: Repository<Reparation>,
         private readonly dataSource: DataSource,
+        private readonly caisseService: CaisseService,
     ) { }
 
     findAll(): Promise<Reparation[]> {
@@ -58,7 +60,7 @@ export class ReparationsService {
             let pieceDefectueuse: any = null;
             if (itemDefectueux?.article) {
                 const fournisseurs = await this.dataSource.query(
-                    `SELECT f.id_fournisseur, f.nom, f.prenom, f.entreprise
+                    `SELECT f.id_fournisseur, f.nom, f.prenom, f.entreprise, f.type_articles
                      FROM fournisseur_articles fa
                      JOIN fournisseur f ON f.id_fournisseur = fa."fournisseurId_fournisseur"
                      WHERE fa."articleId_article" = $1`,
@@ -85,7 +87,7 @@ export class ReparationsService {
         return reparation;
     }
 
-    async create(data: CreateReparationDto): Promise<Reparation> {
+    async create(data: CreateReparationDto, authorization?: string): Promise<Reparation> {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -166,6 +168,17 @@ export class ReparationsService {
             }
 
             await queryRunner.commitTransaction();
+
+            if (acompte > 0) {
+                const acteur = await this.caisseService.acteurOuSysteme(authorization);
+                await this.caisseService.enregistrerAuto(acteur, {
+                    type: 'entree',
+                    source: 'reparation',
+                    montant: acompte,
+                    motif: `Acompte réparation #${savedReparation.id_reparation} — ${data.appareil || 'Appareil'}`,
+                    reference: 'reparation:' + savedReparation.id_reparation,
+                });
+            }
             return this.findOne(savedReparation.id_reparation);
         } catch (err) {
             await queryRunner.rollbackTransaction();

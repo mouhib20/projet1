@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
@@ -11,6 +11,7 @@ export class AuthService {
     ) { }
 
     async login(username: string, password: string) {
+        if (!username || !password) throw new BadRequestException("Nom d'utilisateur et mot de passe requis");
         const user = await this.usersService.findByUsername(username);
         if (!user) throw new UnauthorizedException('Utilisateur introuvable');
 

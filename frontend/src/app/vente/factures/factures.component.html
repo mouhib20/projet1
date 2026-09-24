@@ -27,7 +27,7 @@
                 <tr *ngFor="let f of factures">
                     <td><span class="badge">{{ f.reference }}</span></td>
                     <td>{{ f.date_facture | date:'dd/MM/yyyy' }}</td>
-                    <td>{{ f.fournisseur?.entreprise || f.fournisseur?.nom }}</td>
+                    <td>{{ f.fournisseur?.entreprise || f.fournisseur?.nom }}{{ f.fournisseur?.type_articles ? ' · ' + f.fournisseur?.type_articles : '' }}</td>
                     <td>{{ f.total_ht | number:'1.3-3' }}</td>
                     <td class="text-muted">{{ f.total_tva | number:'1.3-3' }}</td>
                     <td class="fw-bold text-success">{{ f.net_a_payer | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
@@ -70,7 +70,7 @@
                             class="form-control select-box">
                             <option [ngValue]="undefined" disabled>{{ 'FACTURES.SELECT_SUPPLIER' | translate }}</option>
                             <option *ngFor="let fr of fournisseurs" [ngValue]="fr.id_fournisseur">
-                                {{ fr.entreprise ? fr.entreprise + ' - ' : '' }}{{ fr.nom }} {{ fr.prenom }}
+                                {{ fr.entreprise ? fr.entreprise + ' - ' : '' }}{{ fr.nom }} {{ fr.prenom }}{{ fr.type_articles ? ' · ' + fr.type_articles : '' }}
                             </option>
                         </select>
                     </div>
@@ -382,7 +382,7 @@
                     <div class="detail-card-content">
                         <span class="detail-card-label">{{ 'FACTURES.SUPPLIER' | translate }}</span>
                         <span class="detail-card-value">{{ selectedFacture.fournisseur?.entreprise ||
-                            selectedFacture.fournisseur?.nom }} {{ selectedFacture.fournisseur?.prenom || '' }}</span>
+                            selectedFacture.fournisseur?.nom }} {{ selectedFacture.fournisseur?.prenom || '' }}{{ selectedFacture.fournisseur?.type_articles ? ' · ' + selectedFacture.fournisseur?.type_articles : '' }}</span>
                     </div>
                 </div>
                 <div class="detail-card">

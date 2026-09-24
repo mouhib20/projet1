@@ -22,6 +22,9 @@ export class ArticlesService {
     }
 
     create(dto: Partial<Article>): Promise<Article> {
+        if (!dto.designation || !String(dto.designation).trim()) {
+            throw new BadRequestException('La désignation est obligatoire.');
+        }
         const article = this.repo.create(dto);
         return this.repo.save(article);
     }
@@ -42,7 +45,7 @@ export class ArticlesService {
         return this.dataSource.query(
             `SELECT rf.id, rf.id_article, a.designation, a.marque, a.modele, a.sous_categorie, a.type,
                     rf.qte, rf.probleme, rf.date_retour,
-                    f.id_fournisseur, f.nom, f.prenom, f.entreprise
+                    f.id_fournisseur, f.nom, f.prenom, f.entreprise, f.type_articles
              FROM retour_fournisseur rf
              LEFT JOIN article a ON a.id_article = rf.id_article
              LEFT JOIN fournisseur f ON f.id_fournisseur = rf.id_fournisseur

@@ -1104,3 +1104,70 @@
 .dossier-contenu {
     margin: 8px 0 0 22px;
 }
+
+/* ─── Caisse: montant attendu ──────────────────────────────── */
+.caisse-lignes {
+    background: #0f1117;
+    border-radius: 10px;
+    padding: 8px 16px;
+    margin: 12px 0;
+}
+
+.caisse-ligne {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    font-size: 14px;
+    color: #8b949e;
+}
+
+.caisse-ligne strong {
+    color: #e1e4e8;
+    font-family: 'Inter', monospace;
+}
+
+.caisse-attendu {
+    border-top: 1px solid #21263a;
+    margin-top: 4px;
+    padding-top: 10px;
+}
+
+.caisse-attendu strong {
+    color: #4ade80;
+    font-size: 16px;
+}
+
+.caisse-pending-appel small {
+    display: block;
+    font-size: 11px;
+    color: #8b949e;
+}
+
+/* ─── POS form controls (client, remise, paiement) ─────────── */
+.pos-form-row .form-control {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0f1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #c9d1d9;
+    font-size: 14px;
+}
+
+.pos-form-row .form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.pos-form-row .pos-remise-row input.form-control {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+}
+
+.pos-form-row .pos-remise-row .pos-remise-type {
+    width: 175px;
+    flex-shrink: 0;
+}

@@ -268,8 +268,8 @@
             <div class="detail-part" *ngFor="let it of detailRep.items">
                 <div>
                     {{ it.article?.designation || 'Pièce' }}
-                    <small class="text-muted" *ngIf="it.article?.marque || it.article?.modele">
-                        — {{ it.article?.marque }} {{ it.article?.modele }}</small>
+                    <small class="text-muted" *ngIf="marqueModeleAAjouter(it.article)">
+                        — {{ marqueModeleAAjouter(it.article) }}</small>
                 </div>
                 <div class="text-muted">
                     Qté {{ it.qte }} · achat {{ it.article?.prix_achat || 0 }} MAD · prix {{ it.prix }} MAD
@@ -594,7 +594,7 @@
                 <select class="form-control" [(ngModel)]="customPart.fournisseurId">
                     <option [ngValue]="undefined">-- Sans fournisseur --</option>
                     <option *ngFor="let f of fournisseurs" [ngValue]="f.id_fournisseur">
-                        {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}
+                        {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}{{ f.type_articles ? ' · ' + f.type_articles : '' }}
                     </option>
                 </select>
             </div>
@@ -677,7 +677,7 @@
                         <select class="form-control" [(ngModel)]="stockPartFournisseurId">
                             <option [ngValue]="undefined">-- Sans fournisseur --</option>
                             <option *ngFor="let f of fournisseurs" [ngValue]="f.id_fournisseur">
-                                {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}
+                                {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}{{ f.type_articles ? ' · ' + f.type_articles : '' }}
                             </option>
                         </select>
                     </div>
@@ -716,7 +716,7 @@
                         <select class="form-control" [(ngModel)]="occasionFournisseurId">
                             <option [ngValue]="undefined">-- Sans fournisseur --</option>
                             <option *ngFor="let f of fournisseurs" [ngValue]="f.id_fournisseur">
-                                {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}
+                                {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}{{ f.type_articles ? ' · ' + f.type_articles : '' }}
                             </option>
                         </select>
                         <button type="button" class="btn btn-secondary" [disabled]="savingOccasion"
