@@ -42,17 +42,26 @@ import { PaiementsFournisseurModule } from './paiements-fournisseur/paiements-fo
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) => ({
-                type: 'postgres',
-                host: configService.get<string>('DB_HOST', 'localhost'),
-                port: configService.get<number>('DB_PORT', 5432),
-                username: configService.get<string>('DB_USERNAME', 'postgres'),
-                password: configService.get<string>('DB_PASSWORD', ''),
-                database: configService.get<string>('DB_DATABASE', 'postgres'),
-                entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, ProductEntity, FactureAchat, Charge, Utilisateur],
-                synchronize: configService.get<string>('DB_SYNC', 'false') === 'true',
-                ssl: configService.get<string>('DB_SSL', 'true') === 'true' ? { rejectUnauthorized: false } : false,
-            }),
+            useFactory: (configService: ConfigService) => {
+                // DATABASE_URL (given by Render) takes over the separate DB_* settings
+                const url = configService.get<string>('DATABASE_URL');
+                const connexion = url
+                    ? { url }
+                    : {
+                        host: configService.get<string>('DB_HOST', 'localhost'),
+                        port: configService.get<number>('DB_PORT', 5432),
+                        username: configService.get<string>('DB_USERNAME', 'postgres'),
+                        password: configService.get<string>('DB_PASSWORD', ''),
+                        database: configService.get<string>('DB_DATABASE', 'postgres'),
+                    };
+                return {
+                    type: 'postgres' as const,
+                    ...connexion,
+                    entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, ProductEntity, FactureAchat, Charge, Utilisateur],
+                    synchronize: configService.get<string>('DB_SYNC', 'false') === 'true',
+                    ssl: configService.get<string>('DB_SSL', 'true') === 'true' ? { rejectUnauthorized: false } : false,
+                };
+            },
         }),
         ProductsModule,
         ArticlesModule,
