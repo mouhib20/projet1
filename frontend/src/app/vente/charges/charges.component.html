@@ -299,7 +299,9 @@
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" (click)="closeModal()">{{ 'CANCEL' | translate }}</button>
-            <button class="btn-primary" (click)="saveCharge()">AJOUTER LA DÉPENSE</button>
+            <button class="btn-primary" [disabled]="savingCharge" (click)="saveCharge()">
+                {{ savingCharge ? 'ENREGISTREMENT…' : 'AJOUTER LA DÉPENSE' }}
+            </button>
         </div>
     </div>
 </div>

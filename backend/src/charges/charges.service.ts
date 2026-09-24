@@ -38,6 +38,8 @@ export class ChargesService {
 
     async create(dto: Partial<Charge>, authorization?: string): Promise<Charge> {
         this.verifierType(dto);
+        if (!String(dto.description ?? '').trim()) throw new BadRequestException('La description de la dépense est obligatoire.');
+        if (!(Number(dto.montant) > 0)) throw new BadRequestException('Le montant doit être supérieur à 0.');
         if ((dto.type_depense ?? 'mensuelle') === 'mensuelle') dto.paye_caisse = false;
         const charge = await this.repo.save(this.repo.create(dto));
         const montant = this.montantCaisse(charge);

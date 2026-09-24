@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { AntiDoubleSoumissionInterceptor } from './anti-double-soumission.interceptor';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
@@ -15,7 +16,11 @@ import { JWT_SECRET } from './jwt.constants';
             signOptions: { expiresIn: '8h' },
         }),
     ],
-    providers: [AuthService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
+    providers: [
+        AuthService,
+        { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_INTERCEPTOR, useClass: AntiDoubleSoumissionInterceptor },
+    ],
     controllers: [AuthController],
 })
 export class AuthModule { }

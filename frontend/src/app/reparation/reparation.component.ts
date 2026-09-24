@@ -618,7 +618,11 @@ export class ReparationComponent implements OnInit {
         return partsTotal + (this.ticketForm.cout_main_oeuvre || 0);
     }
 
+    /** True while the ticket is being created: further taps are ignored (no duplicate tickets). */
+    savingTicket = false;
+
     saveTicket() {
+        if (this.savingTicket) return;
         if (!this.ticketForm.id_client) {
             alert('Veuillez sélectionner un client.');
             return;
@@ -663,13 +667,16 @@ export class ReparationComponent implements OnInit {
             }))
         };
 
+        this.savingTicket = true;
         this.reparationService.createReparation(payload).subscribe({
             next: () => {
+                this.savingTicket = false;
                 this.loadReparations();
                 this.loadArticles();
                 this.closeTicketModal();
             },
             error: err => {
+                this.savingTicket = false;
                 alert(err.error?.message || 'Erreur création ticket');
             }
         });

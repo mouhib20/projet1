@@ -525,7 +525,9 @@
 
         <div class="modal-footer">
             <button class="btn btn-secondary" (click)="closeTicketModal()">Annuler</button>
-            <button class="btn btn-primary" (click)="saveTicket()">Créer le Ticket</button>
+            <button class="btn btn-primary" [disabled]="savingTicket" (click)="saveTicket()">
+                {{ savingTicket ? 'Création…' : 'Créer le Ticket' }}
+            </button>
         </div>
     </div>
 </div>

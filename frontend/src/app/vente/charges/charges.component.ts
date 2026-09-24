@@ -259,7 +259,11 @@ export class ChargesComponent implements OnInit {
     this.isModalOpen = false;
   }
 
+  /** True while the expense is being saved: further taps are ignored (no duplicate expenses). */
+  savingCharge = false;
+
   saveCharge() {
+    if (this.savingCharge) return;
     if (!this.formData.description || !this.formData.montant || this.formData.montant <= 0) {
       alert('Veuillez fournir une description et un montant valide.');
       return;
@@ -268,12 +272,15 @@ export class ChargesComponent implements OnInit {
     // Only daily expenses can be paid from the caisse
     if (this.formData.type_depense !== 'journaliere') this.formData.paye_caisse = false;
 
+    this.savingCharge = true;
     this.chargeService.createCharge(this.formData as Charge).subscribe({
       next: () => {
+        this.savingCharge = false;
         this.loadCharges();
         this.closeModal();
       },
       error: (err) => {
+        this.savingCharge = false;
         console.error(err);
         alert('Erreur lors de la création de la charge.');
       }
