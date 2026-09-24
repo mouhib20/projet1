@@ -21,6 +21,10 @@ export class ClientService {
         return this.http.get<Client>(`${this.apiUrl}/${id}`);
     }
 
+    fusionnerDoublons(): Observable<{ groupes: number; supprimes: number }> {
+        return this.http.post<{ groupes: number; supprimes: number }>(`${this.apiUrl}/fusionner-doublons`, {});
+    }
+
     createClient(client: Client): Observable<Client> {
         return this.http.post<Client>(this.apiUrl, client);
     }

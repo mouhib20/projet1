@@ -39,6 +39,11 @@ export class ClientsController {
         return this.service.create(body);
     }
 
+    @Post('fusionner-doublons')
+    fusionnerDoublons() {
+        return this.service.fusionnerDoublons();
+    }
+
     @Put(':id')
     update(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
         return this.service.update(id, body);

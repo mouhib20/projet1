@@ -346,7 +346,9 @@
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" (click)="closeClientModal()">{{ 'CANCEL' | translate }}</button>
-            <button class="btn-primary" (click)="saveClient()">AJOUTER CLIENT</button>
+            <button class="btn-primary" [disabled]="savingClient" (click)="saveClient()">
+                {{ savingClient ? 'ENREGISTREMENT…' : 'AJOUTER CLIENT' }}
+            </button>
         </div>
     </div>
 </div>

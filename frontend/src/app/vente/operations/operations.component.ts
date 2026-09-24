@@ -234,17 +234,27 @@ export class OperationsComponent implements OnInit {
     this.isClientModalOpen = false;
   }
 
+  /** True while the client is being saved: further clicks are ignored (no duplicate clients). */
+  savingClient = false;
+
   saveClient() {
+    if (this.savingClient) return;
     if (!this.clientForm.nom) {
       alert('Veuillez saisir le nom du client.');
       return;
     }
+    this.savingClient = true;
     this.clientService.createClient(this.clientForm as Client).subscribe({
       next: () => {
+        this.savingClient = false;
         this.loadClients();
         this.closeClientModal();
       },
-      error: (err) => console.error(err)
+      error: (err) => {
+        this.savingClient = false;
+        console.error(err);
+        alert(err.error?.message || "Erreur lors de l'enregistrement du client.");
+      }
     });
   }
 

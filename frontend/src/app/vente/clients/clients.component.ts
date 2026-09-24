@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClientService } from '../../services/client.service';
+import { AuthService } from '../../services/auth.service';
 import { Client, ClientDepot, ClientDepotSummary } from '../../models/client.model';
 
 @Component({
@@ -31,11 +32,27 @@ export class ClientsComponent implements OnInit {
   depotNote = '';
   savingDepot = false;
 
-  constructor(private clientService: ClientService) { }
+  constructor(private clientService: ClientService, public auth: AuthService) { }
 
   ngOnInit(): void {
     this.loadClients();
     this.loadDepotsSummary();
+  }
+
+  /** Same person entered several times (same name and phone): merged into one record. */
+  fusionnerDoublons(): void {
+    if (!confirm("Fusionner les clients en double (même nom et même téléphone) ? Leurs tickets, ventes et dépôts sont regroupés sur une seule fiche.")) return;
+    this.errorMsg = '';
+    this.successMsg = '';
+    this.clientService.fusionnerDoublons().subscribe({
+      next: (r) => {
+        this.successMsg = r.supprimes === 0
+          ? 'Aucun doublon à fusionner.'
+          : `${r.supprimes} fiche(s) en double fusionnée(s) (${r.groupes} client(s) concerné(s)).`;
+        this.loadClients();
+      },
+      error: (err) => { this.errorMsg = err.error?.message || 'Impossible de fusionner les doublons.'; }
+    });
   }
 
   loadClients(): void {

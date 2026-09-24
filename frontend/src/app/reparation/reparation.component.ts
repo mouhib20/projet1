@@ -396,15 +396,27 @@ export class ReparationComponent implements OnInit {
         this.isClientModalOpen = false;
     }
 
+    /** True while the client is being saved: further clicks are ignored (no duplicate clients). */
+    savingClient = false;
+
     saveClient() {
+        if (this.savingClient) return;
         if (!this.newClient.nom) {
             alert('Le nom est obligatoire');
             return;
         }
-        this.clientService.createClient(this.newClient).subscribe(res => {
-            this.loadClients();
-            this.ticketForm.id_client = res?.id_client;
-            this.closeClientModal();
+        this.savingClient = true;
+        this.clientService.createClient(this.newClient).subscribe({
+            next: (res) => {
+                this.savingClient = false;
+                this.loadClients();
+                this.ticketForm.id_client = res?.id_client;
+                this.closeClientModal();
+            },
+            error: (err) => {
+                this.savingClient = false;
+                alert(err.error?.message || "Erreur lors de l'enregistrement du client.");
+            }
         });
     }
 

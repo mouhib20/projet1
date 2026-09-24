@@ -29,9 +29,57 @@ export class ClientsService {
         return client;
     }
 
-    create(dto: Partial<Client>): Promise<Client> {
-        const client = this.repo.create(dto);
-        return this.repo.save(client);
+    /**
+     * Creates a client, unless the same person (same name and phone, ignoring case and spaces)
+     * already exists: then that client is returned. A repeated click or request therefore never
+     * makes a duplicate, even when two identical requests arrive at the same time.
+     */
+    async create(dto: Partial<Client>): Promise<Client> {
+        const nom = String(dto.nom ?? '').trim();
+        if (!nom) throw new BadRequestException('Le nom est obligatoire.');
+        const telephone = String(dto.telephone ?? '').trim();
+
+        return this.dataSource.transaction(async (m) => {
+            // Identical requests wait for each other, so the second one finds the first one's client
+            await m.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`client:${nom.toLowerCase()}|${telephone}`]);
+            const existant = await m.getRepository(Client)
+                .createQueryBuilder('c')
+                .where('lower(trim(c.nom)) = :nom', { nom: nom.toLowerCase() })
+                .andWhere("coalesce(trim(c.telephone), '') = :tel", { tel: telephone })
+                .orderBy('c.id_client', 'ASC')
+                .getOne();
+            if (existant) return existant;
+            return m.save(m.create(Client, { ...dto, nom, telephone: telephone || (undefined as any) }));
+        });
+    }
+
+    /**
+     * Merges clients that are the same person (same name and phone): the oldest record is kept,
+     * tickets, sales, deposits and balance usage move to it, balances are added up, the others are deleted.
+     */
+    async fusionnerDoublons(): Promise<{ groupes: number; supprimes: number }> {
+        return this.dataSource.transaction(async (m) => {
+            const groupes: { ids: number[] }[] = await m.query(
+                `SELECT array_agg(id_client ORDER BY id_client) AS ids
+                 FROM client
+                 GROUP BY lower(trim(nom)), coalesce(trim(telephone), '')
+                 HAVING count(*) > 1`,
+            );
+            let supprimes = 0;
+            for (const g of groupes) {
+                const [garde, ...autres] = g.ids;
+                for (const table of ['reparation', 'vente', 'client_depot', 'client_solde_usage']) {
+                    await m.query(`UPDATE ${table} SET id_client = $1 WHERE id_client = ANY($2)`, [garde, autres]);
+                }
+                await m.query(
+                    `UPDATE client SET solde = (SELECT COALESCE(SUM(solde), 0) FROM client WHERE id_client = ANY($2)) WHERE id_client = $1`,
+                    [garde, g.ids],
+                );
+                await m.query(`DELETE FROM client WHERE id_client = ANY($1)`, [autres]);
+                supprimes += autres.length;
+            }
+            return { groupes: groupes.length, supprimes };
+        });
     }
 
     async update(id: number, dto: Partial<Client>): Promise<Client> {

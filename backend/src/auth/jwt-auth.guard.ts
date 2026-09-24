@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { IS_PUBLIC } from './public.decorator';
 
 /** Areas only an administrator may change (the UI already restricts these pages to admins). */
-const ECRITURE_ADMIN = /^\/api\/(fournisseurs|factures-achat|mouvements-achat|stocks)(\/|$|\?)/;
+const ECRITURE_ADMIN = /^\/api\/(fournisseurs|factures-achat|mouvements-achat|stocks|clients\/fusionner-doublons)(\/|$|\?)/;
 
 /**
  * Global guard: every route needs a valid login token unless marked @Public().

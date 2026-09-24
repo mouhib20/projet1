@@ -6,7 +6,11 @@
             <div class="page-title">👥 Clients</div>
             <div class="page-subtitle">Gérez vos clients, leurs dépôts et leur solde disponible</div>
         </div>
-        <button class="btn btn-primary" (click)="openAddForm()" *ngIf="!showAddForm">＋ Ajouter un client</button>
+        <div class="header-boutons" *ngIf="!showAddForm">
+            <button class="btn btn-secondary" *ngIf="auth.isAdmin()" (click)="fusionnerDoublons()"
+                title="Regrouper les clients saisis plusieurs fois">🧩 Fusionner les doublons</button>
+            <button class="btn btn-primary" (click)="openAddForm()">＋ Ajouter un client</button>
+        </div>
     </div>
 
     <!-- Alerts -->
