@@ -7,6 +7,12 @@
         </button>
     </div>
 
+    <!-- Draft of an invoice left unfinished -->
+    <div class="brouillon-notice" *ngIf="brouillonExiste && !isModalOpen">
+        <span>📝 Une facture est en cours de saisie (brouillon enregistré).</span>
+        <button type="button" class="brouillon-lien" (click)="openModal()">Reprendre</button>
+    </div>
+
     <!-- MAIN TABLE -->
     <div class="table-container fade-in">
         <table class="modern-table">
@@ -60,6 +66,10 @@
         </div>
 
         <div class="modal-body custom-scroll">
+            <div class="brouillon-banniere" *ngIf="brouillonDate">
+                <span>📝 Brouillon repris : enregistré le {{ brouillonDate | date:'dd/MM/yyyy HH:mm' }}. Terminez la saisie et validez.</span>
+                <button type="button" class="brouillon-lien" (click)="abandonnerBrouillon()">Recommencer à zéro</button>
+            </div>
             <div class="modern-form">
 
                 <!-- TOP SECTION: Supplier and Basic Info -->

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -15,7 +15,7 @@ import { Fournisseur } from '../../models/fournisseur.model';
   templateUrl: './factures.component.html',
   styleUrls: ['./factures.component.css']
 })
-export class FacturesComponent implements OnInit {
+export class FacturesComponent implements OnInit, OnDestroy {
   factures: FactureAchat[] = [];
   fournisseurs: Fournisseur[] = [];
   articles: ArticleForm[] = [];
@@ -118,6 +118,7 @@ export class FacturesComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.brouillonExiste = !!this.lireBrouillon();
     this.loadFactures();
     this.loadFournisseurs();
     this.loadArticles();
@@ -176,11 +177,105 @@ export class FacturesComponent implements OnInit {
   openModal() {
     this.isModalOpen = true;
     this.savingFacture = false;
+    const brouillon = this.lireBrouillon();
+    if (brouillon) this.restaurerBrouillon(brouillon);
+    else this.resetForm();
+  }
+
+  /** Leaving the form (cross, click outside, another page…) keeps what was typed as a draft. */
+  closeModal() {
+    this.sauvegarderBrouillon();
+    this.isModalOpen = false;
+  }
+
+  // ── Draft: the invoice being typed is kept until it is saved or discarded ──
+
+  brouillonExiste = false;
+  /** Set while the form shows a restored draft (date it was kept). */
+  brouillonDate: string | null = null;
+
+  /** One draft per person, so somebody else on the same computer neither sees nor erases it. */
+  private get cleBrouillon(): string {
+    return 'gsmpro_facture_brouillon_' + this.utilisateurCourant();
+  }
+
+  private utilisateurCourant(): string {
+    try { return localStorage.getItem('username') || ''; } catch { return ''; }
+  }
+
+  private brouillonRempli(): boolean {
+    const f = this.formData;
+    const c = this.currentItem;
+    return !!(f.fournisseurId || f.items.length > 0 || c.designation || c.marque || c.modele || c.barcode || (c.prix || 0) > 0);
+  }
+
+  private lireBrouillon(): any | null {
+    try {
+      const s = localStorage.getItem(this.cleBrouillon);
+      if (!s) return null;
+      const b = JSON.parse(s);
+      return b && b.formData ? b : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private sauvegarderBrouillon() {
+    if (!this.isModalOpen) return;
+    if (!this.brouillonRempli()) {
+      this.supprimerBrouillon();
+      return;
+    }
+    try {
+      localStorage.setItem(this.cleBrouillon, JSON.stringify({
+        date: new Date().toISOString(),
+        utilisateur: this.utilisateurCourant(),
+        formData: this.formData,
+        currentItem: this.currentItem,
+        searchTerm: this.searchTerm
+      }));
+      this.brouillonExiste = true;
+    } catch {
+      // storage unavailable: nothing is kept
+    }
+  }
+
+  private supprimerBrouillon() {
+    try { localStorage.removeItem(this.cleBrouillon); } catch { }
+    this.brouillonExiste = false;
+    this.brouillonDate = null;
+  }
+
+  private restaurerBrouillon(b: any) {
+    this.resetForm();
+    this.formData = { ...this.initForm(), ...b.formData, items: Array.isArray(b.formData.items) ? b.formData.items : [] };
+    this.currentItem = { ...this.initCurrentItem(), ...(b.currentItem || {}) };
+    this.searchTerm = b.searchTerm || '';
+    this.editingItemIndex = null;
+    // a supplier deleted since then cannot be selected any more
+    if (this.formData.fournisseurId && this.fournisseurs.length > 0
+      && !this.fournisseurs.some(f => f.id_fournisseur == this.formData.fournisseurId)) {
+      this.formData.fournisseurId = undefined;
+    }
+    if (this.formData.fournisseurId) this.onFournisseurChange();
+    this.calculateTotals();
+    this.brouillonDate = b.date || null;
+  }
+
+  /** Throws the draft away and starts an empty invoice. */
+  abandonnerBrouillon() {
+    this.supprimerBrouillon();
     this.resetForm();
   }
 
-  closeModal() {
-    this.isModalOpen = false;
+  /** Closing the tab, refreshing or being logged out while typing also keeps the draft. */
+  @HostListener('window:beforeunload')
+  avantFermeture() {
+    this.sauvegarderBrouillon();
+  }
+
+  ngOnDestroy(): void {
+    this.sauvegarderBrouillon();
   }
 
   resetForm() {
@@ -582,6 +677,8 @@ export class FacturesComponent implements OnInit {
         this.loadFactures();
         this.loadArticles();
         this.loadFournisseurs();
+        this.resetForm();
+        this.supprimerBrouillon();
         this.closeModal();
       },
       error: (err: any) => {
