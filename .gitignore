@@ -28,3 +28,9 @@ Thumbs.db
 
 # Clé de connexion générée en local (développement)
 .jwt-secret
+
+# Anciens exports et scripts (données et mots de passe par défaut): ne jamais publier
+database/
+backend/seed-users.js
+backend/backend_log.txt
+frontend/build_output.txt
