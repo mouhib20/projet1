@@ -287,6 +287,18 @@ export class OperationsComponent implements OnInit {
     }).slice(0, 40);
   }
 
+  /** Product sheet on one line: kind, category, brand, model, barcode and description. */
+  specsArticle(a: ArticleForm): string {
+    return [
+      a.type === 'accessory' ? 'Accessoire' : 'Pièce',
+      a.sous_categorie ? a.sous_categorie.split('(')[0].trim() : '',
+      a.marque ? 'Marque : ' + a.marque : '',
+      a.modele ? 'Modèle : ' + a.modele : '',
+      a.barcode ? 'Code : ' + a.barcode : '',
+      a.description || ''
+    ].filter(Boolean).join(' · ');
+  }
+
   get posBestSellers(): ArticleForm[] {
     const soldQtyByArticle = new Map<number, number>();
     for (const v of this.ventes) {

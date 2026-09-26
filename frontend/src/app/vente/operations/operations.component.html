@@ -290,6 +290,7 @@
                             <div class="pos-search-item-info">
                                 <span>{{ art.designation }}</span>
                                 <small>Stock: {{ art.quantite }}</small>
+                                <small class="pos-search-item-specs" *ngIf="specsArticle(art)">{{ specsArticle(art) }}</small>
                             </div>
                             <span class="pos-search-item-price">{{ art.prix_vente | number:'1.3-3' }}</span>
                         </div>

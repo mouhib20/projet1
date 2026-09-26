@@ -862,6 +862,12 @@
     color: #8b949e;
 }
 
+.pos-search-item-info .pos-search-item-specs {
+    color: #a5b4fc;
+    white-space: normal;
+    line-height: 1.35;
+}
+
 .pos-search-item-price {
     font-size: 13px;
     font-weight: 700;
