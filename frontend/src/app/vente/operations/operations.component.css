@@ -1131,6 +1131,15 @@
     background: #222a40;
 }
 
+.dossier-benefice {
+    color: #4ade80;
+    font-weight: 600;
+}
+
+.dossier-benefice.negatif {
+    color: #f87171;
+}
+
 .dossier-info {
     font-size: 13px;
     font-weight: 500;

@@ -137,6 +137,19 @@ export class OperationsComponent implements OnInit {
     return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
   }
 
+  /**
+   * Profit of one sale line: price minus the article's purchase price. Repair lines (deposit,
+   * pickup) have no article, so their cost is unknown: null, and they are left out of the totals.
+   */
+  beneficeVente(v: Vente): number | null {
+    if (!v.article) return null;
+    return (v.qte || 1) * ((Number(v.prix) || 0) - (Number(v.article.prix_achat) || 0));
+  }
+
+  beneficeListe(list: Vente[]): number {
+    return list.reduce((s, v) => s + (this.beneficeVente(v) ?? 0), 0);
+  }
+
   private total(list: Vente[]): number {
     return list.reduce((s, v) => s + (v.qte || 1) * (v.prix || 0), 0);
   }

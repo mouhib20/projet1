@@ -63,6 +63,7 @@
                         <th>Qté</th>
                         <th>Prix Unit.</th>
                         <th>Total</th>
+                        <th>Bénéfice</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -77,6 +78,9 @@
                         <td class="text-right">{{ v.prix | number:'1.3-3' }}</td>
                         <td class="fw-bold text-success text-right">
                             {{ (v.qte || 1) * (v.prix || 0) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                        </td>
+                        <td class="text-right" [class.text-success]="(beneficeVente(v) ?? 0) >= 0" [class.text-danger]="(beneficeVente(v) ?? 0) < 0">
+                            {{ beneficeVente(v) === null ? '—' : (beneficeVente(v) | number:'1.3-3') }}
                         </td>
                         <td class="text-center">
                             <button *ngIf="auth.getRole() !== 'visiteur'" class="btn-icon delete-action"
@@ -94,7 +98,7 @@
                 <button type="button" class="dossier-header" (click)="basculerDossier(j.key)">
                     <span>{{ estOuvert(j.key) ? '📂' : '📁' }} {{ j.label }}</span>
                     <span class="dossier-info">{{ j.ventes.length }} vente(s) ·
-                        {{ j.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                        {{ j.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }} <span class="dossier-benefice" [class.negatif]="beneficeListe(j.ventes) < 0">· Bénéfice : {{ beneficeListe(j.ventes) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span></span>
                 </button>
                 <div class="table-container" *ngIf="estOuvert(j.key)">
                     <ng-container *ngTemplateOutlet="tableVentes; context: { $implicit: j.ventes }"></ng-container>
@@ -108,7 +112,7 @@
                 <button type="button" class="dossier-header" (click)="basculerDossier('aujourdhui')">
                     <span>{{ estOuvert('aujourdhui') ? '📂' : '📁' }} Aujourd'hui</span>
                     <span class="dossier-info">{{ g.aujourdhui.ventes.length }} vente(s) ·
-                        {{ g.aujourdhui.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                        {{ g.aujourdhui.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }} <span class="dossier-benefice" [class.negatif]="beneficeListe(g.aujourdhui.ventes) < 0">· Bénéfice : {{ beneficeListe(g.aujourdhui.ventes) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span></span>
                 </button>
                 <div class="table-container" *ngIf="estOuvert('aujourdhui')">
                     <ng-container *ngIf="g.aujourdhui.ventes.length > 0; else aucuneVenteJour">
@@ -123,7 +127,7 @@
                 <button type="button" class="dossier-header" (click)="basculerDossier('ce-mois')">
                     <span>{{ estOuvert('ce-mois') ? '📂' : '📁' }} Ce mois-ci</span>
                     <span class="dossier-info">{{ g.ceMois.ventes.length }} vente(s) ·
-                        {{ g.ceMois.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                        {{ g.ceMois.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }} <span class="dossier-benefice" [class.negatif]="beneficeListe(g.ceMois.ventes) < 0">· Bénéfice : {{ beneficeListe(g.ceMois.ventes) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span></span>
                 </button>
                 <div class="dossier-contenu" *ngIf="estOuvert('ce-mois')">
                     <ng-container *ngTemplateOutlet="dossiersJours; context: { $implicit: g.ceMois.jours }"></ng-container>
@@ -135,14 +139,14 @@
                 <button type="button" class="dossier-header" (click)="basculerDossier(a.key)">
                     <span>{{ estOuvert(a.key) ? '📂' : '📁' }} {{ a.label }}</span>
                     <span class="dossier-info">{{ a.ventes.length }} vente(s) ·
-                        {{ a.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                        {{ a.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }} <span class="dossier-benefice" [class.negatif]="beneficeListe(a.ventes) < 0">· Bénéfice : {{ beneficeListe(a.ventes) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span></span>
                 </button>
                 <div class="dossier-contenu" *ngIf="estOuvert(a.key)">
                     <div class="dossier dossier-mois" *ngFor="let m of a.mois; trackBy: trackByKey">
                         <button type="button" class="dossier-header" (click)="basculerDossier(m.key)">
                             <span>{{ estOuvert(m.key) ? '📂' : '📁' }} {{ m.label }}</span>
                             <span class="dossier-info">{{ m.ventes.length }} vente(s) ·
-                                {{ m.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                                {{ m.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }} <span class="dossier-benefice" [class.negatif]="beneficeListe(m.ventes) < 0">· Bénéfice : {{ beneficeListe(m.ventes) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span></span>
                         </button>
                         <div class="dossier-contenu" *ngIf="estOuvert(m.key)">
                             <ng-container *ngTemplateOutlet="dossiersJours; context: { $implicit: m.jours }"></ng-container>
