@@ -188,20 +188,6 @@ export class FacturesComponent implements OnInit, OnDestroy {
     this.isModalOpen = false;
   }
 
-  /**
-   * Click on the dark background: closes the invoice (the draft is kept). When the click landed on
-   * the menu or the top bar hidden behind the background, that link/button is followed at once,
-   * so leaving for another page takes one click instead of two.
-   */
-  clicFond(ev: MouseEvent) {
-    const cible = document.elementsFromPoint(ev.clientX, ev.clientY)
-      .filter(e => e.closest('.sidebar, .top-header'))
-      .map(e => e.closest('a, button') as HTMLElement | null)
-      .find(e => !!e);
-    this.closeModal();
-    if (cible) setTimeout(() => cible.click());
-  }
-
   // ── Draft: the invoice being typed is kept until it is saved or discarded ──
 
   brouillonExiste = false;
