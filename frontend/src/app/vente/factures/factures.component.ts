@@ -296,11 +296,15 @@ export class FacturesComponent implements OnInit, OnDestroy {
     this.supplierTypes = [...this.defaultSupplierTypes];
   }
 
-  /** True when the chosen supplier sells accessories and no repair parts: its "Autre" lines are accessories too. */
-  private get fournisseurAccessoiresSeulement(): boolean {
+  /** What the chosen supplier sells: accessories only, parts only, or both (or unknown → 'mixte'). */
+  private get genreFournisseur(): 'accessory' | 'part' | 'mixte' {
     const f = this.fournisseurs.find(x => x.id_fournisseur == this.formData.fournisseurId);
     const types = (f?.type_articles || '').toLowerCase();
-    return types.includes('accessoire') && !types.includes('réparation') && !types.includes('reparation');
+    const accessoires = types.includes('accessoire');
+    const pieces = types.includes('réparation') || types.includes('reparation');
+    if (accessoires && !pieces) return 'accessory';
+    if (pieces && !accessoires) return 'part';
+    return 'mixte';
   }
 
   onFournisseurChange() {
@@ -651,8 +655,11 @@ export class FacturesComponent implements OnInit, OnDestroy {
         let mappedType = 'part';
         let subCategory = item.type || '';
 
-        if (this.accessoiresPartTypes.includes(subCategory) || subCategory.toLowerCase().includes('accessoires')
-          || (subCategory.startsWith('Autre') && this.fournisseurAccessoiresSeulement)) {
+        // A supplier of accessories only gives accessories, a supplier of parts only gives parts;
+        // only a supplier of both is classified line by line, from the chosen category.
+        const genre = this.genreFournisseur;
+        if (genre === 'accessory') mappedType = 'accessory';
+        else if (genre === 'mixte' && (this.accessoiresPartTypes.includes(subCategory) || subCategory.toLowerCase().includes('accessoires'))) {
           mappedType = 'accessory';
         }
 
