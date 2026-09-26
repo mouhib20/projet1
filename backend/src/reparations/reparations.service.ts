@@ -160,6 +160,7 @@ export class ReparationsService {
                     designation: `Acompte réparation — ${data.appareil || 'Appareil'}`,
                     qte: 1,
                     prix: acompte,
+                    cout: 0, // the parts cost is booked on the pickup line
                     date: new Date().toISOString().split('T')[0],
                     client: { id_client: data.id_client },
                     article: null,
@@ -268,10 +269,17 @@ export class ReparationsService {
             rep.statut = 'Vente avec reçu';
             await queryRunner.manager.save(rep);
 
+            const [{ cout }] = await queryRunner.query(
+                `SELECT COALESCE(SUM(ri.qte * COALESCE(a.prix_achat, 0)), 0) AS cout
+                   FROM reparation_item ri LEFT JOIN article a ON a.id_article = ri.id_article
+                  WHERE ri.id_reparation = $1`,
+                [id],
+            );
             const vente = queryRunner.manager.create(Vente, {
                 designation: `Réparation — ${rep.appareil || 'Appareil'}`,
                 qte: 1,
                 prix: montant_recu,
+                cout: Number(cout) || 0,
                 date: new Date().toISOString().split('T')[0],
                 client: rep.client ? { id_client: rep.client.id_client } : null,
                 article: null,

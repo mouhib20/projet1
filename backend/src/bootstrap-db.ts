@@ -43,7 +43,10 @@ async function connecter(): Promise<Client> {
  * already has its tables, and never overwrites the password of an existing account.
  */
 export async function initialiserBase(): Promise<void> {
-    if (process.env.AUTO_INIT_DB !== 'true') return;
+    if (process.env.AUTO_INIT_DB !== 'true') {
+        await migrer();
+        return;
+    }
 
     const client = await connecter();
     try {
@@ -84,5 +87,27 @@ export async function initialiserBase(): Promise<void> {
         if (n === 0) console.warn("[init-db] ATTENTION : aucun compte admin. Définissez SEED_ADMIN_PASSWORD (10 caractères minimum) et redémarrez.");
     } finally {
         await client.end();
+    }
+    await migrer();
+}
+
+/**
+ * Small additive changes applied to databases created before them (safe to run at every start:
+ * each one only adds something that is missing, and never touches existing data).
+ */
+async function migrer(): Promise<void> {
+    let client: Client | null = null;
+    try {
+        client = nouveauClient();
+        await client.connect();
+        if (process.env.DB_SCHEMA && /^[a-z_][a-z0-9_]*$/i.test(process.env.DB_SCHEMA)) {
+            await client.query(`SET search_path TO ${process.env.DB_SCHEMA}`);
+        }
+        // Cost of a sale line that has no article (repairs): lets the profit of repairs be shown
+        await client.query(`ALTER TABLE "vente" ADD COLUMN IF NOT EXISTS "cout" numeric(10,2)`);
+    } catch (err) {
+        console.warn('[migrations] non appliquées :', (err as Error).message);
+    } finally {
+        await client?.end().catch(() => undefined);
     }
 }

@@ -138,12 +138,14 @@ export class OperationsComponent implements OnInit {
   }
 
   /**
-   * Profit of one sale line: price minus the article's purchase price. Repair lines (deposit,
-   * pickup) have no article, so their cost is unknown: null, and they are left out of the totals.
+   * Profit of one sale line: price minus the cost. The cost is the article's purchase price, or,
+   * for a repair line (no article), the cost of the parts kept on the line. Lines from before this
+   * was recorded have no known cost: null, and they are left out of the totals.
    */
   beneficeVente(v: Vente): number | null {
-    if (!v.article) return null;
-    return (v.qte || 1) * ((Number(v.prix) || 0) - (Number(v.article.prix_achat) || 0));
+    const cout = v.article ? v.article.prix_achat : v.cout;
+    if (cout === null || cout === undefined) return null;
+    return (v.qte || 1) * ((Number(v.prix) || 0) - (Number(cout) || 0));
   }
 
   beneficeListe(list: Vente[]): number {

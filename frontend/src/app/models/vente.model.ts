@@ -5,6 +5,8 @@ export interface Vente {
     designation: string;
     qte: number;
     prix: number;
+    /** Cost of the parts for a repair line (no article). */
+    cout?: number | string | null;
     date: Date | string;
     client?: Client;
     article?: any;

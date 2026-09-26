@@ -136,10 +136,18 @@ export class VentesService {
                     rep.montant_recu = discountedUnitPrice;
                     await queryRunner.manager.save(rep);
 
+                    // Cost of the parts used in this repair, kept on the line so its profit can be shown
+                    const [{ cout }] = await queryRunner.query(
+                        `SELECT COALESCE(SUM(ri.qte * COALESCE(a.prix_achat, 0)), 0) AS cout
+                           FROM reparation_item ri LEFT JOIN article a ON a.id_article = ri.id_article
+                          WHERE ri.id_reparation = $1`,
+                        [item.reparationId],
+                    );
                     const vente = queryRunner.manager.create(Vente, {
                         designation: item.designation || `Réparation — ${rep.appareil || 'Appareil'}`,
                         qte: item.qte || 1,
                         prix: discountedUnitPrice,
+                        cout: Number(cout) || 0,
                         date,
                         client: data.clientId ? { id_client: data.clientId } : null,
                         article: null,
@@ -242,7 +250,8 @@ export class VentesService {
         for (const v of ventes) {
             const lineRevenue = (v.qte || 0) * (Number(v.prix) || 0);
             totalRevenue += lineRevenue;
-            totalCogs += (v.qte || 0) * (Number(v.article?.prix_achat) || 0);
+            // Repair lines have no article: their cost is the parts cost stored on the line
+            totalCogs += (v.qte || 0) * (Number(v.article ? v.article.prix_achat : v.cout) || 0);
 
             const key = dayKey(v.date);
             revenueByDayMap.set(key, (revenueByDayMap.get(key) || 0) + lineRevenue);

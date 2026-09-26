@@ -19,6 +19,10 @@ export class Vente {
     @Column({ type: 'date' })
     date: Date;
 
+    /** Cost of the parts for a line without article (repairs); articles use their own purchase price. */
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    cout: number | null;
+
     @ManyToOne(() => Client, client => client.ventes, { onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'id_client' })
     client: Client;
