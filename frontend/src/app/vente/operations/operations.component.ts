@@ -275,11 +275,16 @@ export class OperationsComponent implements OnInit {
 
   get posFilteredArticles(): ArticleForm[] {
     if (!this.posSearchTerm || this.posSearchTerm.length < 1) return [];
-    const term = this.posSearchTerm.toLowerCase();
-    return this.availableArticles.filter(a =>
-      (a.designation || '').toLowerCase().includes(term) ||
-      (a.barcode || '').toLowerCase().includes(term)
-    ).slice(0, 8);
+    // Every kind of article is searchable (parts, screens, batteries, filters, accessories, others),
+    // by name, barcode, brand, model or category. Each typed word must match somewhere.
+    const mots = this.posSearchTerm.toLowerCase().split(/\s+/).filter(Boolean);
+    return this.availableArticles.filter(a => {
+      const texte = [
+        a.designation, a.barcode, a.marque, a.modele, a.sous_categorie,
+        a.type === 'accessory' ? 'accessoire accessoires' : 'pièce pièces piece pieces'
+      ].map(s => String(s || '').toLowerCase()).join(' ');
+      return mots.every(m => texte.includes(m));
+    }).slice(0, 40);
   }
 
   get posBestSellers(): ArticleForm[] {
