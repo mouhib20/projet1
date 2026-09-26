@@ -287,11 +287,16 @@ export class OperationsComponent implements OnInit {
     }).slice(0, 40);
   }
 
-  /** Product sheet on one line: kind, category, brand, model, barcode and description. */
+  /** Category of an article as a short label (Afficheur → Écran, Vitre, Batterie, Filtre, Cendre, Glace…). */
+  categorieArticle(a: ArticleForm): string {
+    const c = (a.sous_categorie || '').split('(')[0].trim();
+    if (!c) return '';
+    return c.toLowerCase() === 'afficheur' ? 'Écran' : c;
+  }
+
+  /** Rest of the product sheet on one line: brand, model, barcode and description. */
   specsArticle(a: ArticleForm): string {
     return [
-      a.type === 'accessory' ? 'Accessoire' : 'Pièce',
-      a.sous_categorie ? a.sous_categorie.split('(')[0].trim() : '',
       a.marque ? 'Marque : ' + a.marque : '',
       a.modele ? 'Modèle : ' + a.modele : '',
       a.barcode ? 'Code : ' + a.barcode : '',

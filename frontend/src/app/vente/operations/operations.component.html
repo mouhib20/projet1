@@ -289,6 +289,13 @@
                                 alt="" />
                             <div class="pos-search-item-info">
                                 <span>{{ art.designation }}</span>
+                                <span class="pos-badges">
+                                    <em class="pos-badge" [class.pos-badge-acc]="art.type === 'accessory'"
+                                        [class.pos-badge-part]="art.type !== 'accessory'">{{ art.type === 'accessory' ?
+                                        '🎧 Accessoire' : '🔧 Pièce de rechange' }}</em>
+                                    <em class="pos-badge pos-badge-cat" *ngIf="categorieArticle(art)">{{
+                                        categorieArticle(art) }}</em>
+                                </span>
                                 <small>Stock: {{ art.quantite }}</small>
                                 <small class="pos-search-item-specs" *ngIf="specsArticle(art)">{{ specsArticle(art) }}</small>
                             </div>

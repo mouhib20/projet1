@@ -862,6 +862,40 @@
     color: #8b949e;
 }
 
+.pos-search-item-info .pos-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 3px 0;
+}
+
+.pos-badge {
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 8px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+}
+
+.pos-badge-acc {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.12);
+    border-color: rgba(74, 222, 128, 0.35);
+}
+
+.pos-badge-part {
+    color: #fb923c;
+    background: rgba(251, 146, 60, 0.12);
+    border-color: rgba(251, 146, 60, 0.35);
+}
+
+.pos-badge-cat {
+    color: #a5b4fc;
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.35);
+}
+
 .pos-search-item-info .pos-search-item-specs {
     color: #a5b4fc;
     white-space: normal;
