@@ -57,7 +57,7 @@
 <!-- =========================================================
      Modal Creation Facture (Matching GSM UI)
      ========================================================= -->
-<div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
+<div class="modal-overlay" *ngIf="isModalOpen" (click)="clicFond($event)">
     <!-- Note: Modal is slightly wider to accommodate detailed forms -->
     <div class="modal-content scale-in large-modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
