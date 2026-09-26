@@ -29,7 +29,7 @@ export const routes: Routes = [
             { path: 'charges', component: ChargesComponent, canActivate: [authGuard], data: { roles: ['admin', 'vendeur', 'vendeuse'] } },
             { path: 'stock', component: StockComponent, canActivate: [adminGuard] },
             { path: 'fournisseurs', component: FournisseursComponent, canActivate: [adminGuard] },
-            { path: 'factures', component: FacturesComponent, canActivate: [adminGuard] },
+            { path: 'factures', component: FacturesComponent, canActivate: [adminGuard], canDeactivate: [(page: FacturesComponent) => page.peutQuitter()] },
             { path: 'clients', component: ClientsComponent, canActivate: [authGuard], data: { roles: ['admin', 'vendeur', 'vendeuse'] } },
         ]
     },

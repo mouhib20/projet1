@@ -269,9 +269,23 @@ export class FacturesComponent implements OnInit, OnDestroy {
   }
 
   /** Closing the tab, refreshing or being logged out while typing also keeps the draft. */
-  @HostListener('window:beforeunload')
-  avantFermeture() {
+  @HostListener('window:beforeunload', ['$event'])
+  avantFermeture(ev: BeforeUnloadEvent) {
     this.sauvegarderBrouillon();
+    // Leaving the page (back/forward gesture, refresh, closing the tab) while typing: ask first
+    if (this.isModalOpen && this.brouillonRempli()) {
+      ev.preventDefault();
+      ev.returnValue = '';
+    }
+  }
+
+  /**
+   * Used by the router: a back/forward gesture (Alt+arrow, touchpad swipe, mouse side button) would
+   * leave the page and close the form by accident, so the person is asked to confirm first.
+   */
+  peutQuitter(): boolean {
+    if (!this.isModalOpen || !this.brouillonRempli()) return true;
+    return confirm("Vous êtes en train de saisir une facture.\n\nQuitter cette page ? (Votre saisie sera conservée en brouillon.)\n\nOK = quitter · Annuler = rester sur la facture");
   }
 
   ngOnDestroy(): void {
