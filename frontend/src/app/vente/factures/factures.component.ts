@@ -296,6 +296,13 @@ export class FacturesComponent implements OnInit, OnDestroy {
     this.supplierTypes = [...this.defaultSupplierTypes];
   }
 
+  /** True when the chosen supplier sells accessories and no repair parts: its "Autre" lines are accessories too. */
+  private get fournisseurAccessoiresSeulement(): boolean {
+    const f = this.fournisseurs.find(x => x.id_fournisseur == this.formData.fournisseurId);
+    const types = (f?.type_articles || '').toLowerCase();
+    return types.includes('accessoire') && !types.includes('réparation') && !types.includes('reparation');
+  }
+
   onFournisseurChange() {
     if (!this.formData.fournisseurId) {
       this.supplierTypes = [...this.defaultSupplierTypes];
@@ -644,7 +651,8 @@ export class FacturesComponent implements OnInit, OnDestroy {
         let mappedType = 'part';
         let subCategory = item.type || '';
 
-        if (this.accessoiresPartTypes.includes(subCategory) || subCategory.toLowerCase().includes('accessoires')) {
+        if (this.accessoiresPartTypes.includes(subCategory) || subCategory.toLowerCase().includes('accessoires')
+          || (subCategory.startsWith('Autre') && this.fournisseurAccessoiresSeulement)) {
           mappedType = 'accessory';
         }
 
