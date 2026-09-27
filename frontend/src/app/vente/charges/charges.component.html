@@ -79,6 +79,8 @@
                     <th class="text-right">Mensuelles</th>
                     <th class="text-right">Journalières</th>
                     <th class="text-right">Total</th>
+                    <th class="text-right">Gagné ce mois-là</th>
+                    <th class="text-right">Gagné ou perdu</th>
                 </tr>
             </thead>
             <tbody>
@@ -90,9 +92,15 @@
                         <td class="text-right">{{ m.mensuelles | number:'1.3-3' }}</td>
                         <td class="text-right">{{ m.journalieres | number:'1.3-3' }}</td>
                         <td class="text-right fw-bold">{{ m.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
+                        <td class="text-right" *ngIf="ventesChargees">{{ m.benefice | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
+                        <td class="text-right fw-bold" *ngIf="ventesChargees" [class.resultat-positif]="m.resultat >= 0"
+                            [class.resultat-negatif]="m.resultat < 0">
+                            {{ m.resultat >= 0 ? '+' : '' }}{{ m.resultat | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                        </td>
+                        <td colspan="2" class="text-right text-muted" *ngIf="!ventesChargees">…</td>
                     </tr>
                     <tr *ngIf="moisEstOuvert(m.key)">
-                        <td colspan="4" class="synthese-detail-jours">
+                        <td colspan="6" class="synthese-detail-jours">
                             <p class="synthese-note synthese-note-jours">
                                 Les dépenses mensuelles de {{ m.label }} ({{ m.mensuelles | number:'1.3-3' }}
                                 {{ 'CURRENCY' | translate }}) sont réparties à parts égales sur les

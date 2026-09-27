@@ -144,8 +144,13 @@ export class ChargesComponent implements OnInit {
     return Math.round((t(b) - t(a)) / 86400000);
   }
 
+  /** Profit made that month (same rule as beneficeMoisCourant, for any month key). */
+  private beneficeDuMois(moisKey: string): number {
+    return this.beneficeListe(this.ventes.filter(v => this.jourDeVente(v).slice(0, 7) === moisKey));
+  }
+
   /** Totals of each month, split by type, most recent first. */
-  get depensesParMois(): { key: string; label: string; nombre: number; mensuelles: number; journalieres: number; total: number; enCours: boolean }[] {
+  get depensesParMois(): { key: string; label: string; nombre: number; mensuelles: number; journalieres: number; total: number; benefice: number; resultat: number; enCours: boolean }[] {
     const mois = new Map<string, { nombre: number; mensuelles: number; journalieres: number }>();
     for (const c of this.charges) {
       const k = this.jourDe(c).slice(0, 7);
@@ -157,7 +162,11 @@ export class ChargesComponent implements OnInit {
     }
     return [...mois.entries()]
       .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([key, m]) => ({ key, label: this.libelleMois(key), ...m, total: m.mensuelles + m.journalieres, enCours: key === this.moisCourant }));
+      .map(([key, m]) => {
+        const total = m.mensuelles + m.journalieres;
+        const benefice = this.beneficeDuMois(key);
+        return { key, label: this.libelleMois(key), ...m, total, benefice, resultat: benefice - total, enCours: key === this.moisCourant };
+      });
   }
 
   /** Which months are expanded to show their day-by-day detail. */
