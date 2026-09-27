@@ -419,7 +419,11 @@ export class ReparationComponent implements OnInit {
 
     // --- CLIENT MODAL --- //
     openClientModal() {
-        this.newClient = { nom: '', telephone: '' };
+        // Pre-fill from what was typed in the client search, if it looks like a name or a phone number
+        const saisie = this.clientSearchTerm.trim();
+        const estTelephone = /^[\d\s+]+$/.test(saisie);
+        this.newClient = { nom: estTelephone ? '' : saisie, telephone: estTelephone ? saisie : '' };
+        this.clientResultsOuverts = false;
         this.isClientModalOpen = true;
     }
 

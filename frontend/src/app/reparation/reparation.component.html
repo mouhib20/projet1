@@ -470,6 +470,10 @@
                                 <div class="client-search-empty" *ngIf="clientsFiltres.length === 0">
                                     Aucun client trouvé pour « {{ clientSearchTerm }} ».
                                 </div>
+                                <div class="client-search-item client-search-add" (mousedown)="openClientModal()">
+                                    ➕ {{ clientSearchTerm ? ('Ajouter « ' + clientSearchTerm + ' » comme nouveau client')
+                                    : 'Nouveau client' }}
+                                </div>
                             </div>
                         </div>
                         <button class="btn btn-secondary ml-2" (click)="openClientModal()">+</button>
