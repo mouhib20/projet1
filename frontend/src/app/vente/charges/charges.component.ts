@@ -63,6 +63,14 @@ export class ChargesComponent implements OnInit {
       .reduce((s, v) => s + (v.qte || 1) * Number(v.prix || 0), 0);
   }
 
+  /** Total revenue of every sale recorded today. */
+  get gagneAujourdhui(): number {
+    const jour = this.aujourdhui;
+    return this.ventes
+      .filter(v => this.jourDeVente(v) === jour)
+      .reduce((s, v) => s + (v.qte || 1) * Number(v.prix || 0), 0);
+  }
+
   initForm(): Partial<Charge> {
     return {
       description: '',
