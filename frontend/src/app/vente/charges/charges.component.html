@@ -35,12 +35,13 @@
             </div>
             <div class="synthese-carte" [class.synthese-carte-positive]="ventesChargees && gagneAujourdhui >= objectifJournalier">
                 <span class="synthese-valeur">
-                    <ng-container *ngIf="ventesChargees; else chargement2">{{ gagneAujourdhui | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</ng-container>
+                    <ng-container *ngIf="ventesChargees; else chargement2">{{ gagneAujourdhui | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                        <small class="synthese-benefice-inline">(dont {{ beneficeAujourdhui | number:'1.3-3' }} {{ 'CURRENCY' | translate }} de bénéfice)</small>
+                    </ng-container>
                     <ng-template #chargement2>…</ng-template>
                 </span>
                 <span class="synthese-label">gagné aujourd'hui
                     <small>(objectif : {{ objectifJournalier | number:'1.3-3' }})</small>
-                    <small class="synthese-benefice" *ngIf="ventesChargees">Bénéfice : {{ beneficeAujourdhui | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</small>
                 </span>
             </div>
             <div class="synthese-carte">
@@ -49,12 +50,13 @@
             </div>
             <div class="synthese-carte" [class.synthese-carte-positive]="ventesChargees && gagneMoisCourant >= depensesMoisCourant">
                 <span class="synthese-valeur">
-                    <ng-container *ngIf="ventesChargees; else chargement">{{ gagneMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</ng-container>
+                    <ng-container *ngIf="ventesChargees; else chargement">{{ gagneMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                        <small class="synthese-benefice-inline">(dont {{ beneficeMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }} de bénéfice)</small>
+                    </ng-container>
                     <ng-template #chargement>…</ng-template>
                 </span>
                 <span class="synthese-label">déjà gagné ce mois-ci
                     <small>(objectif : {{ depensesMoisCourant | number:'1.3-3' }})</small>
-                    <small class="synthese-benefice" *ngIf="ventesChargees">Bénéfice : {{ beneficeMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</small>
                 </span>
             </div>
         </div>

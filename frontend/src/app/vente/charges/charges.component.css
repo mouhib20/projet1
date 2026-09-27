@@ -490,6 +490,14 @@
     font-weight: 600;
 }
 
+.synthese-benefice-inline {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4ade80;
+    margin-top: 2px;
+}
+
 .synthese-carte-positive {
     border-color: rgba(16, 185, 129, 0.4);
     background: rgba(16, 185, 129, 0.08);
