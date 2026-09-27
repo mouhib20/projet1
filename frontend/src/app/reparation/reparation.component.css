@@ -305,6 +305,15 @@
     color: white;
 }
 
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
 .btn-secondary:hover {
     background: #3b424a;
 }
@@ -445,6 +454,16 @@ label {
 
 .btn-step-success:hover {
     background: #10b9814d;
+}
+
+.btn-step-danger {
+    background: #ef444433;
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.btn-step-danger:hover {
+    background: #ef44444d;
 }
 
 .montant-recu-row {

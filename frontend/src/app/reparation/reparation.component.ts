@@ -34,6 +34,37 @@ export class ReparationComponent implements OnInit {
     ouvrirDetails(rep: any) { this.detailRep = rep; }
     fermerDetails() { this.detailRep = null; }
 
+    // --- Annulation : rendre le téléphone au client (pièce indisponible, désaccord…) ---
+    annulerRep: any = null;
+    annulerMotif = '';
+    annulerEnCours = false;
+
+    ouvrirAnnulation(rep: any) {
+        this.annulerRep = rep;
+        this.annulerMotif = '';
+    }
+
+    fermerAnnulation() {
+        this.annulerRep = null;
+    }
+
+    confirmerAnnulation() {
+        if (!this.annulerRep || this.annulerEnCours) return;
+        this.annulerEnCours = true;
+        this.reparationService.annuler(this.annulerRep.id_reparation, this.annulerMotif).subscribe({
+            next: () => {
+                this.annulerEnCours = false;
+                this.fermerAnnulation();
+                this.loadReparations();
+                this.loadArticles();
+            },
+            error: (err) => {
+                this.annulerEnCours = false;
+                alert(err.error?.message || "Erreur lors de l'annulation du ticket.");
+            }
+        });
+    }
+
     // --- Retour après réparation: the client brings the phone back with a problem ---
     retourRep: any = null;
     /** One of Écran / Batterie / Problème technique. */
@@ -695,6 +726,11 @@ export class ReparationComponent implements OnInit {
     /** Ticket is still being worked on: no explicit action taken yet, or repair in progress. */
     estEnCours(rep: any): boolean {
         return rep.statut === 'En attente' || rep.statut === 'En cours';
+    }
+
+    /** Cancelled: the phone was handed back to the client instead of being repaired. */
+    estAnnule(rep: any): boolean {
+        return rep.statut === 'Annulé';
     }
 
     /** Repair work is done, awaiting the "montant reçu" step (legacy "Terminé" tickets fold in here too). */

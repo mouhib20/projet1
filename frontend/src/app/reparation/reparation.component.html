@@ -69,17 +69,23 @@
                                 <td>
                                     <span class="badge" [class.badge-primary]="estEnCours(rep)"
                                         [class.badge-warning]="estEnLivraison(rep)"
-                                        [class.badge-success]="estFinalise(rep)">
+                                        [class.badge-success]="estFinalise(rep)"
+                                        [class.badge-danger]="estAnnule(rep)">
                                         {{ rep.statut }}
                                     </span>
                                 </td>
                                 <td class="price-text">{{ rep.prix }} MAD</td>
                                 <td (click)="$event.stopPropagation()">
                                     <!-- Step 1: repair in progress -->
-                                    <button *ngIf="estEnCours(rep)" class="btn-step btn-step-primary"
-                                        (click)="ouvrirFinalisation(rep)">
-                                        🔧 Maintenance terminée
-                                    </button>
+                                    <div *ngIf="estEnCours(rep)" class="montant-recu-row">
+                                        <button class="btn-step btn-step-primary" (click)="ouvrirFinalisation(rep)">
+                                            🔧 Maintenance terminée
+                                        </button>
+                                        <button class="btn-step btn-step-danger" (click)="ouvrirAnnulation(rep)"
+                                            title="Pièce indisponible ou désaccord avec le client">
+                                            ↩️ Rendre le téléphone
+                                        </button>
+                                    </div>
 
                                     <!-- Step 2: awaiting payment -->
                                     <div *ngIf="estEnLivraison(rep)" class="montant-recu-row">
@@ -91,6 +97,11 @@
                                     <!-- Step 3: closed out -->
                                     <span *ngIf="estFinalise(rep)" class="montant-recu-final">
                                         ✅ Reçu : {{ (rep.montant_recu ?? rep.prix) | number:'1.2-2' }} MAD
+                                    </span>
+
+                                    <!-- Cancelled: phone returned to the client -->
+                                    <span *ngIf="estAnnule(rep)" class="montant-recu-final text-muted">
+                                        ↩️ Téléphone rendu
                                     </span>
                                 </td>
                             </tr>
@@ -235,7 +246,8 @@
                 <span class="detail-label">Statut</span>
                 <span><span class="badge" [class.badge-primary]="estEnCours(detailRep)"
                         [class.badge-warning]="estEnLivraison(detailRep)"
-                        [class.badge-success]="estFinalise(detailRep)">{{ detailRep.statut }}</span></span>
+                        [class.badge-success]="estFinalise(detailRep)"
+                        [class.badge-danger]="estAnnule(detailRep)">{{ detailRep.statut }}</span></span>
                 <span class="detail-label">Date de réception</span>
                 <span>{{ detailRep.date_reception | date:'dd/MM/yyyy' }}</span>
                 <span class="detail-label">Client</span>
@@ -348,6 +360,37 @@
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" (click)="fermerRemplacement()">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- CANCEL TICKET MODAL: return the phone to the client -->
+<div class="modal-overlay" *ngIf="annulerRep">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h2>Rendre le téléphone au client</h2>
+            <button class="btn-close" (click)="fermerAnnulation()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p class="text-muted" style="margin-bottom: 12px;">
+                Ticket #{{ annulerRep.id_reparation }} — {{ annulerRep.appareil }} ({{ annulerRep.client?.nom }}).
+                Le ticket sera marqué « Annulé » et les pièces déjà réservées reviendront au stock.
+            </p>
+            <p class="text-muted" *ngIf="annulerRep.acompte > 0" style="margin-bottom: 12px;">
+                Un acompte de <strong>{{ annulerRep.acompte | number:'1.2-2' }} MAD</strong> a été versé : il sera
+                rendu au client et sortira de la caisse.
+            </p>
+            <div class="form-group">
+                <label>Raison (facultatif)</label>
+                <textarea class="form-control" rows="2" [(ngModel)]="annulerMotif"
+                    placeholder="Ex: pièce indisponible, désaccord sur le prix…"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" (click)="fermerAnnulation()">Fermer</button>
+            <button class="btn btn-danger" [disabled]="annulerEnCours" (click)="confirmerAnnulation()">
+                {{ annulerEnCours ? 'Annulation…' : 'Confirmer' }}
+            </button>
         </div>
     </div>
 </div>

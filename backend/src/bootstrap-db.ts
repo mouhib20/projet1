@@ -105,6 +105,8 @@ async function migrer(): Promise<void> {
         }
         // Cost of a sale line that has no article (repairs): lets the profit of repairs be shown
         await client.query(`ALTER TABLE "vente" ADD COLUMN IF NOT EXISTS "cout" numeric(10,2)`);
+        // Repair a deposit line belongs to: lets cancelling a ticket find and refund its deposit
+        await client.query(`ALTER TABLE "vente" ADD COLUMN IF NOT EXISTS "id_reparation_origine" integer`);
     } catch (err) {
         console.warn('[migrations] non appliquées :', (err as Error).message);
     } finally {

@@ -164,6 +164,7 @@ export class ReparationsService {
                     date: new Date().toISOString().split('T')[0],
                     client: { id_client: data.id_client },
                     article: null,
+                    id_reparation_origine: savedReparation.id_reparation,
                 });
                 await queryRunner.manager.save(venteAcompte);
             }
@@ -331,5 +332,71 @@ export class ReparationsService {
         } finally {
             await queryRunner.release();
         }
+    }
+
+    /**
+     * Returns the phone to the client instead of continuing the repair (part unavailable,
+     * disagreement…). Only while the ticket is still "En attente"/"En cours" — once maintenance is
+     * done the phone has already been worked on. The parts reserved for it go back to stock, the
+     * ticket is kept in the list as "Annulé" (not deleted, so the record stays), and any deposit
+     * already taken is handed back: its sale line is removed and the amount leaves the caisse.
+     */
+    async annuler(id: number, motif: string | undefined, authorization?: string): Promise<Reparation> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        let montantRembourse = 0;
+        let savedReparation: Reparation;
+        try {
+            const reparation = await queryRunner.manager.findOne(Reparation, {
+                where: { id_reparation: id },
+                relations: ['items', 'items.article', 'client'],
+            });
+            if (!reparation) throw new NotFoundException(`Reparation #${id} introuvable`);
+            if (reparation.statut !== 'En attente' && reparation.statut !== 'En cours') {
+                throw new BadRequestException("Seul un ticket encore en attente/en cours peut être annulé (le téléphone a déjà été rendu ou vendu).");
+            }
+
+            // Give back the parts reserved for this ticket
+            for (const item of reparation.items || []) {
+                if (!item.article) continue;
+                const article = await queryRunner.manager.findOne(Article, { where: { id_article: item.article.id_article } });
+                if (article) {
+                    article.quantite += item.qte;
+                    await queryRunner.manager.save(article);
+                }
+            }
+
+            // Undo the deposit sale line, if any, and remember how much to hand back
+            const ventesAcompte = await queryRunner.manager.find(Vente, { where: { id_reparation_origine: id } });
+            for (const v of ventesAcompte) montantRembourse += (v.qte || 1) * Number(v.prix || 0);
+            if (ventesAcompte.length > 0) await queryRunner.manager.remove(ventesAcompte);
+
+            reparation.statut = 'Annulé';
+            reparation.description = motif
+                ? `${reparation.description ? reparation.description + ' — ' : ''}Annulé : ${motif}`
+                : reparation.description;
+            savedReparation = await queryRunner.manager.save(reparation);
+
+            await queryRunner.commitTransaction();
+        } catch (err) {
+            await queryRunner.rollbackTransaction();
+            throw err;
+        } finally {
+            await queryRunner.release();
+        }
+
+        if (montantRembourse > 0) {
+            const acteur = await this.caisseService.acteurOuSysteme(authorization);
+            await this.caisseService.enregistrerAuto(acteur, {
+                type: 'sortie',
+                source: 'reparation',
+                montant: montantRembourse,
+                motif: `Remboursement acompte — ticket #${id} annulé (${savedReparation.appareil || 'Appareil'})`,
+                reference: 'reparation:' + id,
+            });
+        }
+        return this.findOne(id);
     }
 }

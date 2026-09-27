@@ -62,4 +62,8 @@ export class ReparationService {
     deleteReparation(id: number): Observable<any> {
         return this.http.delete<any>(`${this.apiUrl}/${id}`);
     }
+
+    annuler(id: number, motif?: string): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/${id}/annuler`, { motif });
+    }
 }

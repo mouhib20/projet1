@@ -41,6 +41,11 @@ export class ReparationsController {
         return this.reparationsService.finaliserVente(+id, montant_recu);
     }
 
+    @Post(':id/annuler')
+    annuler(@Param('id') id: string, @Body('motif') motif: string | undefined, @Headers('authorization') auth?: string) {
+        return this.reparationsService.annuler(+id, motif, auth);
+    }
+
     @Delete(':id')
     remove(@Param('id') id: string) {
         return this.reparationsService.remove(+id);

@@ -23,6 +23,10 @@ export class Vente {
     @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     cout: number | null;
 
+    /** Repair this line's deposit belongs to, so cancelling the ticket can find and undo it. */
+    @Column({ type: 'int', nullable: true })
+    id_reparation_origine: number | null;
+
     @ManyToOne(() => Client, client => client.ventes, { onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'id_client' })
     client: Client;
