@@ -5,6 +5,8 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { ChargeService } from '../../services/charge.service';
 import { Charge } from '../../models/charge.model';
 import { PaiementFournisseurService, FournisseurDu, PaiementFournisseur } from '../../services/paiement-fournisseur.service';
+import { VenteService } from '../../services/vente.service';
+import { Vente } from '../../models/vente.model';
 
 @Component({
   selector: 'app-charges',
@@ -20,11 +22,43 @@ export class ChargesComponent implements OnInit {
 
   formData: Partial<Charge> = this.initForm();
 
-  constructor(private chargeService: ChargeService, private paiementService: PaiementFournisseurService) { }
+  constructor(
+    private chargeService: ChargeService,
+    private paiementService: PaiementFournisseurService,
+    private venteService: VenteService,
+  ) { }
 
   ngOnInit(): void {
     this.loadCharges();
     this.chargerFournisseurs();
+    this.loadVentes();
+  }
+
+  // ── What's actually been earned this month, to compare against the objective ──
+
+  ventes: Vente[] = [];
+
+  loadVentes() {
+    this.venteService.getVentes().subscribe({
+      next: (data) => this.ventes = data,
+      error: (err) => console.error(err)
+    });
+  }
+
+  /** Local calendar day (YYYY-MM-DD) of a sale, same rule as the sales history page. */
+  private jourDeVente(v: Vente): string {
+    const d = String(v.date);
+    if (/^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0, 10);
+    const dt = new Date(v.date);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  }
+
+  /** Total revenue of every sale (articles and repairs) recorded this month so far. */
+  get gagneMoisCourant(): number {
+    const courant = this.moisCourant;
+    return this.ventes
+      .filter(v => this.jourDeVente(v).slice(0, 7) === courant)
+      .reduce((s, v) => s + (v.qte || 1) * Number(v.prix || 0), 0);
   }
 
   initForm(): Partial<Charge> {
