@@ -37,10 +37,10 @@
                 <span class="synthese-valeur">{{ depensesMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
                 <span class="synthese-label">déjà dépensé ce mois-ci</span>
             </div>
-            <div class="synthese-carte" [class.synthese-carte-positive]="gagneMoisCourant >= objectifMensuel">
+            <div class="synthese-carte" [class.synthese-carte-positive]="gagneMoisCourant >= depensesMoisCourant">
                 <span class="synthese-valeur">{{ gagneMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
                 <span class="synthese-label">déjà gagné ce mois-ci
-                    <small>(objectif : {{ objectifMensuel | number:'1.3-3' }})</small>
+                    <small>(objectif : {{ depensesMoisCourant | number:'1.3-3' }})</small>
                 </span>
             </div>
         </div>
