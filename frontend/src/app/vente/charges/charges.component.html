@@ -49,7 +49,10 @@
                 <strong>{{ moyenneMensuelles.moyenne | number:'1.3-3' }} {{ 'CURRENCY' | translate }} / mois</strong>
             </div>
             <div class="synthese-ligne">
-                <span>🗓️ Dépenses journalières <small>({{ moyenneJournalieres.parJour | number:'1.3-3' }} par jour × 30)</small></span>
+                <span>🗓️ Dépenses journalières <small>({{ moyenneJournalieres.parJour | number:'1.3-3' }} par jour ×
+                        30)</small>
+                    <span class="synthese-provisoire" *ngIf="moyenneJournalieres.provisoire">provisoire</span>
+                </span>
                 <strong>{{ moyenneJournalieres.parJour * 30 | number:'1.3-3' }} {{ 'CURRENCY' | translate }} / mois</strong>
             </div>
         </div>
@@ -57,9 +60,9 @@
             <ng-container *ngIf="moyenneMensuelles.nbMois > 0 && !moyenneMensuelles.provisoire">Mensuelles : moyenne sur
                 {{ moyenneMensuelles.nbMois }} mois complet(s). </ng-container>
             <ng-container *ngIf="moyenneMensuelles.provisoire">Mensuelles : seul le mois en cours existe, chiffre provisoire. </ng-container>
-            <ng-container *ngIf="moyenneJournalieres.nbJours > 0 && !moyenneJournalieres.provisoire">Journalières : moyenne sur
-                {{ moyenneJournalieres.nbJours }} jour(s) complet(s). </ng-container>
-            <ng-container *ngIf="moyenneJournalieres.provisoire">Journalières : seul aujourd'hui existe, chiffre provisoire. </ng-container>
+            <ng-container *ngIf="moyenneJournalieres.nbDepenses > 0">Journalières : {{ moyenneJournalieres.nbDepenses
+                }} dépense(s) totalisant {{ moyenneJournalieres.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                sur {{ moyenneJournalieres.nbJours }} jour(s) complet(s){{ moyenneJournalieres.provisoire ? ' — trop peu de recul, chiffre provisoire' : '' }}. </ng-container>
             Le mois et le jour en cours ne sont pas comptés tant qu'ils ne sont pas terminés.
         </p>
 

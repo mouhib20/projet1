@@ -124,19 +124,27 @@ export class ChargesComponent implements OnInit {
     return { moyenne: total / nbMois, nbMois, provisoire: false };
   }
 
-  /** Daily expenses: average per day over the complete days since the first one (empty days count 0). */
-  get moyenneJournalieres(): { parJour: number; nbJours: number; provisoire: boolean } {
+  /**
+   * Daily expenses: average per day over the complete days since the first one (empty days count 0),
+   * then used to project a month. With very little history (few days, or a single expense so far)
+   * that projection is not trustworthy — it is marked "provisoire" instead of shown as a firm number,
+   * the same way the monthly average is while only the current month exists.
+   */
+  get moyenneJournalieres(): { parJour: number; nbJours: number; nbDepenses: number; total: number; provisoire: boolean } {
     const liste = this.charges.filter(c => this.typeDe(c) === 'journaliere');
-    if (liste.length === 0) return { parJour: 0, nbJours: 0, provisoire: false };
+    const nbDepenses = liste.length;
+    if (nbDepenses === 0) return { parJour: 0, nbJours: 0, nbDepenses: 0, total: 0, provisoire: false };
     const today = this.aujourdhui;
     const premier = liste.map(c => this.jourDe(c)).sort()[0];
     const nbJours = this.joursEntre(premier, today); // days from the first expense up to yesterday
     if (nbJours <= 0) {
       const total = liste.reduce((s, c) => s + Number(c.montant || 0), 0);
-      return { parJour: total, nbJours: 1, provisoire: true };
+      return { parJour: total, nbJours: 1, nbDepenses, total, provisoire: true };
     }
     const total = liste.filter(c => this.jourDe(c) < today).reduce((s, c) => s + Number(c.montant || 0), 0);
-    return { parJour: total / nbJours, nbJours, provisoire: false };
+    // Under a week of history: too little to trust a whole month's projection from it
+    const provisoire = nbJours < 7;
+    return { parJour: total / nbJours, nbJours, nbDepenses, total, provisoire };
   }
 
   /** What must be earned each month: monthly expenses + daily expenses over a 30-day month. */
