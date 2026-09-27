@@ -109,6 +109,42 @@ export class ChargesComponent implements OnInit {
       .map(([key, m]) => ({ key, label: this.libelleMois(key), ...m, total: m.mensuelles + m.journalieres, enCours: key === this.moisCourant }));
   }
 
+  /** Which months are expanded to show their day-by-day detail. */
+  private moisOuverts = new Set<string>();
+
+  basculerMois(key: string): void {
+    if (this.moisOuverts.has(key)) this.moisOuverts.delete(key);
+    else this.moisOuverts.add(key);
+  }
+
+  moisEstOuvert(key: string): boolean {
+    return this.moisOuverts.has(key);
+  }
+
+  private libelleJour(jour: string): string {
+    const nom = new Date(+jour.slice(0, 4), +jour.slice(5, 7) - 1, +jour.slice(8, 10))
+      .toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    return nom.charAt(0).toUpperCase() + nom.slice(1);
+  }
+
+  /** For one month: each day that has at least one expense, most recent first, with its own charges. */
+  joursDuMois(moisKey: string): { jour: string; label: string; charges: Charge[]; mensuelles: number; journalieres: number; total: number }[] {
+    const jours = new Map<string, Charge[]>();
+    for (const c of this.charges) {
+      const j = this.jourDe(c);
+      if (!j.startsWith(moisKey)) continue;
+      if (!jours.has(j)) jours.set(j, []);
+      jours.get(j)!.push(c);
+    }
+    return [...jours.entries()]
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([jour, charges]) => {
+        const mensuelles = charges.filter(c => this.typeDe(c) === 'mensuelle').reduce((s, c) => s + Number(c.montant || 0), 0);
+        const journalieres = charges.filter(c => this.typeDe(c) === 'journaliere').reduce((s, c) => s + Number(c.montant || 0), 0);
+        return { jour, label: this.libelleJour(jour), charges, mensuelles, journalieres, total: mensuelles + journalieres };
+      });
+  }
+
   /** Monthly expenses: average over the complete months since the first one (empty months count 0). */
   get moyenneMensuelles(): { moyenne: number; nbMois: number; provisoire: boolean } {
     const liste = this.charges.filter(c => this.typeDe(c) === 'mensuelle');
