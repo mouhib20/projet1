@@ -88,10 +88,14 @@ export class ChargesComponent implements OnInit {
     };
   }
 
+  /** False until the expenses have loaded, so the totals show "…" instead of a misleading 0 meanwhile. */
+  chargesChargees = false;
+
   loadCharges() {
     this.chargeService.getCharges().subscribe({
       next: (data) => {
         this.charges = data;
+        this.chargesChargees = true;
       },
       error: (err) => console.error(err)
     });

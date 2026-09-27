@@ -12,14 +12,14 @@
         <div class="stat-card">
             <div class="stat-icon">🏷️</div>
             <div class="stat-info">
-                <span class="stat-value">{{ charges.length }}</span>
+                <span class="stat-value">{{ chargesChargees ? charges.length : '…' }}</span>
                 <span class="stat-label">Nombre de charges</span>
             </div>
         </div>
         <div class="stat-card amount">
             <div class="stat-icon">💸</div>
             <div class="stat-info">
-                <span class="stat-value">{{ totalAmount | number:'1.3-3' }}</span>
+                <span class="stat-value">{{ chargesChargees ? (totalAmount | number:'1.3-3') : '…' }}</span>
                 <span class="stat-label">Total Dépenses ({{ 'CURRENCY' | translate }})</span>
             </div>
         </div>
