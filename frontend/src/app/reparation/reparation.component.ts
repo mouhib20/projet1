@@ -423,6 +423,39 @@ export class ReparationComponent implements OnInit {
         this.isClientModalOpen = true;
     }
 
+    // --- Client search (ticket creation): the list can hold many, sometimes similar, names ---
+    clientSearchTerm = '';
+    clientResultsOuverts = false;
+
+    get clientChoisi(): any {
+        return this.clients.find(c => c.id_client === this.ticketForm.id_client);
+    }
+
+    get clientsFiltres(): any[] {
+        const mots = this.clientSearchTerm.toLowerCase().trim().split(/\s+/).filter(Boolean);
+        const tries = [...this.clients].sort((a, b) => (a.nom || '').localeCompare(b.nom || '', 'fr'));
+        if (mots.length === 0) return tries.slice(0, 40);
+        return tries.filter(c => {
+            const texte = `${c.nom || ''} ${c.telephone || ''}`.toLowerCase();
+            return mots.every(m => texte.includes(m));
+        }).slice(0, 40);
+    }
+
+    choisirClient(c: any) {
+        this.ticketForm.id_client = c.id_client;
+        this.clientSearchTerm = '';
+        this.clientResultsOuverts = false;
+    }
+
+    effacerClientChoisi() {
+        this.ticketForm.id_client = undefined;
+        this.clientSearchTerm = '';
+    }
+
+    fermerResultatsClient() {
+        setTimeout(() => this.clientResultsOuverts = false, 200);
+    }
+
     closeClientModal() {
         this.isClientModalOpen = false;
     }
@@ -465,6 +498,8 @@ export class ReparationComponent implements OnInit {
         this.panneTypes = [];
         this.problemeAutre = '';
         this.searchCategoryFilters = [];
+        this.clientSearchTerm = '';
+        this.clientResultsOuverts = false;
         this.isTicketModalOpen = true;
     }
 

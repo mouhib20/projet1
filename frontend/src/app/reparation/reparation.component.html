@@ -452,11 +452,26 @@
             <div class="form-row">
                 <div class="form-group flex-1">
                     <label>Client <span class="required">*</span></label>
-                    <div class="input-with-button">
-                        <select class="form-control flex-1" [(ngModel)]="ticketForm.id_client">
-                            <option *ngFor="let c of clients" [value]="c.id_client">{{ c.nom }} - {{ c.telephone }}
-                            </option>
-                        </select>
+                    <div class="input-with-button client-search-wrap">
+                        <div class="client-search-box flex-1">
+                            <input *ngIf="!clientChoisi" type="text" class="form-control" [(ngModel)]="clientSearchTerm"
+                                (focus)="clientResultsOuverts = true" (blur)="fermerResultatsClient()"
+                                placeholder="🔍 Chercher par nom ou téléphone…" />
+                            <div *ngIf="clientChoisi" class="client-choisi">
+                                <span>{{ clientChoisi.nom }} — {{ clientChoisi.telephone || 'sans téléphone' }}</span>
+                                <button type="button" class="btn-icon" (click)="effacerClientChoisi()"
+                                    title="Changer de client">✕</button>
+                            </div>
+                            <div class="client-search-results" *ngIf="!clientChoisi && clientResultsOuverts">
+                                <div class="client-search-item" *ngFor="let c of clientsFiltres"
+                                    (mousedown)="choisirClient(c)">
+                                    {{ c.nom }} <small>{{ c.telephone || 'sans téléphone' }}</small>
+                                </div>
+                                <div class="client-search-empty" *ngIf="clientsFiltres.length === 0">
+                                    Aucun client trouvé pour « {{ clientSearchTerm }} ».
+                                </div>
+                            </div>
+                        </div>
                         <button class="btn btn-secondary ml-2" (click)="openClientModal()">+</button>
                     </div>
                 </div>
