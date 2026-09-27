@@ -22,7 +22,6 @@
                     <th>{{ 'FACTURES.COL_DATE' | translate }}</th>
                     <th>{{ 'FACTURES.COL_SUPP' | translate }}</th>
                     <th>{{ 'FACTURES.COL_TOT' | translate }}</th>
-                    <th>{{ 'FACTURES.COL_TVA' | translate }}</th>
                     <th>{{ 'FACTURES.COL_NET' | translate }}</th>
                     <th>{{ 'FACTURES.COL_REMAIN' | translate }}</th>
                     <th>{{ 'FACTURES.COL_ITEMS' | translate }}</th>
@@ -35,7 +34,6 @@
                     <td>{{ f.date_facture | date:'dd/MM/yyyy' }}</td>
                     <td>{{ f.fournisseur?.entreprise || f.fournisseur?.nom }}{{ f.fournisseur?.type_articles ? ' · ' + f.fournisseur?.type_articles : '' }}</td>
                     <td>{{ f.total_ht | number:'1.3-3' }}</td>
-                    <td class="text-muted">{{ f.total_tva | number:'1.3-3' }}</td>
                     <td class="fw-bold text-success">{{ f.net_a_payer | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
                     </td>
                     <td [class.text-danger]="f.reste_a_payer > 0">

@@ -148,7 +148,7 @@ export class FacturesComponent implements OnInit, OnDestroy {
       qte: 1,
       prix: 0,
       prix_vente: 0,
-      tva_rate: 19,
+      tva_rate: 0,
       total_ttc: 0
     };
   }
@@ -429,7 +429,7 @@ export class FacturesComponent implements OnInit, OnDestroy {
       qte: 1,
       prix: article.prix_achat || 0,
       prix_vente: article.prix_vente || 0,
-      tva_rate: 19,
+      tva_rate: 0,
       total_ttc: 0
     };
     this.searchTerm = article.designation || '';
@@ -549,13 +549,10 @@ export class FacturesComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Prepare line totals
+    // Prepare line total (no TVA: the line total is simply qty × unit price)
     const q = c.qte || 1;
     const p = c.prix || 0;
-    const tvaRate = c.tva_rate || 0;
-    const ht = q * p;
-    const tva = ht * (tvaRate / 100);
-    c.total_ttc = ht + tva;
+    c.total_ttc = q * p;
 
     // Default designation if new and missing
     if (c.isNew && !c.designation) {
@@ -579,8 +576,7 @@ export class FacturesComponent implements OnInit, OnDestroy {
       );
       if (existing) {
         existing.qte = (existing.qte || 0) + q;
-        const lineHt = existing.qte * p;
-        existing.total_ttc = lineHt + lineHt * (tvaRate / 100);
+        existing.total_ttc = existing.qte * p;
       } else {
         this.formData.items.push({ ...c } as FactureItem);
       }
@@ -615,26 +611,23 @@ export class FacturesComponent implements OnInit, OnDestroy {
     this.calculateTotals();
   }
 
+  /** No TVA: net à payer is simply the total HT minus the discount. */
   calculateTotals() {
     let totalHt = 0;
-    let totalTva = 0;
 
     for (const item of this.formData.items) {
       const lineHt = (item.qte || 0) * (item.prix || 0);
-      const tvaRate = item.tva_rate || 0;
-      const lineTva = lineHt * (tvaRate / 100);
-      item.total_ttc = lineHt + lineTva;
+      item.total_ttc = lineHt;
       totalHt += lineHt;
-      totalTva += lineTva;
     }
 
     const remise = this.formData.remise || 0;
-    const netAPayer = Math.max(0, totalHt + totalTva - remise);
+    const netAPayer = Math.max(0, totalHt - remise);
     const resteAPayer = Math.max(0, netAPayer - (this.formData.montant_paye || 0));
 
     this.computed = {
       total_ht: totalHt,
-      total_tva: totalTva,
+      total_tva: 0,
       net_a_payer: netAPayer,
       reste_a_payer: resteAPayer
     };
