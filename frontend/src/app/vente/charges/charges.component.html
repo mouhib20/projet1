@@ -29,10 +29,6 @@
     <div class="synthese" *ngIf="charges.length > 0">
         <div class="synthese-titre">📅 Combien gagner pour couvrir mes dépenses</div>
         <div class="synthese-cartes">
-            <div class="synthese-carte synthese-principale">
-                <span class="synthese-valeur">{{ objectifMensuel | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
-                <span class="synthese-label">à gagner chaque mois</span>
-            </div>
             <div class="synthese-carte">
                 <span class="synthese-valeur">{{ objectifJournalier | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
                 <span class="synthese-label">à gagner chaque jour (sur 30 jours)</span>
