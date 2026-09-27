@@ -87,25 +87,31 @@
                     </tr>
                     <tr *ngIf="moisEstOuvert(m.key)">
                         <td colspan="4" class="synthese-detail-jours">
+                            <p class="synthese-note synthese-note-jours">
+                                Les dépenses mensuelles de {{ m.label }} ({{ m.mensuelles | number:'1.3-3' }}
+                                {{ 'CURRENCY' | translate }}) sont réparties à parts égales sur les
+                                {{ nbJoursDansMois(m.key) }} jours du mois.
+                            </p>
                             <table class="synthese-table synthese-table-jours">
                                 <thead>
                                     <tr>
                                         <th>Jour</th>
                                         <th>Détail</th>
-                                        <th class="text-right">Mensuelles</th>
+                                        <th class="text-right">Part mensuelle</th>
                                         <th class="text-right">Journalières</th>
-                                        <th class="text-right">Total</th>
+                                        <th class="text-right">Total du jour</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr *ngFor="let j of joursDuMois(m.key)">
                                         <td>{{ j.label }}</td>
                                         <td>
+                                            <span *ngIf="j.charges.length === 0" class="text-muted">—</span>
                                             <span *ngFor="let c of j.charges; let last = last" class="jour-charge">
                                                 {{ c.description }} ({{ c.montant | number:'1.3-3' }}){{ last ? '' : ', ' }}
                                             </span>
                                         </td>
-                                        <td class="text-right">{{ j.mensuelles | number:'1.3-3' }}</td>
+                                        <td class="text-right">{{ j.partMensuelle | number:'1.3-3' }}</td>
                                         <td class="text-right">{{ j.journalieres | number:'1.3-3' }}</td>
                                         <td class="text-right fw-bold">{{ j.total | number:'1.3-3' }}
                                             {{ 'CURRENCY' | translate }}</td>

@@ -127,22 +127,37 @@ export class ChargesComponent implements OnInit {
     return nom.charAt(0).toUpperCase() + nom.slice(1);
   }
 
-  /** For one month: each day that has at least one expense, most recent first, with its own charges. */
-  joursDuMois(moisKey: string): { jour: string; label: string; charges: Charge[]; mensuelles: number; journalieres: number; total: number }[] {
-    const jours = new Map<string, Charge[]>();
+  nbJoursDansMois(moisKey: string): number {
+    return new Date(+moisKey.slice(0, 4), +moisKey.slice(5, 7), 0).getDate();
+  }
+
+  /**
+   * For one month: every one of its days (up to today for the current month — future days have no
+   * share yet), with the monthly-type expenses (rent, salaries…) of that month spread evenly across
+   * all its days, plus whatever daily-type expenses were entered on that exact day.
+   */
+  joursDuMois(moisKey: string): { jour: string; label: string; charges: Charge[]; partMensuelle: number; journalieres: number; total: number }[] {
+    const parJour = new Map<string, Charge[]>();
+    let totalMensuelles = 0;
     for (const c of this.charges) {
       const j = this.jourDe(c);
       if (!j.startsWith(moisKey)) continue;
-      if (!jours.has(j)) jours.set(j, []);
-      jours.get(j)!.push(c);
+      if (this.typeDe(c) === 'mensuelle') { totalMensuelles += Number(c.montant || 0); continue; }
+      if (!parJour.has(j)) parJour.set(j, []);
+      parJour.get(j)!.push(c);
     }
-    return [...jours.entries()]
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([jour, charges]) => {
-        const mensuelles = charges.filter(c => this.typeDe(c) === 'mensuelle').reduce((s, c) => s + Number(c.montant || 0), 0);
-        const journalieres = charges.filter(c => this.typeDe(c) === 'journaliere').reduce((s, c) => s + Number(c.montant || 0), 0);
-        return { jour, label: this.libelleJour(jour), charges, mensuelles, journalieres, total: mensuelles + journalieres };
-      });
+    const nbJours = this.nbJoursDansMois(moisKey);
+    const partMensuelle = totalMensuelles / nbJours;
+    const dernierJour = moisKey === this.moisCourant ? +this.aujourdhui.slice(8, 10) : nbJours;
+
+    const jours: { jour: string; label: string; charges: Charge[]; partMensuelle: number; journalieres: number; total: number }[] = [];
+    for (let n = dernierJour; n >= 1; n--) {
+      const jour = `${moisKey}-${String(n).padStart(2, '0')}`;
+      const charges = parJour.get(jour) || [];
+      const journalieres = charges.reduce((s, c) => s + Number(c.montant || 0), 0);
+      jours.push({ jour, label: this.libelleJour(jour), charges, partMensuelle, journalieres, total: partMensuelle + journalieres });
+    }
+    return jours;
   }
 
   /** Monthly expenses: average over the complete months since the first one (empty months count 0). */
