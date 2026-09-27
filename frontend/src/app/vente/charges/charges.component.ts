@@ -71,6 +71,29 @@ export class ChargesComponent implements OnInit {
       .reduce((s, v) => s + (v.qte || 1) * Number(v.prix || 0), 0);
   }
 
+  /**
+   * Profit of one sale line: price minus its cost (the article's purchase price, or, for a repair
+   * line, the parts cost kept on the line). Older lines with no known cost are left out (null),
+   * same rule as the sales-history page.
+   */
+  private beneficeVente(v: Vente): number | null {
+    const cout = v.article ? v.article.prix_achat : v.cout;
+    if (cout === null || cout === undefined) return null;
+    return (v.qte || 1) * (Number(v.prix || 0) - (Number(cout) || 0));
+  }
+
+  private beneficeListe(liste: Vente[]): number {
+    return liste.reduce((s, v) => s + (this.beneficeVente(v) ?? 0), 0);
+  }
+
+  get beneficeAujourdhui(): number {
+    return this.beneficeListe(this.ventes.filter(v => this.jourDeVente(v) === this.aujourdhui));
+  }
+
+  get beneficeMoisCourant(): number {
+    return this.beneficeListe(this.ventes.filter(v => this.jourDeVente(v).slice(0, 7) === this.moisCourant));
+  }
+
   initForm(): Partial<Charge> {
     return {
       description: '',

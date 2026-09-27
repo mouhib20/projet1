@@ -485,6 +485,11 @@
     font-size: 11px;
 }
 
+.synthese-label .synthese-benefice {
+    color: #4ade80;
+    font-weight: 600;
+}
+
 .synthese-carte-positive {
     border-color: rgba(16, 185, 129, 0.4);
     background: rgba(16, 185, 129, 0.08);
