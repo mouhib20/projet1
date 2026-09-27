@@ -55,22 +55,6 @@ export class ChargesComponent implements OnInit {
     return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
   }
 
-  /** Total revenue of every sale (articles and repairs) recorded this month so far. */
-  get gagneMoisCourant(): number {
-    const courant = this.moisCourant;
-    return this.ventes
-      .filter(v => this.jourDeVente(v).slice(0, 7) === courant)
-      .reduce((s, v) => s + (v.qte || 1) * Number(v.prix || 0), 0);
-  }
-
-  /** Total revenue of every sale recorded today. */
-  get gagneAujourdhui(): number {
-    const jour = this.aujourdhui;
-    return this.ventes
-      .filter(v => this.jourDeVente(v) === jour)
-      .reduce((s, v) => s + (v.qte || 1) * Number(v.prix || 0), 0);
-  }
-
   /**
    * Profit of one sale line: price minus its cost (the article's purchase price, or, for a repair
    * line, the parts cost kept on the line). Older lines with no known cost are left out (null),
