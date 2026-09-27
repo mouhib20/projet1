@@ -37,10 +37,12 @@ export class ChargesComponent implements OnInit {
   // ── What's actually been earned this month, to compare against the objective ──
 
   ventes: Vente[] = [];
+  /** False until the sales have loaded, so the card shows "…" instead of a misleading 0 meanwhile. */
+  ventesChargees = false;
 
   loadVentes() {
     this.venteService.getVentes().subscribe({
-      next: (data) => this.ventes = data,
+      next: (data) => { this.ventes = data; this.ventesChargees = true; },
       error: (err) => console.error(err)
     });
   }

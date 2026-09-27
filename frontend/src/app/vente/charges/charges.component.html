@@ -37,8 +37,11 @@
                 <span class="synthese-valeur">{{ depensesMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
                 <span class="synthese-label">déjà dépensé ce mois-ci</span>
             </div>
-            <div class="synthese-carte" [class.synthese-carte-positive]="gagneMoisCourant >= depensesMoisCourant">
-                <span class="synthese-valeur">{{ gagneMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+            <div class="synthese-carte" [class.synthese-carte-positive]="ventesChargees && gagneMoisCourant >= depensesMoisCourant">
+                <span class="synthese-valeur">
+                    <ng-container *ngIf="ventesChargees; else chargement">{{ gagneMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</ng-container>
+                    <ng-template #chargement>…</ng-template>
+                </span>
                 <span class="synthese-label">déjà gagné ce mois-ci
                     <small>(objectif : {{ depensesMoisCourant | number:'1.3-3' }})</small>
                 </span>
