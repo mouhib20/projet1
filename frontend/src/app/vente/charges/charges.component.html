@@ -31,7 +31,9 @@
         <div class="synthese-cartes">
             <div class="synthese-carte">
                 <span class="synthese-valeur">{{ objectifJournalier | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
-                <span class="synthese-label">à gagner chaque jour (sur 30 jours)</span>
+                <span class="synthese-label">à gagner chaque jour d'ici la fin du mois
+                    <small>({{ joursRestantsMois }} jour(s) restant(s))</small>
+                </span>
             </div>
             <div class="synthese-carte" [class.synthese-carte-positive]="ventesChargees && beneficeAujourdhui >= objectifJournalier">
                 <span class="synthese-valeur">

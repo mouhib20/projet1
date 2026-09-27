@@ -254,8 +254,21 @@ export class ChargesComponent implements OnInit {
     return this.moyenneMensuelles.moyenne + this.moyenneJournalieres.parJour * 30;
   }
 
+  /** How many days of the current month are left, today included. */
+  get joursRestantsMois(): number {
+    const nbJours = this.nbJoursDansMois(this.moisCourant);
+    const jourActuel = +this.aujourdhui.slice(8, 10);
+    return Math.max(1, nbJours - jourActuel + 1);
+  }
+
+  /**
+   * How much profit is still needed, per remaining day of the month (today included), to reach
+   * this month's objective (what's already been spent) by the end of the month. Once the objective
+   * is already reached, there is nothing left to catch up on.
+   */
   get objectifJournalier(): number {
-    return this.objectifMensuel / 30;
+    const resteAGagner = Math.max(0, this.depensesMoisCourant - this.beneficeMoisCourant);
+    return resteAGagner / this.joursRestantsMois;
   }
 
   get depensesMoisCourant(): number {
