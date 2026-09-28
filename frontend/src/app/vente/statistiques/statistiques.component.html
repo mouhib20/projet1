@@ -29,15 +29,11 @@
                 number:'1.3-3' }} DT
             </li>
             <li>
-                <strong>Coût des pièces détachées en stock (capital de l'atelier) :</strong>
-                {{ valeurStockPieces !== null ? (valeurStockPieces | number:'1.3-3') : '…' }} DT
-            </li>
-            <li>
-                <strong>Combien coûtent les accessoires et pièces détachées disponibles dans le magasin :</strong>
-                {{ valeurStock !== null ? (valeurStock | number:'1.3-3') : '…' }} DT au total
-                ({{ valeurStockPieces !== null ? (valeurStockPieces | number:'1.3-3') : '…' }} DT de pièces + {{
-                valeurStockAccessoires !== null ? (valeurStockAccessoires | number:'1.3-3') : '…' }} DT
-                d'accessoires)
+                <strong>Capital total (pièces détachées + accessoires disponibles dans le magasin) :</strong>
+                Capital pièces détachées ({{ valeurStockPieces !== null ? (valeurStockPieces | number:'1.3-3') : '…'
+                }} DT) + Capital accessoires ({{ valeurStockAccessoires !== null ? (valeurStockAccessoires |
+                number:'1.3-3') : '…' }} DT) = Total {{ valeurStock !== null ? (valeurStock | number:'1.3-3') : '…'
+                }} DT
             </li>
             <li>
                 <strong>Montant de la dette (aux fournisseurs) :</strong>
