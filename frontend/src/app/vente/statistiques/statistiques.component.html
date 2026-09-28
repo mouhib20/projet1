@@ -15,37 +15,62 @@
     <!-- Numbered recap, one line per question you asked -->
     <div class="chart-card recap-card" *ngIf="stats">
         <div class="chart-header">✅ Réponses à vos questions — {{ periodeLabel }}</div>
-        <ol class="recap-list">
-            <li>
-                <strong>Bénéfice des réparations, coût et prix des pièces (dont d'occasion) :</strong>
-                bénéfice {{ stats.reparations.benefice | number:'1.3-3' }} DT · prix encaissé {{
-                stats.reparations.revenue | number:'1.3-3' }} DT · coût des pièces {{ stats.reparations.cout |
-                number:'1.3-3' }} DT
-            </li>
-            <li>
-                <strong>Coût de vente des accessoires, marge bénéficiaire et prix d'achat :</strong>
-                Bénéfice : {{ stats.accessoires.benefice | number:'1.3-3' }} DT · Prix total : {{
-                stats.accessoires.revenue | number:'1.3-3' }} DT · Coût des accessoires : {{ stats.accessoires.cout |
-                number:'1.3-3' }} DT
-            </li>
-            <li>
-                <strong>Capital total (pièces détachées + accessoires disponibles dans le magasin) :</strong>
-                Capital pièces détachées ({{ valeurStockPieces !== null ? (valeurStockPieces | number:'1.3-3') : '…'
-                }} DT) + Capital accessoires ({{ valeurStockAccessoires !== null ? (valeurStockAccessoires |
-                number:'1.3-3') : '…' }} DT) = Total {{ valeurStock !== null ? (valeurStock | number:'1.3-3') : '…'
-                }} DT
-            </li>
-            <li>
-                <strong>Montant de la dette (aux fournisseurs) :</strong>
-                {{ detteFournisseurs !== null ? (detteFournisseurs | number:'1.3-3') : '…' }} DT
-            </li>
-            <li>
-                <strong>Pertes subies lors des réparations :</strong>
-                {{ stats.reparations.pertes | number:'1.3-3' }} DT
-                <span class="text-muted"> (montant reçu sous le coût des pièces, ou pièce remplacée gratuitement
-                    après retour pour défaut)</span>
-            </li>
-        </ol>
+        <div class="recap-grid">
+            <div class="recap-box">
+                <div class="recap-num">1</div>
+                <div class="recap-body">
+                    <strong>Bénéfice des réparations, coût et prix des pièces (dont d'occasion)</strong>
+                    <div class="recap-line"><span>Bénéfice</span><b>{{ stats.reparations.benefice | number:'1.3-3'
+                            }} DT</b></div>
+                    <div class="recap-line"><span>Prix encaissé</span><b>{{ stats.reparations.revenue |
+                            number:'1.3-3' }} DT</b></div>
+                    <div class="recap-line"><span>Coût des pièces</span><b>{{ stats.reparations.cout | number:'1.3-3'
+                            }} DT</b></div>
+                </div>
+            </div>
+            <div class="recap-box">
+                <div class="recap-num">2</div>
+                <div class="recap-body">
+                    <strong>Coût de vente des accessoires, marge bénéficiaire et prix d'achat</strong>
+                    <div class="recap-line"><span>Bénéfice</span><b>{{ stats.accessoires.benefice | number:'1.3-3'
+                            }} DT</b></div>
+                    <div class="recap-line"><span>Prix total</span><b>{{ stats.accessoires.revenue | number:'1.3-3'
+                            }} DT</b></div>
+                    <div class="recap-line"><span>Coût des accessoires</span><b>{{ stats.accessoires.cout |
+                            number:'1.3-3' }} DT</b></div>
+                </div>
+            </div>
+            <div class="recap-box">
+                <div class="recap-num">3</div>
+                <div class="recap-body">
+                    <strong>Capital total (pièces détachées + accessoires disponibles dans le magasin)</strong>
+                    <div class="recap-line"><span>Capital pièces détachées</span><b>{{ valeurStockPieces !== null ?
+                            (valeurStockPieces | number:'1.3-3') : '…' }} DT</b></div>
+                    <div class="recap-line"><span>Capital accessoires</span><b>{{ valeurStockAccessoires !== null ?
+                            (valeurStockAccessoires | number:'1.3-3') : '…' }} DT</b></div>
+                    <div class="recap-line recap-total"><span>Total</span><b>{{ valeurStock !== null ? (valeurStock |
+                            number:'1.3-3') : '…' }} DT</b></div>
+                </div>
+            </div>
+            <div class="recap-box">
+                <div class="recap-num">4</div>
+                <div class="recap-body">
+                    <strong>Montant de la dette (aux fournisseurs)</strong>
+                    <div class="recap-line recap-total"><span>Dette</span><b>{{ detteFournisseurs !== null ?
+                            (detteFournisseurs | number:'1.3-3') : '…' }} DT</b></div>
+                </div>
+            </div>
+            <div class="recap-box">
+                <div class="recap-num">5</div>
+                <div class="recap-body">
+                    <strong>Pertes subies lors des réparations</strong>
+                    <div class="recap-line recap-total"><span>Pertes</span><b>{{ stats.reparations.pertes |
+                            number:'1.3-3' }} DT</b></div>
+                    <p class="text-muted">Montant reçu sous le coût des pièces, ou pièce remplacée gratuitement après
+                        retour pour défaut.</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Capital: snapshot of the shop right now, independent of the period above -->
