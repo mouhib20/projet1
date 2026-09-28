@@ -68,7 +68,7 @@
 
 .kpi-card {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 14px;
     background: #161b27;
     border-radius: 12px;
@@ -107,6 +107,7 @@
 .kpi-info {
     display: flex;
     flex-direction: column;
+    justify-content: center;
 }
 
 .kpi-label {
