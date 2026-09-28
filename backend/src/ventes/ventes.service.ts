@@ -386,6 +386,58 @@ export class VentesService {
         };
     }
 
+    /**
+     * Detail behind the repair losses: one row per part replaced free of charge on a warranty
+     * return (client brought the phone back, the part just fitted was defective), with the phone,
+     * the part's nature/brand/model, and the supplier it was bought from (its most recent purchase).
+     * The other loss case (a repair checked out for less than its parts cost, with no return) has
+     * no reliable link back to a specific part, so it is not itemised here — only its total counts
+     * towards "Pertes sur réparations".
+     */
+    async getPertesDetail(period: 'today' | 'week' | 'month' | 'year' = 'month') {
+        const { start, end } = this.bornesPeriode(period);
+        const startStr = this.jourLocal(start);
+        const endStr = this.jourLocal(end);
+
+        const lignes = await this.dataSource.query(
+            `SELECT r.id_reparation, r.appareil, r.date_reception, r.degre_dommage, r.retour_de,
+                    ri.qte, a.id_article, a.designation, a.marque, a.modele, a.sous_categorie, a.type,
+                    a.prix_achat, f.nom AS fournisseur_nom, f.prenom AS fournisseur_prenom,
+                    f.entreprise AS fournisseur_entreprise
+               FROM reparation r
+               JOIN reparation_item ri ON ri.id_reparation = r.id_reparation
+               LEFT JOIN article a ON a.id_article = ri.id_article
+               LEFT JOIN LATERAL (
+                   SELECT ma."id_fournisseur" AS id_fournisseur
+                     FROM mouvement_achat ma
+                    WHERE ma."id_article" = a.id_article
+                    ORDER BY ma.date_mouvement DESC
+                    LIMIT 1
+               ) dernier_achat ON true
+               LEFT JOIN fournisseur f ON f.id_fournisseur = dernier_achat.id_fournisseur
+              WHERE r.retour_de IS NOT NULL AND r.date_reception BETWEEN $1 AND $2
+                AND r.statut NOT IN ('Vente avec reçu', 'Livré')
+              ORDER BY r.date_reception DESC, r.id_reparation DESC`,
+            [startStr, endStr],
+        );
+
+        return lignes.map((l: any) => ({
+            id_reparation: l.id_reparation,
+            appareil: l.appareil,
+            date: l.date_reception,
+            degre_dommage: l.degre_dommage,
+            piece: l.id_article ? {
+                designation: l.designation,
+                marque: l.marque,
+                modele: l.modele,
+                nature: l.sous_categorie,
+                type: l.type,
+            } : null,
+            cout: (Number(l.qte) || 0) * (Number(l.prix_achat) || 0),
+            fournisseur: l.fournisseur_entreprise || (l.fournisseur_nom ? `${l.fournisseur_nom} ${l.fournisseur_prenom || ''}`.trim() : null),
+        }));
+    }
+
     async remove(id: number, authorization?: string): Promise<void> {
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();

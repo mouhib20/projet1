@@ -243,6 +243,10 @@
     font-size: 15px;
 }
 
+.text-muted {
+    color: #8b949e;
+}
+
 .recap-body .text-muted {
     color: #565f73;
     font-size: 11.5px;

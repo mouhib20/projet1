@@ -17,6 +17,13 @@ export class VentesController {
         return this.service.getStats(p);
     }
 
+    @Get('stats/pertes')
+    getPertesDetail(@Query('period') period?: string) {
+        const valides = ['today', 'week', 'month', 'year'] as const;
+        const p = valides.includes(period as any) ? (period as (typeof valides)[number]) : undefined;
+        return this.service.getPertesDetail(p);
+    }
+
     @Get(':id')
     findOne(@Param('id', ParseIntPipe) id: number) {
         return this.service.findOne(id);

@@ -43,4 +43,18 @@ export class VenteService {
     getStats(period: PeriodeStats = 'month'): Observable<VenteStats> {
         return this.http.get<VenteStats>(`${this.apiUrl}/stats?period=${period}`);
     }
+
+    getPertesDetail(period: PeriodeStats = 'month'): Observable<PerteReparation[]> {
+        return this.http.get<PerteReparation[]>(`${this.apiUrl}/stats/pertes?period=${period}`);
+    }
+}
+
+export interface PerteReparation {
+    id_reparation: number;
+    appareil: string;
+    date: string;
+    degre_dommage: string | null;
+    piece: { designation: string; marque: string | null; modele: string | null; nature: string | null; type: string | null } | null;
+    cout: number;
+    fournisseur: string | null;
 }

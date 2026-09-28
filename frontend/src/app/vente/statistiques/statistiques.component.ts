@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { VenteService } from '../../services/vente.service';
+import { PerteReparation, VenteService } from '../../services/vente.service';
 import { ArticleService } from '../../services/article.service';
 import { PaiementFournisseurService } from '../../services/paiement-fournisseur.service';
 import { PeriodeStats, VenteStats } from '../../models/vente-stats.model';
@@ -163,5 +163,32 @@ export class StatistiquesComponent implements OnInit {
 
   fermerDetailAccessoires(): void {
     this.detailAccessoiresOuvert = false;
+  }
+
+  // ── Losses detail: which supplier's part caused each warranty return ──
+
+  detailPertesOuvert = false;
+  detailPertesChargement = false;
+  detailPertesErreur = '';
+  detailPertesLignes: PerteReparation[] = [];
+
+  ouvrirDetailPertes(): void {
+    this.detailPertesOuvert = true;
+    this.detailPertesChargement = true;
+    this.detailPertesErreur = '';
+    this.venteService.getPertesDetail(this.periode).subscribe({
+      next: (lignes) => {
+        this.detailPertesLignes = lignes;
+        this.detailPertesChargement = false;
+      },
+      error: () => {
+        this.detailPertesErreur = 'Impossible de charger le détail des pertes.';
+        this.detailPertesChargement = false;
+      }
+    });
+  }
+
+  fermerDetailPertes(): void {
+    this.detailPertesOuvert = false;
   }
 }
