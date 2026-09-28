@@ -53,8 +53,10 @@ export interface PerteReparation {
     id_reparation: number;
     appareil: string;
     date: string;
+    raison: 'retour' | 'ecart_prix';
     degre_dommage: string | null;
     piece: { designation: string; marque: string | null; modele: string | null; nature: string | null; type: string | null } | null;
     cout: number;
+    manque_a_gagner: number;
     fournisseur: string | null;
 }

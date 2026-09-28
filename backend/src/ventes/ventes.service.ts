@@ -151,6 +151,7 @@ export class VentesService {
                         date,
                         client: data.clientId ? { id_client: data.clientId } : null,
                         article: null,
+                        id_reparation_origine: item.reparationId,
                     });
                     const saved = await queryRunner.manager.save(vente);
                     savedIds.push(saved.id_vente);
@@ -387,26 +388,21 @@ export class VentesService {
     }
 
     /**
-     * Detail behind the repair losses: one row per part replaced free of charge on a warranty
-     * return (client brought the phone back, the part just fitted was defective), with the phone,
-     * the part's nature/brand/model, and the supplier it was bought from (its most recent purchase).
-     * The other loss case (a repair checked out for less than its parts cost, with no return) has
-     * no reliable link back to a specific part, so it is not itemised here — only its total counts
-     * towards "Pertes sur réparations".
+     * Detail behind the repair losses, one row per case:
+     *  - a part replaced free of charge on a warranty return (client brought the phone back, the
+     *    part just fitted was defective) — the part itself and its cost are exact.
+     *  - a repair checked out for less than its parts cost, with no return — the shortfall is
+     *    exact, but "part" lists every part used on that ticket (the ticket as a whole was
+     *    discounted, not one specific part), so brand/model/supplier are only shown when the
+     *    ticket used a single part.
+     * Either way, the supplier shown is from that part's most recent purchase.
      */
     async getPertesDetail(period: 'today' | 'week' | 'month' | 'year' = 'month') {
         const { start, end } = this.bornesPeriode(period);
         const startStr = this.jourLocal(start);
         const endStr = this.jourLocal(end);
 
-        const lignes = await this.dataSource.query(
-            `SELECT r.id_reparation, r.appareil, r.date_reception, r.degre_dommage, r.retour_de,
-                    ri.qte, a.id_article, a.designation, a.marque, a.modele, a.sous_categorie, a.type,
-                    a.prix_achat, f.nom AS fournisseur_nom, f.prenom AS fournisseur_prenom,
-                    f.entreprise AS fournisseur_entreprise
-               FROM reparation r
-               JOIN reparation_item ri ON ri.id_reparation = r.id_reparation
-               LEFT JOIN article a ON a.id_article = ri.id_article
+        const fournisseurJoin = `
                LEFT JOIN LATERAL (
                    SELECT ma."id_fournisseur" AS id_fournisseur
                      FROM mouvement_achat ma
@@ -414,28 +410,82 @@ export class VentesService {
                     ORDER BY ma.date_mouvement DESC
                     LIMIT 1
                ) dernier_achat ON true
-               LEFT JOIN fournisseur f ON f.id_fournisseur = dernier_achat.id_fournisseur
+               LEFT JOIN fournisseur f ON f.id_fournisseur = dernier_achat.id_fournisseur`;
+
+        const retours = await this.dataSource.query(
+            `SELECT r.id_reparation, r.appareil, r.date_reception, r.degre_dommage, 'retour' AS raison,
+                    ri.qte, a.id_article, a.designation, a.marque, a.modele, a.sous_categorie, a.type,
+                    a.prix_achat, f.nom AS fournisseur_nom, f.prenom AS fournisseur_prenom,
+                    f.entreprise AS fournisseur_entreprise
+               FROM reparation r
+               JOIN reparation_item ri ON ri.id_reparation = r.id_reparation
+               LEFT JOIN article a ON a.id_article = ri.id_article
+               ${fournisseurJoin}
               WHERE r.retour_de IS NOT NULL AND r.date_reception BETWEEN $1 AND $2
                 AND r.statut NOT IN ('Vente avec reçu', 'Livré')
               ORDER BY r.date_reception DESC, r.id_reparation DESC`,
             [startStr, endStr],
         );
 
-        return lignes.map((l: any) => ({
+        // Repairs checked out (with a matching Vente line) for less than their parts cost, no return
+        const ecarts = await this.dataSource.query(
+            `SELECT r.id_reparation, r.appareil, v.date::text AS date_reception, NULL AS degre_dommage,
+                    'ecart_prix' AS raison, v.cout - (v.qte * v.prix) AS manque_a_gagner,
+                    (SELECT COUNT(*) FROM reparation_item WHERE id_reparation = r.id_reparation) AS nb_pieces,
+                    ri.qte, a.id_article, a.designation, a.marque, a.modele, a.sous_categorie, a.type,
+                    a.prix_achat, f.nom AS fournisseur_nom, f.prenom AS fournisseur_prenom,
+                    f.entreprise AS fournisseur_entreprise
+               FROM vente v
+               JOIN reparation r ON r.id_reparation = v."id_reparation_origine"
+               LEFT JOIN reparation_item ri ON ri.id_reparation = r.id_reparation
+               LEFT JOIN article a ON a.id_article = ri.id_article
+               ${fournisseurJoin}
+              WHERE v.id_article IS NULL AND v.cout IS NOT NULL
+                AND v.prix < v.cout AND r.retour_de IS NULL
+                AND v.date BETWEEN $1 AND $2
+              ORDER BY v.date DESC, r.id_reparation DESC`,
+            [startStr, endStr],
+        );
+
+        const nomFournisseur = (l: any) => l.fournisseur_entreprise || (l.fournisseur_nom ? `${l.fournisseur_nom} ${l.fournisseur_prenom || ''}`.trim() : null);
+
+        const lignesRetour = retours.map((l: any) => ({
             id_reparation: l.id_reparation,
             appareil: l.appareil,
             date: l.date_reception,
+            raison: 'retour' as const,
             degre_dommage: l.degre_dommage,
-            piece: l.id_article ? {
-                designation: l.designation,
-                marque: l.marque,
-                modele: l.modele,
-                nature: l.sous_categorie,
-                type: l.type,
-            } : null,
+            piece: l.id_article ? { designation: l.designation, marque: l.marque, modele: l.modele, nature: l.sous_categorie, type: l.type } : null,
             cout: (Number(l.qte) || 0) * (Number(l.prix_achat) || 0),
-            fournisseur: l.fournisseur_entreprise || (l.fournisseur_nom ? `${l.fournisseur_nom} ${l.fournisseur_prenom || ''}`.trim() : null),
+            manque_a_gagner: (Number(l.qte) || 0) * (Number(l.prix_achat) || 0),
+            fournisseur: nomFournisseur(l),
         }));
+
+        // One row per reparation for the "ecart_prix" case (a ticket can have several parts)
+        const parReparation = new Map<number, any[]>();
+        for (const l of ecarts) {
+            if (!parReparation.has(l.id_reparation)) parReparation.set(l.id_reparation, []);
+            parReparation.get(l.id_reparation)!.push(l);
+        }
+        const lignesEcart = [...parReparation.values()].map((items) => {
+            const premier = items[0];
+            const pieceUnique = Number(premier.nb_pieces) === 1 && premier.id_article;
+            return {
+                id_reparation: premier.id_reparation,
+                appareil: premier.appareil,
+                date: premier.date_reception,
+                raison: 'ecart_prix' as const,
+                degre_dommage: null,
+                piece: pieceUnique
+                    ? { designation: premier.designation, marque: premier.marque, modele: premier.modele, nature: premier.sous_categorie, type: premier.type }
+                    : { designation: items.map((i) => i.designation).filter(Boolean).join(', ') || 'Pièces multiples', marque: null, modele: null, nature: null, type: null },
+                cout: items.reduce((s, i) => s + (Number(i.qte) || 0) * (Number(i.prix_achat) || 0), 0),
+                manque_a_gagner: Number(premier.manque_a_gagner) || 0,
+                fournisseur: pieceUnique ? nomFournisseur(premier) : null,
+            };
+        });
+
+        return [...lignesRetour, ...lignesEcart].sort((a, b) => String(b.date).localeCompare(String(a.date)) || b.id_reparation - a.id_reparation);
     }
 
     async remove(id: number, authorization?: string): Promise<void> {

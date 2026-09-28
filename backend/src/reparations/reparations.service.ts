@@ -284,6 +284,7 @@ export class ReparationsService {
                 date: new Date().toISOString().split('T')[0],
                 client: rep.client ? { id_client: rep.client.id_client } : null,
                 article: null,
+                id_reparation_origine: id,
             });
             await queryRunner.manager.save(vente);
 
