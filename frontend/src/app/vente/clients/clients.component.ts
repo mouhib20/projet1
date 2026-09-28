@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ClientCredit, ClientService } from '../../services/client.service';
 import { AuthService } from '../../services/auth.service';
 import { Client, ClientDepot, ClientDepotSummary } from '../../models/client.model';
@@ -8,7 +9,7 @@ import { Client, ClientDepot, ClientDepotSummary } from '../../models/client.mod
 @Component({
   selector: 'app-clients',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './clients.component.html',
   styleUrls: ['./clients.component.css']
 })
