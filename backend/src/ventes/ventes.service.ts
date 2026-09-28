@@ -427,10 +427,13 @@ export class VentesService {
             [startStr, endStr],
         );
 
-        // Repairs checked out (with a matching Vente line) for less than their parts cost, no return
+        // Repairs checked out (with a matching Vente line) for less than their parts cost — whether
+        // or not the ticket itself was a warranty return (a returned ticket can still be checked out,
+        // e.g. charged a reduced amount instead of being fully free; the "retour" query above only
+        // covers returns that were NEVER checked out, so there is no overlap/double counting here)
         const ecarts = await this.dataSource.query(
-            `SELECT r.id_reparation, r.appareil, v.date::text AS date_reception, NULL AS degre_dommage,
-                    'ecart_prix' AS raison, v.cout - (v.qte * v.prix) AS manque_a_gagner,
+            `SELECT r.id_reparation, r.appareil, v.date::text AS date_reception, r.retour_de,
+                    v.cout - (v.qte * v.prix) AS manque_a_gagner,
                     (SELECT COUNT(*) FROM reparation_item WHERE id_reparation = r.id_reparation) AS nb_pieces,
                     ri.qte, a.id_article, a.designation, a.marque, a.modele, a.sous_categorie, a.type,
                     a.prix_achat, f.nom AS fournisseur_nom, f.prenom AS fournisseur_prenom,
@@ -441,7 +444,7 @@ export class VentesService {
                LEFT JOIN article a ON a.id_article = ri.id_article
                ${fournisseurJoin}
               WHERE v.id_article IS NULL AND v.cout IS NOT NULL
-                AND v.prix < v.cout AND r.retour_de IS NULL
+                AND v.prix < v.cout
                 AND v.date BETWEEN $1 AND $2
               ORDER BY v.date DESC, r.id_reparation DESC`,
             [startStr, endStr],
@@ -474,7 +477,7 @@ export class VentesService {
                 id_reparation: premier.id_reparation,
                 appareil: premier.appareil,
                 date: premier.date_reception,
-                raison: 'ecart_prix' as const,
+                raison: (premier.retour_de ? 'retour' : 'ecart_prix') as 'retour' | 'ecart_prix',
                 degre_dommage: null,
                 piece: pieceUnique
                     ? { designation: premier.designation, marque: premier.marque, modele: premier.modele, nature: premier.sous_categorie, type: premier.type }
