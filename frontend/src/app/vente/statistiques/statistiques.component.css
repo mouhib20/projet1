@@ -80,6 +80,18 @@
     border-color: rgba(16, 185, 129, 0.3);
 }
 
+.kpi-card.kpi-dette {
+    border-color: rgba(248, 113, 113, 0.35);
+}
+
+.kpi-card.kpi-dette .kpi-value {
+    color: #f87171;
+}
+
+.capital-card .kpi-row {
+    margin-top: 6px;
+}
+
 .kpi-icon {
     font-size: 24px;
     width: 44px;

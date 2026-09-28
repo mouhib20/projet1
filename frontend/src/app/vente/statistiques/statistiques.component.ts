@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { VenteService } from '../../services/vente.service';
 import { ChargeService } from '../../services/charge.service';
+import { ArticleService } from '../../services/article.service';
+import { CaisseService } from '../../services/caisse.service';
+import { PaiementFournisseurService } from '../../services/paiement-fournisseur.service';
 import { PeriodeStats, VenteStats } from '../../models/vente-stats.model';
 import { Charge } from '../../models/charge.model';
 
@@ -29,11 +32,50 @@ export class StatistiquesComponent implements OnInit {
 
   constructor(
     private venteService: VenteService,
-    private chargeService: ChargeService
+    private chargeService: ChargeService,
+    private articleService: ArticleService,
+    private caisseService: CaisseService,
+    private paiementFournisseurService: PaiementFournisseurService,
   ) { }
 
   ngOnInit(): void {
     this.loadStats();
+    this.loadCapital();
+  }
+
+  // ── Capital: a snapshot, independent of the selected period ──
+
+  valeurStock: number | null = null;
+  soldeCaisse: number | null = null;
+  detteFournisseurs: number | null = null;
+
+  get capitalCharge(): boolean {
+    return this.valeurStock !== null && this.soldeCaisse !== null && this.detteFournisseurs !== null;
+  }
+
+  get capital(): number {
+    return (this.valeurStock || 0) + (this.soldeCaisse || 0) - (this.detteFournisseurs || 0);
+  }
+
+  loadCapital(): void {
+    this.articleService.getArticles().subscribe({
+      next: (articles) => {
+        this.valeurStock = articles.reduce((s, a) => s + (Number(a.quantite) || 0) * (Number(a.prix_achat) || 0), 0);
+      },
+      error: () => { this.valeurStock = 0; }
+    });
+    this.caisseService.getStatus().subscribe({
+      next: (status) => {
+        this.soldeCaisse = Number(status.ouverte ? status.attendu : status.fondAttenduOuverture) || 0;
+      },
+      error: () => { this.soldeCaisse = 0; }
+    });
+    this.paiementFournisseurService.getDus().subscribe({
+      next: (dus) => {
+        this.detteFournisseurs = dus.reduce((s, f) => s + Math.max(0, Number(f.solde) || 0), 0);
+      },
+      error: () => { this.detteFournisseurs = 0; }
+    });
   }
 
   setPeriod(periode: PeriodeStats): void {

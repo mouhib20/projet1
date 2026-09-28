@@ -268,6 +268,12 @@ export class VentesService {
 
         let totalRevenue = 0;
         let totalCogs = 0;
+        // Repair lines (deposits and pickups) have no article: tracked separately, from the parts
+        // cost kept on the line. A line whose cost was never recorded (pre-existing tickets) counts
+        // its revenue but not its cost/profit, same convention as the sales-history and expenses pages.
+        let reparationsRevenue = 0;
+        let reparationsCout = 0;
+        let reparationsPertes = 0;
         const revenueByDayMap = new Map<string, number>();
         const productMap = new Map<number, { designation: string; qte: number; revenue: number }>();
 
@@ -276,7 +282,6 @@ export class VentesService {
         for (const v of ventes) {
             const lineRevenue = (v.qte || 0) * (Number(v.prix) || 0);
             totalRevenue += lineRevenue;
-            // Repair lines have no article: their cost is the parts cost stored on the line
             totalCogs += (v.qte || 0) * (Number(v.article ? v.article.prix_achat : v.cout) || 0);
 
             const key = granularite === 'mois' ? dayKey(v.date).slice(0, 7) : dayKey(v.date);
@@ -288,6 +293,13 @@ export class VentesService {
                 entry.qte += v.qte || 0;
                 entry.revenue += lineRevenue;
                 productMap.set(id, entry);
+            } else {
+                reparationsRevenue += lineRevenue;
+                if (v.cout !== null && v.cout !== undefined) {
+                    const lineCout = (v.qte || 0) * Number(v.cout);
+                    reparationsCout += lineCout;
+                    if (lineRevenue < lineCout) reparationsPertes += lineCout - lineRevenue;
+                }
             }
         }
 
@@ -336,6 +348,12 @@ export class VentesService {
             growthPercent: prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : null,
             revenueByDay,
             topProducts,
+            reparations: {
+                revenue: reparationsRevenue,
+                cout: reparationsCout,
+                benefice: reparationsRevenue - reparationsCout,
+                pertes: reparationsPertes,
+            },
         };
     }
 

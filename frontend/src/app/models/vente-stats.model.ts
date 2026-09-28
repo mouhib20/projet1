@@ -26,4 +26,12 @@ export interface VenteStats {
     growthPercent: number | null;
     revenueByDay: VenteStatsDay[];
     topProducts: VenteStatsProduct[];
+    /** Repair lines (deposits and pickups) only, kept apart from articles sold. */
+    reparations: {
+        revenue: number;
+        cout: number;
+        benefice: number;
+        /** Sum of the shortfall on repairs where the amount received was below the parts cost. */
+        pertes: number;
+    };
 }
