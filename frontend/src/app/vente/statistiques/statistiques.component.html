@@ -82,20 +82,6 @@
 
     <ng-container *ngIf="!loading && stats">
 
-        <!-- Revenue chart -->
-        <div class="chart-card">
-            <div class="chart-header">Chiffre d'affaires {{ stats.granularite === 'mois' ? 'par mois' : 'par jour' }}
-                — {{ periodeLabel }}</div>
-            <div class="bar-chart" *ngIf="stats.revenueByDay.length > 0">
-                <div class="bar-col" *ngFor="let d of stats.revenueByDay">
-                    <div class="bar-tooltip">{{ d.total | number:'1.3-3' }} DT</div>
-                    <div class="bar" [style.height.%]="barHeight(d.total)"
-                        [class.bar-zero]="d.total === 0"></div>
-                    <span class="bar-label">{{ formatDayLabel(d.date) }}</span>
-                </div>
-            </div>
-        </div>
-
         <!-- Top products -->
         <div class="chart-card">
             <div class="chart-header">Produits les plus vendus</div>
