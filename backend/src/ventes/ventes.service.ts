@@ -404,11 +404,15 @@ export class VentesService {
 
         const fournisseurJoin = `
                LEFT JOIN LATERAL (
-                   SELECT ma."id_fournisseur" AS id_fournisseur
-                     FROM mouvement_achat ma
-                    WHERE ma."id_article" = a.id_article
-                    ORDER BY ma.date_mouvement DESC
-                    LIMIT 1
+                   -- Most recent purchase invoice for this article, or, failing that (a part priced
+                   -- and linked to a supplier directly on a repair, never through an invoice), the
+                   -- supplier it is linked to via fournisseur_articles.
+                   SELECT COALESCE(
+                       (SELECT ma."id_fournisseur" FROM mouvement_achat ma
+                         WHERE ma."id_article" = a.id_article ORDER BY ma.date_mouvement DESC LIMIT 1),
+                       (SELECT fa."fournisseurId_fournisseur" FROM fournisseur_articles fa
+                         WHERE fa."articleId_article" = a.id_article ORDER BY fa."fournisseurId_fournisseur" LIMIT 1)
+                   ) AS id_fournisseur
                ) dernier_achat ON true
                LEFT JOIN fournisseur f ON f.id_fournisseur = dernier_achat.id_fournisseur`;
 
