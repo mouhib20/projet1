@@ -313,12 +313,16 @@ export class VentesService {
 
         // Loss specific to repairs: a client brings the phone back because the part just replaced
         // was defective, and the free replacement (no new charge) still uses real, paid-for stock.
+        // Only tickets not yet checked out are counted here: once checked out (even for 0), the
+        // matching Vente line is already counted above (its price is below its cost) — counting
+        // both would double the same loss.
         const retourLigne = await this.dataSource.query(
             `SELECT COALESCE(SUM(ri.qte * COALESCE(a.prix_achat, 0)), 0) AS total
                FROM reparation r
                JOIN reparation_item ri ON ri.id_reparation = r.id_reparation
                LEFT JOIN article a ON a.id_article = ri.id_article
-              WHERE r.retour_de IS NOT NULL AND r.date_reception BETWEEN $1 AND $2`,
+              WHERE r.retour_de IS NOT NULL AND r.date_reception BETWEEN $1 AND $2
+                AND r.statut NOT IN ('Vente avec reçu', 'Livré')`,
             [startStr, endStr],
         );
         reparationsPertes += Number(retourLigne[0]?.total) || 0;
