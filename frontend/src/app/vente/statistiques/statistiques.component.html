@@ -96,6 +96,131 @@
         </div>
     </div>
 
+    <!-- Sales history grouped by day → month → year, same view as the Ventes page -->
+    <div class="chart-card">
+        <div class="chart-header">📜 Historique des ventes</div>
+
+        <ng-template #tableVentesHisto let-liste>
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Client</th>
+                        <th>Article</th>
+                        <th>Qté</th>
+                        <th>Prix Unit.</th>
+                        <th>Total</th>
+                        <th>Bénéfice</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let v of liste">
+                        <td>{{ v.date | date:'dd/MM/yyyy' }}</td>
+                        <td>{{ v.client?.nom || '—' }}</td>
+                        <td><span class="badge">{{ v.article?.designation || v.designation }}</span></td>
+                        <td class="text-center">{{ v.qte || 1 }}</td>
+                        <td class="text-right">{{ v.prix | number:'1.3-3' }}</td>
+                        <td class="fw-bold text-success text-right">{{ (v.qte || 1) * (v.prix || 0) |
+                            number:'1.3-3' }} DT</td>
+                        <td class="text-right" [class.text-success]="(beneficeVente(v) ?? 0) >= 0"
+                            [class.text-danger]="(beneficeVente(v) ?? 0) < 0">
+                            {{ beneficeVente(v) === null ? '—' : (beneficeVente(v) | number:'1.3-3') }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </ng-template>
+
+        <ng-template #dossiersJoursHisto let-jours>
+            <div class="dossier dossier-mois" *ngFor="let j of jours; trackBy: trackByKey">
+                <button type="button" class="dossier-header" (click)="basculerDossier(j.key)">
+                    <span>{{ dossierOuvert(j.key) ? '📂' : '📁' }} {{ j.label }}</span>
+                    <span class="dossier-info">{{ j.ventes.length }} vente(s) · {{ j.total | number:'1.3-3' }} DT
+                        <span class="dossier-benefice" [class.negatif]="beneficeListe(j.ventes) < 0">· Bénéfice : {{
+                            beneficeListe(j.ventes) | number:'1.3-3' }} DT</span>
+                    </span>
+                </button>
+                <div class="table-container" *ngIf="dossierOuvert(j.key)">
+                    <ng-container *ngTemplateOutlet="tableVentesHisto; context: { $implicit: j.ventes }"></ng-container>
+                </div>
+            </div>
+        </ng-template>
+
+        <div class="loading-state" *ngIf="historiqueChargement">
+            <div class="loading-icon">⟳</div>
+            <strong>Chargement…</strong>
+        </div>
+
+        <div class="ventes-groupes" *ngIf="!historiqueChargement && historiqueGroupes as g">
+            <div class="dossier">
+                <button type="button" class="dossier-header" (click)="basculerDossier('aujourdhui')">
+                    <span>{{ dossierOuvert('aujourdhui') ? '📂' : '📁' }} Aujourd'hui</span>
+                    <span class="dossier-info">{{ g.aujourdhui.ventes.length }} vente(s) · {{ g.aujourdhui.total |
+                        number:'1.3-3' }} DT
+                        <span class="dossier-benefice" [class.negatif]="beneficeListe(g.aujourdhui.ventes) < 0">·
+                            Bénéfice : {{ beneficeListe(g.aujourdhui.ventes) | number:'1.3-3' }} DT</span>
+                    </span>
+                </button>
+                <div class="table-container" *ngIf="dossierOuvert('aujourdhui')">
+                    <ng-container *ngIf="g.aujourdhui.ventes.length > 0; else aucuneVenteJourHisto">
+                        <ng-container
+                            *ngTemplateOutlet="tableVentesHisto; context: { $implicit: g.aujourdhui.ventes }"></ng-container>
+                    </ng-container>
+                    <ng-template #aucuneVenteJourHisto>
+                        <div class="empty-state">
+                            <p>Aucune vente aujourd'hui.</p>
+                        </div>
+                    </ng-template>
+                </div>
+            </div>
+
+            <div class="dossier" *ngIf="g.ceMois.ventes.length > 0">
+                <button type="button" class="dossier-header" (click)="basculerDossier('ce-mois')">
+                    <span>{{ dossierOuvert('ce-mois') ? '📂' : '📁' }} Ce mois-ci</span>
+                    <span class="dossier-info">{{ g.ceMois.ventes.length }} vente(s) · {{ g.ceMois.total |
+                        number:'1.3-3' }} DT
+                        <span class="dossier-benefice" [class.negatif]="beneficeListe(g.ceMois.ventes) < 0">·
+                            Bénéfice : {{ beneficeListe(g.ceMois.ventes) | number:'1.3-3' }} DT</span>
+                    </span>
+                </button>
+                <div class="dossier-contenu" *ngIf="dossierOuvert('ce-mois')">
+                    <ng-container
+                        *ngTemplateOutlet="dossiersJoursHisto; context: { $implicit: g.ceMois.jours }"></ng-container>
+                </div>
+            </div>
+
+            <div class="dossier" *ngFor="let a of g.annees; trackBy: trackByKey">
+                <button type="button" class="dossier-header" (click)="basculerDossier(a.key)">
+                    <span>{{ dossierOuvert(a.key) ? '📂' : '📁' }} {{ a.label }}</span>
+                    <span class="dossier-info">{{ a.ventes.length }} vente(s) · {{ a.total | number:'1.3-3' }} DT
+                        <span class="dossier-benefice" [class.negatif]="beneficeListe(a.ventes) < 0">· Bénéfice : {{
+                            beneficeListe(a.ventes) | number:'1.3-3' }} DT</span>
+                    </span>
+                </button>
+                <div class="dossier-contenu" *ngIf="dossierOuvert(a.key)">
+                    <div class="dossier dossier-mois" *ngFor="let mo of a.mois; trackBy: trackByKey">
+                        <button type="button" class="dossier-header" (click)="basculerDossier(mo.key)">
+                            <span>{{ dossierOuvert(mo.key) ? '📂' : '📁' }} {{ mo.label }}</span>
+                            <span class="dossier-info">{{ mo.ventes.length }} vente(s) · {{ mo.total |
+                                number:'1.3-3' }} DT
+                                <span class="dossier-benefice" [class.negatif]="beneficeListe(mo.ventes) < 0">·
+                                    Bénéfice : {{ beneficeListe(mo.ventes) | number:'1.3-3' }} DT</span>
+                            </span>
+                        </button>
+                        <div class="dossier-contenu" *ngIf="dossierOuvert(mo.key)">
+                            <ng-container
+                                *ngTemplateOutlet="dossiersJoursHisto; context: { $implicit: mo.jours }"></ng-container>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div *ngIf="historique.length === 0" class="empty-state">
+                <p>Aucune vente enregistrée.</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Loading / Error -->
     <div class="loading-state" *ngIf="loading">
         <div class="loading-icon">⟳</div>
