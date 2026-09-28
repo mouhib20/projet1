@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Vente } from '../models/vente.model';
-import { VenteStats } from '../models/vente-stats.model';
+import { PeriodeStats, VenteStats } from '../models/vente-stats.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -40,7 +40,7 @@ export class VenteService {
         return this.http.delete(`${this.apiUrl}/${id}`);
     }
 
-    getStats(days: number = 14): Observable<VenteStats> {
-        return this.http.get<VenteStats>(`${this.apiUrl}/stats?days=${days}`);
+    getStats(period: PeriodeStats = 'month'): Observable<VenteStats> {
+        return this.http.get<VenteStats>(`${this.apiUrl}/stats?period=${period}`);
     }
 }

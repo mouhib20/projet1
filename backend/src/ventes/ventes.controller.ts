@@ -11,8 +11,10 @@ export class VentesController {
     }
 
     @Get('stats')
-    getStats(@Query('days') days?: string) {
-        return this.service.getStats(days ? parseInt(days, 10) : undefined);
+    getStats(@Query('period') period?: string) {
+        const valides = ['today', 'week', 'month', 'year'] as const;
+        const p = valides.includes(period as any) ? (period as (typeof valides)[number]) : undefined;
+        return this.service.getStats(p);
     }
 
     @Get(':id')

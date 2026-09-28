@@ -7,9 +7,8 @@
             <div class="page-subtitle">Performance des ventes, produits phares et rentabilité</div>
         </div>
         <div class="period-selector">
-            <button class="period-btn" [class.active]="periodDays === 7" (click)="setPeriod(7)">7 jours</button>
-            <button class="period-btn" [class.active]="periodDays === 14" (click)="setPeriod(14)">14 jours</button>
-            <button class="period-btn" [class.active]="periodDays === 30" (click)="setPeriod(30)">30 jours</button>
+            <button class="period-btn" *ngFor="let p of periodes" [class.active]="periode === p.valeur"
+                (click)="setPeriod(p.valeur)">{{ p.label }}</button>
         </div>
     </div>
 
@@ -53,16 +52,20 @@
             <div class="kpi-card kpi-profit">
                 <div class="kpi-icon">📈</div>
                 <div class="kpi-info">
-                    <span class="kpi-label">Bénéfice net estimé</span>
-                    <span class="kpi-value">{{ netProfit | number:'1.3-3' }} DT</span>
-                    <span class="kpi-sub">après {{ totalCharges | number:'1.3-3' }} DT de charges</span>
+                    <span class="kpi-label">Bénéfice net</span>
+                    <span class="kpi-value">{{ beneficeNet | number:'1.3-3' }} DT</span>
+                    <span class="kpi-sub">après {{ totalCharges | number:'1.3-3' }} DT de charges
+                        <ng-container *ngIf="margeBrute !== null"> · marge brute {{ margeBrute | number:'1.1-1'
+                            }}%</ng-container>
+                    </span>
                 </div>
             </div>
         </div>
 
         <!-- Revenue chart -->
         <div class="chart-card">
-            <div class="chart-header">Chiffre d'affaires par jour</div>
+            <div class="chart-header">Chiffre d'affaires {{ stats.granularite === 'mois' ? 'par mois' : 'par jour' }}
+                — {{ periodeLabel }}</div>
             <div class="bar-chart" *ngIf="stats.revenueByDay.length > 0">
                 <div class="bar-col" *ngFor="let d of stats.revenueByDay">
                     <div class="bar-tooltip">{{ d.total | number:'1.3-3' }} DT</div>

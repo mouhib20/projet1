@@ -10,13 +10,18 @@ export interface VenteStatsProduct {
     revenue: number;
 }
 
+export type PeriodeStats = 'today' | 'week' | 'month' | 'year';
+
 export interface VenteStats {
-    days: number;
+    period: PeriodeStats;
+    /** Whether revenueByDay is bucketed per day ('jour') or per month ('mois', for the 'year' period). */
+    granularite: 'jour' | 'mois';
     startDate: string;
     endDate: string;
     totalRevenue: number;
     totalTickets: number;
     avgBasket: number;
+    totalCogs: number;
     estimatedProfit: number;
     growthPercent: number | null;
     revenueByDay: VenteStatsDay[];

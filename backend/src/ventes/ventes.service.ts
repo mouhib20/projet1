@@ -223,20 +223,46 @@ export class VentesService {
         }
     }
 
+    /** Local calendar day (YYYY-MM-DD) of a Date — never toISOString(), which shifts to UTC and can
+     *  land on the wrong day around midnight depending on the server's timezone. */
+    private jourLocal(d: Date): string {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    /** Calendar-aligned bounds of a period, today included, plus how bars should be grouped. */
+    private bornesPeriode(period: 'today' | 'week' | 'month' | 'year'): { start: Date; end: Date; granularite: 'jour' | 'mois' } {
+        const now = new Date();
+        const aujourdhui = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        let start: Date;
+        if (period === 'today') {
+            start = aujourdhui;
+        } else if (period === 'week') {
+            const jour = aujourdhui.getDay(); // 0=dimanche..6=samedi
+            const depuisLundi = jour === 0 ? 6 : jour - 1;
+            start = new Date(aujourdhui);
+            start.setDate(start.getDate() - depuisLundi);
+        } else if (period === 'month') {
+            start = new Date(aujourdhui.getFullYear(), aujourdhui.getMonth(), 1);
+        } else {
+            start = new Date(aujourdhui.getFullYear(), 0, 1);
+        }
+        return { start, end: aujourdhui, granularite: period === 'year' ? 'mois' : 'jour' };
+    }
+
     /**
-     * Sales statistics over a rolling window (revenue trend, best sellers, estimated
-     * profit, growth vs. the previous equivalent period). Profit is estimated using each
-     * article's CURRENT purchase price (Vente does not snapshot historical cost).
+     * Sales statistics over a calendar period (today / this week / this month / this year, up to
+     * today), with the revenue trend, best sellers, real profit (price minus cost — the article's
+     * current purchase price, or, for a repair line, the parts cost kept on the line) and growth
+     * versus the immediately preceding period of the same length.
      */
-    async getStats(days = 14) {
-        const today = new Date();
-        const start = new Date();
-        start.setDate(today.getDate() - (days - 1));
-        const startStr = start.toISOString().split('T')[0];
-        const endStr = today.toISOString().split('T')[0];
+    async getStats(period: 'today' | 'week' | 'month' | 'year' = 'month') {
+        const { start, end, granularite } = this.bornesPeriode(period);
+        const startStr = this.jourLocal(start);
+        const endStr = this.jourLocal(end);
+        const joursPeriode = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
 
         const ventes = await this.venteRepo.find({
-            where: { date: Between(start, today) },
+            where: { date: Between(start, end) },
             relations: ['article'],
         });
 
@@ -245,7 +271,7 @@ export class VentesService {
         const revenueByDayMap = new Map<string, number>();
         const productMap = new Map<number, { designation: string; qte: number; revenue: number }>();
 
-        const dayKey = (d: string | Date) => typeof d === 'string' ? d : new Date(d).toISOString().split('T')[0];
+        const dayKey = (d: string | Date) => typeof d === 'string' ? d : this.jourLocal(new Date(d));
 
         for (const v of ventes) {
             const lineRevenue = (v.qte || 0) * (Number(v.prix) || 0);
@@ -253,7 +279,7 @@ export class VentesService {
             // Repair lines have no article: their cost is the parts cost stored on the line
             totalCogs += (v.qte || 0) * (Number(v.article ? v.article.prix_achat : v.cout) || 0);
 
-            const key = dayKey(v.date);
+            const key = granularite === 'mois' ? dayKey(v.date).slice(0, 7) : dayKey(v.date);
             revenueByDayMap.set(key, (revenueByDayMap.get(key) || 0) + lineRevenue);
 
             if (v.article) {
@@ -266,11 +292,18 @@ export class VentesService {
         }
 
         const revenueByDay: { date: string; total: number }[] = [];
-        for (let i = 0; i < days; i++) {
-            const d = new Date(start);
-            d.setDate(start.getDate() + i);
-            const key = d.toISOString().split('T')[0];
-            revenueByDay.push({ date: key, total: revenueByDayMap.get(key) || 0 });
+        if (granularite === 'jour') {
+            for (let i = 0; i < joursPeriode; i++) {
+                const d = new Date(start);
+                d.setDate(start.getDate() + i);
+                const key = this.jourLocal(d);
+                revenueByDay.push({ date: key, total: revenueByDayMap.get(key) || 0 });
+            }
+        } else {
+            for (let m = 0; m <= end.getMonth(); m++) {
+                const key = `${end.getFullYear()}-${String(m + 1).padStart(2, '0')}`;
+                revenueByDay.push({ date: key, total: revenueByDayMap.get(key) || 0 });
+            }
         }
 
         const topProducts = [...productMap.entries()]
@@ -278,11 +311,11 @@ export class VentesService {
             .sort((a, b) => b.revenue - a.revenue)
             .slice(0, 8);
 
-        // Previous equivalent period, for a growth percentage
+        // Immediately preceding period of the same length, for a growth percentage
         const prevEnd = new Date(start);
-        prevEnd.setDate(start.getDate() - 1);
+        prevEnd.setDate(prevEnd.getDate() - 1);
         const prevStart = new Date(prevEnd);
-        prevStart.setDate(prevEnd.getDate() - (days - 1));
+        prevStart.setDate(prevEnd.getDate() - (joursPeriode - 1));
         const prevVentes = await this.venteRepo.find({
             where: { date: Between(prevStart, prevEnd) },
         });
@@ -291,12 +324,14 @@ export class VentesService {
         const totalTickets = ventes.length;
 
         return {
-            days,
+            period,
+            granularite,
             startDate: startStr,
             endDate: endStr,
             totalRevenue,
             totalTickets,
             avgBasket: totalTickets > 0 ? totalRevenue / totalTickets : 0,
+            totalCogs,
             estimatedProfit: totalRevenue - totalCogs,
             growthPercent: prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : null,
             revenueByDay,
