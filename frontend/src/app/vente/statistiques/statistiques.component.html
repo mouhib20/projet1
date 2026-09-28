@@ -80,30 +80,4 @@
     </div>
     <div class="alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg }}</div>
 
-    <ng-container *ngIf="!loading && stats">
-
-        <!-- Top products -->
-        <div class="chart-card">
-            <div class="chart-header">Produits les plus vendus</div>
-            <table class="stats-table" *ngIf="stats.topProducts.length > 0">
-                <thead>
-                    <tr>
-                        <th>Produit</th>
-                        <th class="text-center">Qté vendue</th>
-                        <th class="text-right">Revenu</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let p of stats.topProducts">
-                        <td class="fw-bold">{{ p.designation }}</td>
-                        <td class="text-center">{{ p.qte }}</td>
-                        <td class="text-right text-success">{{ p.revenue | number:'1.3-3' }} DT</td>
-                    </tr>
-                </tbody>
-            </table>
-            <div *ngIf="stats.topProducts.length === 0" class="empty-state">
-                <p>Aucune vente sur cette période.</p>
-            </div>
-        </div>
-    </ng-container>
 </div>
