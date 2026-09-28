@@ -221,6 +221,83 @@
         </div>
     </div>
 
+    <!-- Expenses, grouped by month → day, same view as the Dépenses page -->
+    <div class="chart-card">
+        <div class="chart-header">💸 Dépenses de la boutique</div>
+
+        <div class="loading-state" *ngIf="depensesChargement">
+            <div class="loading-icon">⟳</div>
+            <strong>Chargement…</strong>
+        </div>
+
+        <table class="stats-table" *ngIf="!depensesChargement && depensesParMois.length > 0">
+            <thead>
+                <tr>
+                    <th>Mois</th>
+                    <th class="text-right">Mensuelles</th>
+                    <th class="text-right">Journalières</th>
+                    <th class="text-right">Total</th>
+                    <th class="text-right">Gagné ce mois-là</th>
+                    <th class="text-right">Gagné ou perdu</th>
+                </tr>
+            </thead>
+            <tbody>
+                <ng-container *ngFor="let m of depensesParMois">
+                    <tr class="dossier-row-cliquable" (click)="basculerMoisDepenses(m.key)">
+                        <td>{{ moisDepensesEstOuvert(m.key) ? '📂' : '📁' }} {{ m.label }}
+                            <span class="badge-raison" *ngIf="m.enCours">en cours</span>
+                        </td>
+                        <td class="text-right">{{ m.mensuelles | number:'1.3-3' }}</td>
+                        <td class="text-right">{{ m.journalieres | number:'1.3-3' }}</td>
+                        <td class="text-right fw-bold">{{ m.total | number:'1.3-3' }} DT</td>
+                        <td class="text-right">{{ m.benefice | number:'1.3-3' }} DT</td>
+                        <td class="text-right fw-bold" [class.text-success]="m.resultat >= 0"
+                            [class.text-danger]="m.resultat < 0">
+                            {{ m.resultat >= 0 ? '+' : '' }}{{ m.resultat | number:'1.3-3' }} DT
+                        </td>
+                    </tr>
+                    <tr *ngIf="moisDepensesEstOuvert(m.key)">
+                        <td colspan="6" class="detail-jours-mois">
+                            <p class="text-muted" style="margin: 0 0 12px;">
+                                Les dépenses mensuelles de {{ m.label }} ({{ m.mensuelles | number:'1.3-3' }} DT) sont
+                                réparties à parts égales sur les {{ nbJoursDansMoisCharge(m.key) }} jours du mois.
+                            </p>
+                            <table class="stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Jour</th>
+                                        <th>Détail</th>
+                                        <th class="text-right">Part mensuelle</th>
+                                        <th class="text-right">Journalières</th>
+                                        <th class="text-right">Total du jour</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let j of joursDuMoisCharge(m.key)">
+                                        <td>{{ j.label }}</td>
+                                        <td>
+                                            <span *ngIf="j.charges.length === 0" class="text-muted">—</span>
+                                            <span *ngFor="let c of j.charges; let last = last">
+                                                {{ c.description }} ({{ c.montant | number:'1.3-3' }}){{ last ? '' :
+                                                ', ' }}
+                                            </span>
+                                        </td>
+                                        <td class="text-right">{{ j.partMensuelle | number:'1.3-3' }}</td>
+                                        <td class="text-right">{{ j.journalieres | number:'1.3-3' }}</td>
+                                        <td class="text-right fw-bold">{{ j.total | number:'1.3-3' }} DT</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                </ng-container>
+            </tbody>
+        </table>
+        <div class="empty-state" *ngIf="!depensesChargement && depensesParMois.length === 0">
+            <p>Aucune dépense enregistrée.</p>
+        </div>
+    </div>
+
     <!-- Loading / Error -->
     <div class="loading-state" *ngIf="loading">
         <div class="loading-icon">⟳</div>
