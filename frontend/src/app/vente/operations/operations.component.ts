@@ -364,12 +364,23 @@ export class OperationsComponent implements OnInit {
         alert(`"${article.designation}" est en rupture de stock.`);
         return;
       }
+      // No sale price set on the article: ask for one now instead of silently selling at 0 DT
+      let prix = Number(article.prix_vente) || 0;
+      if (prix <= 0) {
+        const saisie = prompt(`Aucun prix de vente n'est enregistré pour "${article.designation}".\nPrix de vente pour cette vente :`);
+        if (saisie === null) return;
+        prix = Number(saisie.replace(',', '.'));
+        if (!(prix > 0)) {
+          alert('Prix invalide : la vente a été annulée.');
+          return;
+        }
+      }
       this.posCart.push({
         articleId: article.id_article,
         designation: article.designation,
         image: article.image,
         qte: 1,
-        prix: article.prix_vente || 0,
+        prix,
         prix_achat: article.prix_achat || 0,
         maxStock
       });
