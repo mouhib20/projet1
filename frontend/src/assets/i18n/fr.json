@@ -2,7 +2,7 @@
     "SIDEBAR": {
         "HOME": "Accueil",
         "VENTE": "Vente",
-        "STATS": "Statistique",
+        "STATS": "Statistiques",
         "CHARGES": "Charges",
         "STOCK": "Stock",
         "SUPPLIERS": "Fournisseurs",
@@ -27,7 +27,7 @@
     "SPACE": {
         "VENTE_TITLE": "Espace Vente",
         "VENTE_DESC": "Gérez vos produits, commandes et transactions de vente",
-        "REPARATION_TITLE": "Espace Réparation",
+        "REPARATION_TITLE": "Réparation de téléphone",
         "REPARATION_DESC": "Suivez les fiches de réparation et l'état des appareils"
     },
     "BTN": {

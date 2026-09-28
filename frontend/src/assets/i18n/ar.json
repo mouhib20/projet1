@@ -5,9 +5,9 @@
         "STATS": "إحصائيات",
         "CHARGES": "نفقات",
         "STOCK": "مخزون",
-        "SUPPLIERS": "موردين",
+        "SUPPLIERS": "الموردون",
         "INVOICES": "فواتير",
-        "CLIENTS": "الزبائن"
+        "CLIENTS": "العملاء"
     },
     "HOME": {
         "WELCOME": "مساحتك لـ",
@@ -27,7 +27,7 @@
     "SPACE": {
         "VENTE_TITLE": "مساحة المبيعات",
         "VENTE_DESC": "إدارة المنتجات والطلبات ومعاملات البيع",
-        "REPARATION_TITLE": "مساحة الإصلاح",
+        "REPARATION_TITLE": "تصليح الهاتف",
         "REPARATION_DESC": "تتبع بطاقات الإصلاح وحالة الأجهزة"
     },
     "BTN": {
@@ -67,19 +67,19 @@
         "BTN_DELETE": "حذف"
     },
     "FOURNISSEURS": {
-        "TITLE": "المزودون",
-        "SUBTITLE": "إدارة المزودين وجهات الاتصال الخاصة بك",
-        "ADD_NEW": "مزود جديد",
-        "ADD": "إضافة مزود",
-        "EDIT": "تعديل المزود",
-        "EMPTY_LIST": "لا يوجد مزود مسجل."
+        "TITLE": "الموردون",
+        "SUBTITLE": "إدارة الموردين وجهات الاتصال الخاصة بك",
+        "ADD_NEW": "مورد جديد",
+        "ADD": "إضافة مورد",
+        "EDIT": "تعديل المورد",
+        "EMPTY_LIST": "لا يوجد مورد مسجل."
     },
     "FACTURES": {
         "TITLE": "فواتير",
         "NEW_INVOICE": "فاتورة جديدة",
-        "MODAL_ADD_TITLE": "إضافة فاتورة مشتريات (مزود)",
-        "SUPPLIER": "المزود",
-        "SELECT_SUPPLIER": "اختر المزود...",
+        "MODAL_ADD_TITLE": "إضافة فاتورة مشتريات (مورد)",
+        "SUPPLIER": "المورد",
+        "SELECT_SUPPLIER": "اختر المورد...",
         "REFERENCE": "المرجع",
         "DATE": "التاريخ",
         "ITEM_TYPE": "نوع القطعة المراد إضافتها :",
@@ -107,11 +107,11 @@
         "TOTAL_INVOICE": "الإجمالي الكلي للفاتورة",
         "AMOUNT_PAID": "المبلغ المدفوع",
         "VALIDATE_INVOICE": "تسجيل الفاتورة النهائية وتحديث المخزون",
-        "PLEASE_SELECT_SUPPLIER": "الرجاء اختيار مزود لعرض واجهة إضافة القطع.",
+        "PLEASE_SELECT_SUPPLIER": "الرجاء اختيار مورد لعرض واجهة إضافة القطع.",
         "SUBTITLE": "إدارة فواتير الشراء والتوريد",
         "COL_REF": "المرجع",
         "COL_DATE": "التاريخ",
-        "COL_SUPP": "المزود",
+        "COL_SUPP": "المورد",
         "COL_TOT": "الإجمالي HT",
         "COL_NET": "الصافي للدفع",
         "COL_REMAIN": "المتبقي",
@@ -138,7 +138,7 @@
         "LOW_STOCK_ALERTS": "تنبيهات انخفاض المخزون",
         "COLUMN_REF": "الرقم المرجعي",
         "COLUMN_DATE": "التاريخ",
-        "COLUMN_SUPPLIER": "المزود",
+        "COLUMN_SUPPLIER": "المورد",
         "COLUMN_TOTAL_HT": "الإجمالي (صافي)",
         "EMPTY_INVOICES": "لا توجد فواتير مسجلة",
         "EMPTY_LOW_STOCK": "جميع السلع متوفرة بمخزون كافٍ",
