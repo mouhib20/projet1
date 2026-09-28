@@ -27,6 +27,10 @@ export class Vente {
     @Column({ type: 'int', nullable: true })
     id_reparation_origine: number | null;
 
+    /** Part of this line's amount left unpaid (a credit sale): added to the client's debt. */
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    credit: number | null;
+
     @ManyToOne(() => Client, client => client.ventes, { onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'id_client' })
     client: Client;

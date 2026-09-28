@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ClientService } from '../../services/client.service';
+import { ClientCredit, ClientService } from '../../services/client.service';
 import { AuthService } from '../../services/auth.service';
 import { Client, ClientDepot, ClientDepotSummary } from '../../models/client.model';
 
@@ -122,15 +122,22 @@ export class ClientsComponent implements OnInit {
   }
 
   // ── Deposit panel ─────────────────────────────────────────
+  clientCredits: ClientCredit[] = [];
+
   openDepotPanel(client: Client): void {
     this.selectedClient = client;
     this.depotMontant = null;
     this.depotNote = '';
     this.clientDepots = [];
+    this.clientCredits = [];
     this.clearMessages();
     if (client.id_client) {
       this.clientService.getDepots(client.id_client).subscribe({
         next: (data) => this.clientDepots = data,
+        error: (err) => console.error(err)
+      });
+      this.clientService.getCredits(client.id_client).subscribe({
+        next: (data) => this.clientCredits = data,
         error: (err) => console.error(err)
       });
     }

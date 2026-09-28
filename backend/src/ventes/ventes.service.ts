@@ -128,6 +128,7 @@ export class VentesService {
             const ratio = totalHt > 0 ? Math.min(1, remise / totalHt) : 0;
             const date = data.date || new Date().toISOString().split('T')[0];
             const savedIds: number[] = [];
+            const lignesMontants: { id: number; montant: number }[] = [];
 
             for (const item of data.items) {
                 if (item.reparationId) {
@@ -163,6 +164,7 @@ export class VentesService {
                     });
                     const saved = await queryRunner.manager.save(vente);
                     savedIds.push(saved.id_vente);
+                    lignesMontants.push({ id: saved.id_vente, montant: (item.qte || 1) * discountedUnitPrice });
                     continue;
                 }
 
@@ -195,6 +197,7 @@ export class VentesService {
                 });
                 const saved = await queryRunner.manager.save(vente);
                 savedIds.push(saved.id_vente);
+                lignesMontants.push({ id: saved.id_vente, montant: qte * discountedUnitPrice });
             }
 
             // Optionally settle part (or all) of the total using the client's deposited balance
@@ -216,7 +219,20 @@ export class VentesService {
                 const netTotal = Math.max(0, totalHt - remise);
                 const resteApresSolde = Math.max(0, netTotal - montantSoldeUtilise);
                 montantCredit = Math.max(0, resteApresSolde - data.montantPaye);
-                if (montantCredit > 0) await this.clientsService.ajouterDette(data.clientId, montantCredit);
+                if (montantCredit > 0) {
+                    await this.clientsService.ajouterDette(data.clientId, montantCredit);
+                    // Spread the credit across this checkout's lines (by their share of the total),
+                    // so the client's debt can be traced back to exactly what was taken unpaid
+                    const totalLignes = lignesMontants.reduce((s, l) => s + l.montant, 0);
+                    let reste = montantCredit;
+                    for (let i = 0; i < lignesMontants.length; i++) {
+                        const l = lignesMontants[i];
+                        const estDerniere = i === lignesMontants.length - 1;
+                        const part = estDerniere ? reste : Math.round((totalLignes > 0 ? montantCredit * (l.montant / totalLignes) : 0) * 1000) / 1000;
+                        reste -= part;
+                        if (part > 0) await queryRunner.manager.update(Vente, l.id, { credit: part });
+                    }
+                }
             }
 
             await queryRunner.commitTransaction();

@@ -25,6 +25,11 @@ export class ClientsController {
         return this.service.getDepots(id);
     }
 
+    @Get(':id/credits')
+    getCredits(@Param('id', ParseIntPipe) id: number) {
+        return this.service.getCredits(id);
+    }
+
     @Post(':id/depots')
     deposer(
         @Param('id', ParseIntPipe) id: number,

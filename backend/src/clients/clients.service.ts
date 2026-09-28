@@ -195,4 +195,25 @@ export class ClientsService {
         client.solde = Number(client.solde || 0) - montant;
         await this.repo.save(client);
     }
+
+    /** Every sale line that left this client with a debt, most recent first — what they took unpaid. */
+    async getCredits(clientId: number): Promise<{ id_vente: number; date: string; designation: string; qte: number; prix: number; credit: number }[]> {
+        const rows = await this.dataSource.query(
+            `SELECT v.id_vente, v.date::text AS date, COALESCE(a.designation, v.designation) AS designation,
+                    v.qte, v.prix, v.credit
+               FROM vente v
+               LEFT JOIN article a ON a.id_article = v.id_article
+              WHERE v.id_client = $1 AND v.credit IS NOT NULL AND v.credit > 0
+              ORDER BY v.date DESC, v.id_vente DESC`,
+            [clientId],
+        );
+        return rows.map((r: any) => ({
+            id_vente: r.id_vente,
+            date: r.date,
+            designation: r.designation,
+            qte: Number(r.qte) || 1,
+            prix: Number(r.prix) || 0,
+            credit: Number(r.credit) || 0,
+        }));
+    }
 }

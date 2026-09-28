@@ -261,6 +261,7 @@ CREATE TABLE IF NOT EXISTS "vente" (
   "id_article" integer,
   "cout" numeric(10,2),
   "id_reparation_origine" integer,
+  "credit" numeric(10,2),
   CONSTRAINT "PK_fc0f489f2ae4cc4d065c2f24228" PRIMARY KEY (id_vente)
 );
 

@@ -103,6 +103,15 @@
                     <strong>{{ (selectedClient.solde || 0) | number:'1.3-3' }} DT</strong>
                 </div>
 
+                <div class="depot-history" *ngIf="clientCredits.length > 0">
+                    <div class="depot-history-title">Pris à crédit, pas encore payé</div>
+                    <div class="depot-row" *ngFor="let c of clientCredits">
+                        <span class="depot-date">{{ c.date | date:'dd/MM/yyyy' }}</span>
+                        <span class="depot-note">{{ c.designation }} <span class="text-muted">(x{{ c.qte }})</span></span>
+                        <span class="depot-montant depot-montant-dette">- {{ c.credit | number:'1.3-3' }} DT</span>
+                    </div>
+                </div>
+
                 <div class="depot-form">
                     <div class="form-group">
                         <label>Montant du dépôt</label>

@@ -467,6 +467,15 @@ input:focus {
     font-family: 'Inter', monospace;
 }
 
+.depot-montant-dette {
+    color: #f87171;
+}
+
+.text-muted {
+    color: #8b949e;
+    font-weight: 400;
+}
+
 .empty-state-sm {
     text-align: center;
     padding: 1.5rem;

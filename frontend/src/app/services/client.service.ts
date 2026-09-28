@@ -48,4 +48,17 @@ export class ClientService {
     getDepotsSummary(): Observable<ClientDepotSummary[]> {
         return this.http.get<ClientDepotSummary[]>(`${this.apiUrl}/depots/summary`);
     }
+
+    getCredits(id: number): Observable<ClientCredit[]> {
+        return this.http.get<ClientCredit[]>(`${this.apiUrl}/${id}/credits`);
+    }
+}
+
+export interface ClientCredit {
+    id_vente: number;
+    date: string;
+    designation: string;
+    qte: number;
+    prix: number;
+    credit: number;
 }
