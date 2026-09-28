@@ -311,6 +311,18 @@ export class VentesService {
             }
         }
 
+        // Loss specific to repairs: a client brings the phone back because the part just replaced
+        // was defective, and the free replacement (no new charge) still uses real, paid-for stock.
+        const retourLigne = await this.dataSource.query(
+            `SELECT COALESCE(SUM(ri.qte * COALESCE(a.prix_achat, 0)), 0) AS total
+               FROM reparation r
+               JOIN reparation_item ri ON ri.id_reparation = r.id_reparation
+               LEFT JOIN article a ON a.id_article = ri.id_article
+              WHERE r.retour_de IS NOT NULL AND r.date_reception BETWEEN $1 AND $2`,
+            [startStr, endStr],
+        );
+        reparationsPertes += Number(retourLigne[0]?.total) || 0;
+
         const revenueByDay: { date: string; total: number }[] = [];
         if (granularite === 'jour') {
             for (let i = 0; i < joursPeriode; i++) {
