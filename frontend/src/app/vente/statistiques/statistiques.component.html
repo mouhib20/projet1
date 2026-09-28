@@ -31,10 +31,13 @@
                             }} DT</b></div>
                 </div>
             </div>
-            <div class="recap-box">
+            <div class="recap-box recap-box-cliquable" (click)="ouvrirDetailAccessoires()"
+                title="Cliquer pour voir le détail de chaque accessoire vendu">
                 <div class="recap-num">2</div>
                 <div class="recap-body">
-                    <strong>Coût de vente des accessoires, marge bénéficiaire et prix d'achat</strong>
+                    <strong>Coût de vente des accessoires, marge bénéficiaire et prix d'achat
+                        <span class="recap-voir-plus">Voir le détail →</span>
+                    </strong>
                     <div class="recap-line"><span>Bénéfice</span><b>{{ stats.accessoires.benefice | number:'1.3-3'
                             }} DT</b></div>
                     <div class="recap-line"><span>Prix total</span><b>{{ stats.accessoires.revenue | number:'1.3-3'
@@ -124,6 +127,51 @@
             </table>
             <div class="empty-state" *ngIf="!detailReparationsChargement && !detailReparationsErreur && detailReparationsLignes.length === 0">
                 <p>Aucune réparation encaissée sur cette période.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Accessories detail modal: every line behind box 2's totals -->
+<div class="detail-overlay" *ngIf="detailAccessoiresOuvert" (click)="fermerDetailAccessoires()">
+    <div class="detail-modal" (click)="$event.stopPropagation()">
+        <div class="detail-header">
+            <h3>🎧 Détail des accessoires vendus — {{ periodeLabel }}</h3>
+            <button type="button" class="detail-close" (click)="fermerDetailAccessoires()">✕</button>
+        </div>
+        <div class="detail-body">
+            <div class="loading-state" *ngIf="detailAccessoiresChargement">
+                <div class="loading-icon">⟳</div>
+                <strong>Chargement…</strong>
+            </div>
+            <div class="alert-error" *ngIf="detailAccessoiresErreur">⚠️ {{ detailAccessoiresErreur }}</div>
+            <table class="stats-table" *ngIf="!detailAccessoiresChargement && detailAccessoiresLignes.length > 0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Article</th>
+                        <th class="text-center">Qté</th>
+                        <th class="text-right">Prix d'achat</th>
+                        <th class="text-right">Prix vendu</th>
+                        <th class="text-right">Bénéfice</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let l of detailAccessoiresLignes">
+                        <td>{{ l.date | date:'dd/MM/yyyy' }}</td>
+                        <td class="fw-bold">{{ l.designation }}</td>
+                        <td class="text-center">{{ l.qte || 1 }}</td>
+                        <td class="text-right">{{ l.article.prix_achat | number:'1.3-3' }} DT</td>
+                        <td class="text-right">{{ (l.qte || 1) * (l.prix || 0) | number:'1.3-3' }} DT</td>
+                        <td class="text-right" [class.text-success]="l.benefice >= 0"
+                            [class.text-danger]="l.benefice < 0">
+                            {{ l.benefice | number:'1.3-3' }} DT
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="empty-state" *ngIf="!detailAccessoiresChargement && !detailAccessoiresErreur && detailAccessoiresLignes.length === 0">
+                <p>Aucun accessoire vendu sur cette période.</p>
             </div>
         </div>
     </div>

@@ -128,4 +128,40 @@ export class StatistiquesComponent implements OnInit {
   fermerDetailReparations(): void {
     this.detailReparationsOuvert = false;
   }
+
+  // ── Accessories detail: every accessory sale line behind box 2's totals ──
+
+  detailAccessoiresOuvert = false;
+  detailAccessoiresChargement = false;
+  detailAccessoiresErreur = '';
+  detailAccessoiresLignes: (Vente & { benefice: number })[] = [];
+
+  ouvrirDetailAccessoires(): void {
+    if (!this.stats) return;
+    this.detailAccessoiresOuvert = true;
+    this.detailAccessoiresChargement = true;
+    this.detailAccessoiresErreur = '';
+    const { startDate, endDate } = this.stats;
+    this.venteService.getVentes().subscribe({
+      next: (ventes) => {
+        this.detailAccessoiresLignes = ventes
+          .filter(v => v.article?.type === 'accessory')
+          .filter(v => { const j = this.jourDeVente(v); return j >= startDate && j <= endDate; })
+          .map(v => ({
+            ...v,
+            benefice: (v.qte || 1) * (Number(v.prix || 0) - Number(v.article.prix_achat || 0)),
+          }))
+          .sort((a, b) => this.jourDeVente(b).localeCompare(this.jourDeVente(a)) || (b.id_vente ?? 0) - (a.id_vente ?? 0));
+        this.detailAccessoiresChargement = false;
+      },
+      error: () => {
+        this.detailAccessoiresErreur = 'Impossible de charger le détail des accessoires.';
+        this.detailAccessoiresChargement = false;
+      }
+    });
+  }
+
+  fermerDetailAccessoires(): void {
+    this.detailAccessoiresOuvert = false;
+  }
 }
