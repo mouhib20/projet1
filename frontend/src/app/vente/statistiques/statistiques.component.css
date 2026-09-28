@@ -159,6 +159,38 @@
     margin-bottom: 20px;
 }
 
+.recap-card {
+    border-color: rgba(74, 222, 128, 0.3);
+    background: rgba(74, 222, 128, 0.04);
+}
+
+.recap-list {
+    margin: 0;
+    padding-left: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.recap-list li {
+    color: #c9d1d9;
+    font-size: 14px;
+    line-height: 1.6;
+    font-family: 'Inter', monospace;
+}
+
+.recap-list strong {
+    display: block;
+    color: #e1e4e8;
+    font-family: inherit;
+    margin-bottom: 2px;
+}
+
+.recap-list .text-muted {
+    color: #8b949e;
+    font-size: 12.5px;
+}
+
 .bar-chart {
     display: flex;
     align-items: flex-end;

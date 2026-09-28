@@ -12,6 +12,46 @@
         </div>
     </div>
 
+    <!-- Numbered recap, one line per question you asked -->
+    <div class="chart-card recap-card" *ngIf="stats">
+        <div class="chart-header">✅ Réponses à vos questions — {{ periodeLabel }}</div>
+        <ol class="recap-list">
+            <li>
+                <strong>Bénéfice des réparations, coût et prix des pièces (dont d'occasion) :</strong>
+                bénéfice {{ stats.reparations.benefice | number:'1.3-3' }} DT · prix encaissé {{
+                stats.reparations.revenue | number:'1.3-3' }} DT · coût des pièces {{ stats.reparations.cout |
+                number:'1.3-3' }} DT
+            </li>
+            <li>
+                <strong>Coût de vente des accessoires, marge bénéficiaire et prix d'achat :</strong>
+                vendu {{ stats.accessoires.revenue | number:'1.3-3' }} DT · marge {{ margeAccessoires !== null ?
+                (margeAccessoires | number:'1.1-1') + '%' : '—' }} · prix d'achat en stock {{ valeurStockAccessoires
+                !== null ? (valeurStockAccessoires | number:'1.3-3') : '…' }} DT
+            </li>
+            <li>
+                <strong>Coût des pièces détachées en stock (capital de l'atelier) :</strong>
+                {{ valeurStockPieces !== null ? (valeurStockPieces | number:'1.3-3') : '…' }} DT
+            </li>
+            <li>
+                <strong>Combien coûtent les accessoires et pièces détachées disponibles dans le magasin :</strong>
+                {{ valeurStock !== null ? (valeurStock | number:'1.3-3') : '…' }} DT au total
+                ({{ valeurStockPieces !== null ? (valeurStockPieces | number:'1.3-3') : '…' }} DT de pièces + {{
+                valeurStockAccessoires !== null ? (valeurStockAccessoires | number:'1.3-3') : '…' }} DT
+                d'accessoires)
+            </li>
+            <li>
+                <strong>Montant de la dette (aux fournisseurs) :</strong>
+                {{ detteFournisseurs !== null ? (detteFournisseurs | number:'1.3-3') : '…' }} DT
+            </li>
+            <li>
+                <strong>Pertes subies lors des réparations :</strong>
+                {{ stats.reparations.pertes | number:'1.3-3' }} DT
+                <span class="text-muted"> (montant reçu sous le coût des pièces, ou pièce remplacée gratuitement
+                    après retour pour défaut)</span>
+            </li>
+        </ol>
+    </div>
+
     <!-- Capital: snapshot of the shop right now, independent of the period above -->
     <div class="chart-card capital-card">
         <div class="chart-header">🏦 Capital de la boutique</div>
