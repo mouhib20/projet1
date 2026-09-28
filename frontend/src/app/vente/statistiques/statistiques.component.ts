@@ -83,11 +83,6 @@ export class StatistiquesComponent implements OnInit {
     });
   }
 
-  get margeAccessoires(): number | null {
-    if (!this.stats || this.stats.accessoires.revenue <= 0) return null;
-    return (this.stats.accessoires.benefice / this.stats.accessoires.revenue) * 100;
-  }
-
   get maxDayRevenue(): number {
     if (!this.stats || this.stats.revenueByDay.length === 0) return 0;
     return Math.max(...this.stats.revenueByDay.map(d => d.total), 1);

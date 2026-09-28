@@ -82,41 +82,6 @@
 
     <ng-container *ngIf="!loading && stats">
 
-        <!-- Accessories: kept apart from repair parts -->
-        <div class="chart-card">
-            <div class="chart-header">🎧 Accessoires — {{ periodeLabel }}</div>
-            <div class="kpi-row">
-                <div class="kpi-card">
-                    <div class="kpi-icon">💵</div>
-                    <div class="kpi-info">
-                        <span class="kpi-label">Vendu</span>
-                        <span class="kpi-value">{{ stats.accessoires.revenue | number:'1.3-3' }} DT</span>
-                    </div>
-                </div>
-                <div class="kpi-card kpi-profit">
-                    <div class="kpi-icon">📈</div>
-                    <div class="kpi-info">
-                        <span class="kpi-label">Bénéfice accessoires</span>
-                        <span class="kpi-value">{{ stats.accessoires.benefice | number:'1.3-3' }} DT</span>
-                        <span class="kpi-sub" *ngIf="margeAccessoires !== null">marge {{ margeAccessoires |
-                            number:'1.1-1' }}%</span>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon">📦</div>
-                    <div class="kpi-info">
-                        <span class="kpi-label">Investissement initial</span>
-                        <span class="kpi-value">{{ valeurStockAccessoires !== null ? (valeurStockAccessoires |
-                            number:'1.3-3') : '…' }} DT</span>
-                        <span class="kpi-sub">accessoires en stock, au prix d'achat</span>
-                    </div>
-                </div>
-            </div>
-            <p class="empty-state" *ngIf="stats.accessoires.revenue === 0">
-                <span>Aucun accessoire vendu sur cette période.</span>
-            </p>
-        </div>
-
         <!-- Revenue chart -->
         <div class="chart-card">
             <div class="chart-header">Chiffre d'affaires {{ stats.granularite === 'mois' ? 'par mois' : 'par jour' }}
