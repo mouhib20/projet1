@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Unauthor
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { IS_PUBLIC } from './public.decorator';
+import { UsersService } from '../users/users.service';
 
 /** Areas only an administrator may change (the UI already restricts these pages to admins). */
 const ECRITURE_ADMIN = /^\/api\/(fournisseurs|factures-achat|mouvements-achat|stocks|clients\/fusionner-doublons)(\/|$|\?)/;
@@ -9,13 +10,18 @@ const ECRITURE_ADMIN = /^\/api\/(fournisseurs|factures-achat|mouvements-achat|st
 /**
  * Global guard: every route needs a valid login token unless marked @Public().
  * Visitors are read-only; writes to suppliers / purchase invoices / stock are admin-only.
+ * A suspended employee (actif=false) is rejected immediately, even with an otherwise-valid token.
  * (The caisse checks the token again itself to know who is acting.)
  */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-    constructor(private readonly jwt: JwtService, private readonly reflector: Reflector) { }
+    constructor(
+        private readonly jwt: JwtService,
+        private readonly reflector: Reflector,
+        private readonly usersService: UsersService,
+    ) { }
 
-    canActivate(context: ExecutionContext): boolean {
+    async canActivate(context: ExecutionContext): Promise<boolean> {
         if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [context.getHandler(), context.getClass()])) return true;
 
         const req = context.switchToHttp().getRequest();
@@ -30,6 +36,9 @@ export class JwtAuthGuard implements CanActivate {
             throw new UnauthorizedException('Session expirée, reconnectez-vous.');
         }
         req.user = payload;
+
+        const user = await this.usersService.findById(payload.sub);
+        if (!user || !user.actif) throw new ForbiddenException('Compte suspendu.');
 
         const lecture = req.method === 'GET' || req.method === 'HEAD';
         if (!lecture) {

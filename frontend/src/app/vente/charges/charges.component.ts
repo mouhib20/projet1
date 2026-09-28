@@ -7,6 +7,7 @@ import { Charge } from '../../models/charge.model';
 import { PaiementFournisseurService, FournisseurDu, PaiementFournisseur } from '../../services/paiement-fournisseur.service';
 import { VenteService } from '../../services/vente.service';
 import { Vente } from '../../models/vente.model';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-charges',
@@ -27,6 +28,7 @@ export class ChargesComponent implements OnInit {
     private paiementService: PaiementFournisseurService,
     private venteService: VenteService,
     private translate: TranslateService,
+    public auth: AuthService,
   ) { }
 
   ngOnInit(): void {

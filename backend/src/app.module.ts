@@ -32,6 +32,9 @@ import { Charge } from './charges/charge.entity';
 import { ReparationsModule } from './reparations/reparations.module';
 import { CaisseModule } from './caisse/caisse.module';
 import { PaiementsFournisseurModule } from './paiements-fournisseur/paiements-fournisseur.module';
+import { PermissionsModule } from './permissions/permissions.module';
+import { Permission } from './permissions/permission.entity';
+import { EmployeesModule } from './employees/employees.module';
 
 @Module({
     imports: [
@@ -57,7 +60,7 @@ import { PaiementsFournisseurModule } from './paiements-fournisseur/paiements-fo
                 return {
                     type: 'postgres' as const,
                     ...connexion,
-                    entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, ProductEntity, FactureAchat, Charge, Utilisateur],
+                    entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, ProductEntity, FactureAchat, Charge, Utilisateur, Permission],
                     synchronize: configService.get<string>('DB_SYNC', 'false') === 'true',
                     ssl: configService.get<string>('DB_SSL', 'true') === 'true' ? { rejectUnauthorized: false } : false,
                 };
@@ -78,6 +81,8 @@ import { PaiementsFournisseurModule } from './paiements-fournisseur/paiements-fo
         ReparationsModule,
         CaisseModule,
         PaiementsFournisseurModule,
+        PermissionsModule,
+        EmployeesModule,
     ],
     controllers: [AppController],
     providers: [AppService],

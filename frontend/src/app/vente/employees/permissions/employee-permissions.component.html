@@ -1,0 +1,54 @@
+<div class="permissions-page">
+
+    <div class="page-header">
+        <div>
+            <button class="btn btn-secondary btn-sm" (click)="back()">← {{ 'EMPLOYEES.BACK_TO_LIST' | translate }}</button>
+            <div class="page-title">🔑 {{ 'EMPLOYEES.PERMISSIONS_TITLE' | translate }}</div>
+        </div>
+    </div>
+
+    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg | translate }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
+
+    <div class="loading-state" *ngIf="loading">
+        <div class="loading-icon">⟳</div>
+        <strong>{{ 'EMPLOYEES.LOADING' | translate }}</strong>
+    </div>
+
+    <div class="table-container" *ngIf="!loading">
+        <table class="permissions-table">
+            <thead>
+                <tr>
+                    <th>{{ 'EMPLOYEES.COL_DEPARTMENT' | translate }}</th>
+                    <th class="text-center">{{ 'EMPLOYEES.COL_VIEW' | translate }}</th>
+                    <th class="text-center">{{ 'EMPLOYEES.COL_ADD' | translate }}</th>
+                    <th class="text-center">{{ 'EMPLOYEES.COL_MODIFY' | translate }}</th>
+                    <th class="text-center">{{ 'EMPLOYEES.COL_DELETE' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let dept of departements">
+                    <td class="fw-bold">{{ ('EMPLOYEES.DEPT_' + dept.toUpperCase()) | translate }}</td>
+                    <td class="text-center">
+                        <input type="checkbox" [(ngModel)]="matrix[dept].voir" (ngModelChange)="onVoirChange(dept)" />
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" [(ngModel)]="matrix[dept].ajouter" [disabled]="!matrix[dept].voir" />
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" [(ngModel)]="matrix[dept].modifier" [disabled]="!matrix[dept].voir" />
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" [(ngModel)]="matrix[dept].supprimer" [disabled]="!matrix[dept].voir" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="form-actions">
+            <button class="btn btn-success" [disabled]="saving" (click)="save()">
+                {{ (saving ? 'EMPLOYEES.SAVING' : 'EMPLOYEES.SAVE_PERMISSIONS') | translate }}
+            </button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,115 @@
+<div class="employees-page">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <div class="page-title">👤 {{ 'EMPLOYEES.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'EMPLOYEES.SUBTITLE' | translate }}</div>
+        </div>
+        <div class="header-boutons" *ngIf="!showForm">
+            <button class="btn btn-primary" (click)="openAddForm()">＋ {{ 'EMPLOYEES.ADD_EMPLOYEE' | translate }}</button>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg | translate }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
+
+    <!-- Add/edit form -->
+    <div class="form-card" *ngIf="showForm">
+        <div class="form-card-header">
+            <ng-container *ngIf="isEditing">✏️ {{ 'EMPLOYEES.EDIT_EMPLOYEE' | translate }}</ng-container>
+            <ng-container *ngIf="!isEditing">➕ {{ 'EMPLOYEES.NEW_EMPLOYEE' | translate }}</ng-container>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>{{ 'EMPLOYEES.NAME_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.nom" [placeholder]="'EMPLOYEES.NAME_PLACEHOLDER' | translate" />
+            </div>
+            <div class="form-group">
+                <label>{{ 'EMPLOYEES.PHONE_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.telephone" [placeholder]="'EMPLOYEES.PHONE_PLACEHOLDER' | translate" />
+            </div>
+            <ng-container *ngIf="!isEditing">
+                <div class="form-group">
+                    <label>{{ 'EMPLOYEES.USERNAME_LABEL' | translate }}</label>
+                    <input type="text" [(ngModel)]="form.username" [placeholder]="'EMPLOYEES.USERNAME_PLACEHOLDER' | translate" />
+                </div>
+                <div class="form-group">
+                    <label>{{ 'EMPLOYEES.PASSWORD_LABEL' | translate }}</label>
+                    <input type="password" [(ngModel)]="form.password" [placeholder]="'EMPLOYEES.PASSWORD_PLACEHOLDER' | translate" />
+                </div>
+            </ng-container>
+            <div class="form-group full" *ngIf="isEditing">
+                <label class="checkbox-label">
+                    <input type="checkbox" [(ngModel)]="resetPassword" />
+                    {{ 'EMPLOYEES.RESET_PASSWORD' | translate }}
+                </label>
+                <input *ngIf="resetPassword" type="password" [(ngModel)]="form.password"
+                    [placeholder]="'EMPLOYEES.NEW_PASSWORD_PLACEHOLDER' | translate" style="margin-top: 8px;" />
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-secondary" (click)="cancelForm()">{{ 'CANCEL' | translate }}</button>
+            <button class="btn btn-success" [disabled]="savingEmployee" (click)="saveEmployee()">
+                <ng-container *ngIf="savingEmployee">{{ 'EMPLOYEES.SAVING' | translate }}</ng-container>
+                <ng-container *ngIf="!savingEmployee">{{ (isEditing ? 'STOCK.SAVE' : 'EMPLOYEES.CREATE') | translate }}</ng-container>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="table-toolbar">
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" type="text" [placeholder]="'EMPLOYEES.SEARCH_PLACEHOLDER' | translate"
+                [(ngModel)]="searchTerm" />
+        </div>
+        <div class="table-count">{{ filteredEmployees.length }} {{ 'EMPLOYEES.COUNT_SUFFIX' | translate }}</div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="loading">
+        <div class="loading-icon">⟳</div>
+        <strong>{{ 'EMPLOYEES.LOADING' | translate }}</strong>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty-state" *ngIf="!loading && filteredEmployees.length === 0">
+        <div class="empty-icon">📭</div>
+        <strong>{{ 'EMPLOYEES.EMPTY' | translate }}</strong>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container" *ngIf="!loading && filteredEmployees.length > 0">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>{{ 'EMPLOYEES.COL_NAME' | translate }}</th>
+                    <th>{{ 'EMPLOYEES.COL_PHONE' | translate }}</th>
+                    <th>{{ 'EMPLOYEES.COL_USERNAME' | translate }}</th>
+                    <th class="text-center">{{ 'EMPLOYEES.COL_STATUS' | translate }}</th>
+                    <th class="text-center">{{ 'EMPLOYEES.COL_ACTIONS' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let e of filteredEmployees">
+                    <td class="fw-bold">{{ e.nom }}</td>
+                    <td>{{ e.telephone || '—' }}</td>
+                    <td>{{ e.username }}</td>
+                    <td class="text-center">
+                        <span class="badge-dette" *ngIf="!e.actif">{{ 'EMPLOYEES.STATUS_SUSPENDED' | translate }}</span>
+                        <span class="text-success" *ngIf="e.actif">{{ 'EMPLOYEES.STATUS_ACTIVE' | translate }}</span>
+                    </td>
+                    <td class="text-center">
+                        <button class="btn-outline btn-sm" (click)="openEditForm(e)">✏️ {{ 'EMPLOYEES.BTN_EDIT' | translate }}</button>
+                        <button class="btn-outline btn-sm" (click)="openPermissions(e)">🔑 {{ 'EMPLOYEES.BTN_PERMISSIONS' | translate }}</button>
+                        <button class="btn-outline btn-sm" (click)="toggleStatut(e)">
+                            {{ (e.actif ? 'EMPLOYEES.BTN_SUSPEND' : 'EMPLOYEES.BTN_REACTIVATE') | translate }}
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -2,7 +2,7 @@
     <div class="header-section">
         <h2 class="title">{{ 'SIDEBAR.CHARGES' | translate | uppercase }}</h2>
         <p class="subtitle">{{ 'CHARGES.SUBTITLE' | translate }}</p>
-        <button class="btn-primary add-btn" (click)="openModal()">
+        <button class="btn-primary add-btn" *ngIf="auth.hasPermission('charges', 'ajouter')" (click)="openModal()">
             + {{ 'CHARGES.NEW_EXPENSE' | translate }}
         </button>
     </div>
@@ -140,7 +140,7 @@
     <div class="fourn">
         <div class="synthese-titre fourn-titre">
             <span>🤝 {{ 'CHARGES.SUPPLIER_PAYMENTS' | translate }}</span>
-            <button class="btn-primary fourn-btn" (click)="ouvrirPaiement()">+ {{ 'CHARGES.PAY_A_SUPPLIER' | translate }}</button>
+            <button class="btn-primary fourn-btn" *ngIf="auth.hasPermission('charges', 'ajouter')" (click)="ouvrirPaiement()">+ {{ 'CHARGES.PAY_A_SUPPLIER' | translate }}</button>
         </div>
 
         <div class="alerte-ok" *ngIf="paiementMessage">✅ {{ paiementMessage | translate }}</div>
@@ -254,7 +254,7 @@
                         <td>{{ p.note || '—' }}</td>
                         <td>{{ (p.paye_caisse ? 'CHARGES.CASH_REGISTER' : 'CHARGES.OUTSIDE_REGISTER') | translate }}</td>
                         <td class="text-right fw-bold">{{ p.montant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
-                        <td class="text-right"><button class="btn-icon delete-action" [title]="'CHARGES.CANCEL_PAYMENT_TOOLTIP' | translate" (click)="annulerPaiement(p)">🗑</button></td>
+                        <td class="text-right"><button class="btn-icon delete-action" *ngIf="auth.hasPermission('charges', 'supprimer')" [title]="'CHARGES.CANCEL_PAYMENT_TOOLTIP' | translate" (click)="annulerPaiement(p)">🗑</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -288,7 +288,7 @@
                         - {{ c.montant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
                     </td>
                     <td class="text-center">
-                        <button class="btn-icon delete-action" [title]="'STOCK.DELETE' | translate" (click)="deleteCharge(c.id_charge!)">🗑
+                        <button class="btn-icon delete-action" *ngIf="auth.hasPermission('charges', 'supprimer')" [title]="'STOCK.DELETE' | translate" (click)="deleteCharge(c.id_charge!)">🗑
                         </button>
                     </td>
                 </tr>

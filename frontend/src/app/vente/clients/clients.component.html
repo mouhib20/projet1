@@ -9,7 +9,7 @@
         <div class="header-boutons" *ngIf="!showAddForm">
             <button class="btn btn-secondary" *ngIf="auth.isAdmin()" (click)="fusionnerDoublons()"
                 [title]="'CLIENTS.MERGE_TOOLTIP' | translate">🧩 {{ 'CLIENTS.MERGE_DUPLICATES' | translate }}</button>
-            <button class="btn btn-primary" (click)="openAddForm()">＋ {{ 'CLIENTS.ADD_CLIENT' | translate }}</button>
+            <button class="btn btn-primary" *ngIf="auth.hasPermission('clients', 'ajouter')" (click)="openAddForm()">＋ {{ 'CLIENTS.ADD_CLIENT' | translate }}</button>
         </div>
     </div>
 

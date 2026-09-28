@@ -11,6 +11,8 @@ import { StockComponent } from './vente/stock/stock.component';
 import { FournisseursComponent } from './vente/fournisseurs/fournisseurs.component';
 import { FacturesComponent } from './vente/factures/factures.component';
 import { ClientsComponent } from './vente/clients/clients.component';
+import { EmployeesComponent } from './vente/employees/employees.component';
+import { EmployeePermissionsComponent } from './vente/employees/permissions/employee-permissions.component';
 import { authGuard } from './guards/auth.guard';
 import { adminGuard } from './guards/admin.guard';
 
@@ -31,6 +33,8 @@ export const routes: Routes = [
             { path: 'fournisseurs', component: FournisseursComponent, canActivate: [adminGuard] },
             { path: 'factures', component: FacturesComponent, canActivate: [adminGuard], canDeactivate: [(page: FacturesComponent) => page.peutQuitter()] },
             { path: 'clients', component: ClientsComponent, canActivate: [authGuard], data: { roles: ['admin', 'vendeur', 'vendeuse'] } },
+            { path: 'employees', component: EmployeesComponent, canActivate: [adminGuard] },
+            { path: 'employees/:id/permissions', component: EmployeePermissionsComponent, canActivate: [adminGuard] },
         ]
     },
     { path: 'reparation', component: ReparationComponent, canActivate: [authGuard] },

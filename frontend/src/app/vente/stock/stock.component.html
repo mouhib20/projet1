@@ -6,7 +6,7 @@
             <div class="page-title">📦 {{ 'STOCK.TITLE' | translate }}</div>
             <div class="page-subtitle">{{ 'STOCK.SUBTITLE' | translate }}</div>
         </div>
-        <button class="btn btn-primary" (click)="openAddForm()" *ngIf="!showForm">
+        <button class="btn btn-primary" (click)="openAddForm()" *ngIf="!showForm && auth.hasPermission('stock', 'ajouter')">
             ＋ {{ 'STOCK.ADD' | translate }}
         </button>
     </div>
@@ -370,10 +370,10 @@
                         </td>
                         <td>
                             <div class="actions-cell">
-                                <button class="btn-icon edit" [title]="'STOCK.EDIT' | translate" (click)="openEditForm(p)">✏️</button>
-                                <button class="btn-icon" *ngIf="p.type === 'accessory' && (p.quantite ?? 0) > 0"
+                                <button class="btn-icon edit" *ngIf="auth.hasPermission('stock', 'modifier')" [title]="'STOCK.EDIT' | translate" (click)="openEditForm(p)">✏️</button>
+                                <button class="btn-icon" *ngIf="p.type === 'accessory' && (p.quantite ?? 0) > 0 && auth.hasPermission('stock', 'modifier')"
                                     [title]="'STOCK.RETURN_TO_SUPPLIER' | translate" (click)="ouvrirRenvoi(p)">↩</button>
-                                <button class="btn-icon delete" [title]="'STOCK.DELETE' | translate"
+                                <button class="btn-icon delete" *ngIf="auth.hasPermission('stock', 'supprimer')" [title]="'STOCK.DELETE' | translate"
                                     (click)="deleteProduct(p.id_article, p.designation)">🗑️</button>
                             </div>
                         </td>

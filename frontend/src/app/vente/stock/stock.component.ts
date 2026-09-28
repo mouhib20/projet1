@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ArticleService, ArticleForm, articleImageUrl } from '../../services/article.service';
 import { ClientService } from '../../services/client.service';
+import { AuthService } from '../../services/auth.service';
 import { TranslatePipe, TranslateDirective, TranslateService } from '@ngx-translate/core';
 
 export type StockStatus = {
@@ -67,7 +68,7 @@ export class StockComponent implements OnInit {
         return articleImageUrl(image);
     }
 
-    constructor(private articleService: ArticleService, private clientService: ClientService, private translate: TranslateService) { }
+    constructor(private articleService: ArticleService, private clientService: ClientService, private translate: TranslateService, public auth: AuthService) { }
 
     ngOnInit(): void {
         this.loadProducts();

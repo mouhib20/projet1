@@ -22,7 +22,7 @@
             </a>
         </nav>
 
-        <div style="margin-top: auto;">
+        <div style="margin-top: auto;" *ngIf="auth.hasPermission('reparation', 'ajouter')">
             <button class="btn btn-primary"
                 style="width: 100%; border-radius: 8px; padding: 12px; font-weight: bold; background: #6366f1; border: none; color: white; cursor: pointer;"
                 (click)="openTicketModal()">
@@ -78,10 +78,10 @@
                                 <td (click)="$event.stopPropagation()">
                                     <!-- Step 1: repair in progress -->
                                     <div *ngIf="estEnCours(rep)" class="montant-recu-row">
-                                        <button class="btn-step btn-step-primary" (click)="ouvrirFinalisation(rep)">
+                                        <button class="btn-step btn-step-primary" *ngIf="auth.hasPermission('reparation', 'modifier')" (click)="ouvrirFinalisation(rep)">
                                             🔧 {{ 'REPARATION.MAINTENANCE_DONE' | translate }}
                                         </button>
-                                        <button class="btn-step btn-step-danger" (click)="ouvrirAnnulation(rep)"
+                                        <button class="btn-step btn-step-danger" *ngIf="auth.hasPermission('reparation', 'supprimer')" (click)="ouvrirAnnulation(rep)"
                                             [title]="'REPARATION.RETURN_PHONE_TOOLTIP' | translate">
                                             ↩️ {{ 'REPARATION.RETURN_PHONE' | translate }}
                                         </button>

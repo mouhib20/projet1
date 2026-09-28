@@ -6,11 +6,14 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
+import { PermissionsModule } from '../permissions/permissions.module';
+import { PermissionsGuard } from '../permissions/permissions.guard';
 import { JWT_SECRET } from './jwt.constants';
 
 @Module({
     imports: [
         UsersModule,
+        PermissionsModule,
         JwtModule.register({
             secret: JWT_SECRET,
             signOptions: { expiresIn: '8h' },
@@ -19,6 +22,7 @@ import { JWT_SECRET } from './jwt.constants';
     providers: [
         AuthService,
         { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_GUARD, useClass: PermissionsGuard },
         { provide: APP_INTERCEPTOR, useClass: AntiDoubleSoumissionInterceptor },
     ],
     controllers: [AuthController],

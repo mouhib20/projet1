@@ -6,6 +6,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export type UserRole = 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
+export type Departement = 'ventes' | 'stock' | 'reparation' | 'fournisseurs' | 'charges' | 'clients' | 'rapports';
+export type PermissionAction = 'voir' | 'ajouter' | 'modifier' | 'supprimer';
+export type PermissionEntry = { voir: boolean; ajouter: boolean; modifier: boolean; supprimer: boolean };
+export type PermissionMatrix = Partial<Record<Departement, PermissionEntry>>;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -20,6 +24,7 @@ export class AuthService {
                 localStorage.setItem('role', res.role);
                 localStorage.setItem('username', res.username);
                 localStorage.setItem('nom', res.nom);
+                localStorage.setItem('permissions', JSON.stringify(res.permissions || {}));
             })
         );
     }
@@ -29,6 +34,7 @@ export class AuthService {
         localStorage.removeItem('role');
         localStorage.removeItem('username');
         localStorage.removeItem('nom');
+        localStorage.removeItem('permissions');
         this.router.navigate(['/login']);
     }
 
@@ -54,5 +60,42 @@ export class AuthService {
 
     isAdmin(): boolean {
         return this.getRole() === 'admin';
+    }
+
+    getPermissions(): PermissionMatrix {
+        try {
+            return JSON.parse(localStorage.getItem('permissions') || '{}');
+        } catch {
+            return {};
+        }
+    }
+
+    /** For an account with no permission rows (predates this feature): today's exact visibility per department. */
+    private legacyVoirParDefaut(dept: Departement): boolean {
+        const role = this.getRole();
+        if (dept === 'ventes' || dept === 'rapports') return true; // open to everyone today, including visiteur
+        if (dept === 'stock' || dept === 'fournisseurs') return role === 'admin'; // admin-only pages today
+        return role !== 'visiteur'; // clients / charges: hidden only from visiteur
+    }
+
+    private legacyPeutParDefaut(dept: Departement, action: PermissionAction): boolean {
+        if (action === 'voir') return this.legacyVoirParDefaut(dept);
+        const role = this.getRole();
+        if (role === 'visiteur') return false;
+        if (dept === 'stock' || dept === 'fournisseurs') return role === 'admin'; // writes here are admin-only today
+        return true;
+    }
+
+    /**
+     * Admins always pass. An employee with no permission rows at all (every account that existed
+     * before this feature) falls back to reproducing exactly today's behavior for that department
+     * (see legacyPeutParDefaut). Employees created via the Employees page are checked strictly
+     * against their granted matrix.
+     */
+    hasPermission(dept: Departement, action: PermissionAction): boolean {
+        if (this.isAdmin()) return true;
+        const perms = this.getPermissions();
+        if (Object.keys(perms).length === 0) return this.legacyPeutParDefaut(dept, action);
+        return !!perms[dept]?.[action];
     }
 }

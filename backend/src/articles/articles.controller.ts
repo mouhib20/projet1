@@ -8,12 +8,14 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { ArticlesService } from './articles.service';
 import { Article } from './article.entity';
+import { RequirePermission } from '../permissions/require-permission.decorator';
 
 @Controller('articles')
 export class ArticlesController {
     constructor(private readonly articlesService: ArticlesService) { }
 
     @Post('upload-image')
+    @RequirePermission('stock', 'ajouter')
     @UseInterceptors(FileInterceptor('image', {
         storage: diskStorage({
             destination: './uploads/articles',
@@ -37,26 +39,31 @@ export class ArticlesController {
     }
 
     @Get()
+    @RequirePermission('stock', 'voir')
     findAll(): Promise<Article[]> {
         return this.articlesService.findAll();
     }
 
     @Get('retours-fournisseur')
+    @RequirePermission('stock', 'voir')
     findRetoursFournisseur() {
         return this.articlesService.findRetoursFournisseur();
     }
 
     @Get('sav')
+    @RequirePermission('stock', 'voir')
     findSav() {
         return this.articlesService.findSav();
     }
 
     @Post('sav')
+    @RequirePermission('stock', 'ajouter')
     creerSav(@Body() body: { id_article: number; id_client?: number; qte?: number; probleme: string; degre_dommage?: string }) {
         return this.articlesService.creerSav(body);
     }
 
     @Post('sav/:id/remplacer')
+    @RequirePermission('stock', 'modifier')
     remplacerSav(
         @Param('id', ParseIntPipe) id: number,
         @Body('id_article_remplacement') idArticleRemplacement: number,
@@ -65,16 +72,19 @@ export class ArticlesController {
     }
 
     @Get(':id')
+    @RequirePermission('stock', 'voir')
     findOne(@Param('id', ParseIntPipe) id: number): Promise<Article> {
         return this.articlesService.findOne(id);
     }
 
     @Post()
+    @RequirePermission('stock', 'ajouter')
     create(@Body() body: Partial<Article>): Promise<Article> {
         return this.articlesService.create(body);
     }
 
     @Put(':id')
+    @RequirePermission('stock', 'modifier')
     update(
         @Param('id', ParseIntPipe) id: number,
         @Body() body: Partial<Article>,
@@ -83,6 +93,7 @@ export class ArticlesController {
     }
 
     @Post(':id/fournisseur')
+    @RequirePermission('stock', 'modifier')
     linkFournisseur(
         @Param('id', ParseIntPipe) id: number,
         @Body('fournisseurId') fournisseurId: number,
@@ -91,6 +102,7 @@ export class ArticlesController {
     }
 
     @Post(':id/retour-fournisseur')
+    @RequirePermission('stock', 'modifier')
     renvoyerAuFournisseur(
         @Param('id', ParseIntPipe) id: number,
         @Body() body: { probleme: string; qte?: number },
@@ -100,6 +112,7 @@ export class ArticlesController {
 
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
+    @RequirePermission('stock', 'supprimer')
     remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
         return this.articlesService.remove(id);
     }

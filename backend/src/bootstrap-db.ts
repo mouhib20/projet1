@@ -109,6 +109,24 @@ async function migrer(): Promise<void> {
         await client.query(`ALTER TABLE "vente" ADD COLUMN IF NOT EXISTS "id_reparation_origine" integer`);
         // Part of a sale line left unpaid (credit sale): lets the client's debt be traced back to what they took
         await client.query(`ALTER TABLE "vente" ADD COLUMN IF NOT EXISTS "credit" numeric(10,2)`);
+        // Employees feature: phone number, active/suspended flag, and which admin owns this account
+        await client.query(`ALTER TABLE "utilisateurs" ADD COLUMN IF NOT EXISTS "telephone" character varying`);
+        await client.query(`ALTER TABLE "utilisateurs" ADD COLUMN IF NOT EXISTS "actif" boolean DEFAULT true NOT NULL`);
+        await client.query(`ALTER TABLE "utilisateurs" ADD COLUMN IF NOT EXISTS "id_proprietaire" integer`);
+        // Per-employee, per-department permission matrix (voir/ajouter/modifier/supprimer)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "permission" (
+                "id" SERIAL PRIMARY KEY,
+                "id_utilisateur" integer NOT NULL,
+                "departement" character varying(20) NOT NULL,
+                "peut_voir" boolean DEFAULT false NOT NULL,
+                "peut_ajouter" boolean DEFAULT false NOT NULL,
+                "peut_modifier" boolean DEFAULT false NOT NULL,
+                "peut_supprimer" boolean DEFAULT false NOT NULL
+            )
+        `);
+        await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "permission_utilisateur_departement_idx" ON "permission" ("id_utilisateur", "departement")`);
+        await client.query(`DO $$ BEGIN ALTER TABLE "permission" ADD CONSTRAINT "permission_id_utilisateur_fkey" FOREIGN KEY (id_utilisateur) REFERENCES utilisateurs(id) ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
     } catch (err) {
         console.warn('[migrations] non appliquées :', (err as Error).message);
     } finally {

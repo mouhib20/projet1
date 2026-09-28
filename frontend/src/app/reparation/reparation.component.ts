@@ -8,6 +8,7 @@ import { ClientService } from '../services/client.service';
 import { ArticleService, ArticleForm } from '../services/article.service';
 import { FournisseurService } from '../services/fournisseur.service';
 import { PosBridgeService } from '../services/pos-bridge.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
     selector: 'app-reparation',
@@ -251,7 +252,8 @@ export class ReparationComponent implements OnInit {
         private articleService: ArticleService,
         private fournisseurService: FournisseurService,
         private posBridge: PosBridgeService,
-        private router: Router
+        private router: Router,
+        public auth: AuthService
     ) { }
 
     ngOnInit() {
