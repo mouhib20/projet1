@@ -73,44 +73,6 @@
         </div>
     </div>
 
-    <!-- Capital: snapshot of the shop right now, independent of the period above -->
-    <div class="chart-card capital-card">
-        <div class="chart-header">🏦 Capital de la boutique</div>
-        <div class="kpi-row">
-            <div class="kpi-card kpi-profit">
-                <div class="kpi-icon">💎</div>
-                <div class="kpi-info">
-                    <span class="kpi-label">Capital net</span>
-                    <span class="kpi-value">{{ capitalCharge ? (capital | number:'1.3-3') : '…' }} DT</span>
-                    <span class="kpi-sub">stock + caisse − dette fournisseurs</span>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon">📦</div>
-                <div class="kpi-info">
-                    <span class="kpi-label">Valeur du stock</span>
-                    <span class="kpi-value">{{ valeurStock !== null ? (valeurStock | number:'1.3-3') : '…' }} DT</span>
-                    <span class="kpi-sub">au prix d'achat</span>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon">🗄️</div>
-                <div class="kpi-info">
-                    <span class="kpi-label">Solde caisse</span>
-                    <span class="kpi-value">{{ soldeCaisse !== null ? (soldeCaisse | number:'1.3-3') : '…' }} DT</span>
-                </div>
-            </div>
-            <div class="kpi-card kpi-dette">
-                <div class="kpi-icon">⚠️</div>
-                <div class="kpi-info">
-                    <span class="kpi-label">Dette fournisseurs</span>
-                    <span class="kpi-value">{{ detteFournisseurs !== null ? (detteFournisseurs | number:'1.3-3') :
-                        '…' }} DT</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Loading / Error -->
     <div class="loading-state" *ngIf="loading">
         <div class="loading-icon">⟳</div>

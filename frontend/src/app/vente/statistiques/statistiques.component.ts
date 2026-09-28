@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { VenteService } from '../../services/vente.service';
 import { ChargeService } from '../../services/charge.service';
 import { ArticleService } from '../../services/article.service';
-import { CaisseService } from '../../services/caisse.service';
 import { PaiementFournisseurService } from '../../services/paiement-fournisseur.service';
 import { PeriodeStats, VenteStats } from '../../models/vente-stats.model';
 import { Charge } from '../../models/charge.model';
@@ -34,7 +33,6 @@ export class StatistiquesComponent implements OnInit {
     private venteService: VenteService,
     private chargeService: ChargeService,
     private articleService: ArticleService,
-    private caisseService: CaisseService,
     private paiementFournisseurService: PaiementFournisseurService,
   ) { }
 
@@ -49,16 +47,7 @@ export class StatistiquesComponent implements OnInit {
   /** Stock value split by kind: repair parts ('part') vs accessories ('accessory'). */
   valeurStockPieces: number | null = null;
   valeurStockAccessoires: number | null = null;
-  soldeCaisse: number | null = null;
   detteFournisseurs: number | null = null;
-
-  get capitalCharge(): boolean {
-    return this.valeurStock !== null && this.soldeCaisse !== null && this.detteFournisseurs !== null;
-  }
-
-  get capital(): number {
-    return (this.valeurStock || 0) + (this.soldeCaisse || 0) - (this.detteFournisseurs || 0);
-  }
 
   loadCapital(): void {
     this.articleService.getArticles().subscribe({
@@ -69,12 +58,6 @@ export class StatistiquesComponent implements OnInit {
         this.valeurStockAccessoires = articles.filter(a => a.type === 'accessory').reduce((s, a) => s + valeur(a), 0);
       },
       error: () => { this.valeurStock = 0; this.valeurStockPieces = 0; this.valeurStockAccessoires = 0; }
-    });
-    this.caisseService.getStatus().subscribe({
-      next: (status) => {
-        this.soldeCaisse = Number(status.ouverte ? status.attendu : status.fondAttenduOuverture) || 0;
-      },
-      error: () => { this.soldeCaisse = 0; }
     });
     this.paiementFournisseurService.getDus().subscribe({
       next: (dus) => {
