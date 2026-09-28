@@ -27,54 +27,6 @@
     <!-- Dashboard Content -->
     <div *ngIf="stats && !loading" class="dash-content fade-in">
 
-        <!-- KPI Cards -->
-        <div class="kpi-grid">
-            <div class="kpi-card kpi-articles">
-                <div class="kpi-icon-wrap kpi-icon-blue">
-                    <span>📦</span>
-                </div>
-                <div class="kpi-info">
-                    <span class="kpi-value">{{ stats.totalArticles }}</span>
-                    <span class="kpi-label">{{ 'DASHBOARD.KPI_ARTICLES' | translate }}</span>
-                </div>
-                <div class="kpi-glow kpi-glow-blue"></div>
-            </div>
-
-            <div class="kpi-card kpi-fournisseurs">
-                <div class="kpi-icon-wrap kpi-icon-purple">
-                    <span>🤝</span>
-                </div>
-                <div class="kpi-info">
-                    <span class="kpi-value">{{ stats.totalFournisseurs }}</span>
-                    <span class="kpi-label">{{ 'DASHBOARD.KPI_SUPPLIERS' | translate }}</span>
-                </div>
-                <div class="kpi-glow kpi-glow-purple"></div>
-            </div>
-
-            <div class="kpi-card kpi-factures">
-                <div class="kpi-icon-wrap kpi-icon-green">
-                    <span>📄</span>
-                </div>
-                <div class="kpi-info">
-                    <span class="kpi-value">{{ stats.totalFactures }}</span>
-                    <span class="kpi-label">{{ 'DASHBOARD.KPI_INVOICES' | translate }}</span>
-                </div>
-                <div class="kpi-glow kpi-glow-green"></div>
-            </div>
-
-            <div class="kpi-card kpi-stock-value">
-                <div class="kpi-icon-wrap kpi-icon-amber">
-                    <span>💰</span>
-                </div>
-                <div class="kpi-info">
-                    <span class="kpi-value">{{ stats.totalStockValue | number:'1.3-3' }}</span>
-                    <span class="kpi-label">{{ 'DASHBOARD.KPI_STOCK_VALUE' | translate }} ({{ 'CURRENCY' | translate
-                        }})</span>
-                </div>
-                <div class="kpi-glow kpi-glow-amber"></div>
-            </div>
-        </div>
-
         <!-- Two-column layout -->
         <div class="panels-grid">
             <!-- Recent Invoices -->
