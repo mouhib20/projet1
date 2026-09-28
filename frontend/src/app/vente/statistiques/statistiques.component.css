@@ -347,6 +347,12 @@
     font-family: 'Inter', monospace;
 }
 
+.text-danger {
+    color: #f87171;
+    font-weight: 700;
+    font-family: 'Inter', monospace;
+}
+
 .fw-bold {
     font-weight: 700;
     color: #ffffff;
@@ -385,6 +391,82 @@
     border-radius: 8px;
     margin-bottom: 1rem;
     font-size: 0.85rem;
+}
+
+/* ── Repair detail: clickable box 1 + its modal ──────────────── */
+.recap-box-cliquable {
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.recap-box-cliquable:hover {
+    border-color: rgba(74, 222, 128, 0.5);
+    background: #12151f;
+}
+
+.recap-voir-plus {
+    display: block;
+    color: #60a5fa;
+    font-weight: 600;
+    font-size: 11.5px;
+    margin-top: 4px;
+}
+
+.detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 7, 12, 0.75);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.detail-modal {
+    background: #161b27;
+    border: 1px solid #21263a;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 760px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid #21263a;
+}
+
+.detail-header h3 {
+    margin: 0;
+    font-size: 15px;
+    color: #e1e4e8;
+}
+
+.detail-close {
+    background: none;
+    border: none;
+    color: #8b949e;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+}
+
+.detail-close:hover {
+    color: #e1e4e8;
+}
+
+.detail-body {
+    padding: 18px 22px;
+    overflow-y: auto;
 }
 
 /* ── Responsive ────────────────────────────────────────────── */

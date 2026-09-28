@@ -5,6 +5,7 @@ import { VenteService } from '../../services/vente.service';
 import { ArticleService } from '../../services/article.service';
 import { PaiementFournisseurService } from '../../services/paiement-fournisseur.service';
 import { PeriodeStats, VenteStats } from '../../models/vente-stats.model';
+import { Vente } from '../../models/vente.model';
 
 @Component({
   selector: 'app-statistiques',
@@ -85,5 +86,46 @@ export class StatistiquesComponent implements OnInit {
 
   get periodeLabel(): string {
     return this.periodes.find(p => p.valeur === this.periode)?.label || '';
+  }
+
+  // ── Repair detail: every repair sale line behind box 1's totals ──
+
+  detailReparationsOuvert = false;
+  detailReparationsChargement = false;
+  detailReparationsErreur = '';
+  detailReparationsLignes: (Vente & { benefice: number | null })[] = [];
+
+  private jourDeVente(v: Vente): string {
+    const d = String(v.date);
+    return /^\d{4}-\d{2}-\d{2}/.test(d) ? d.slice(0, 10) : new Date(v.date).toISOString().slice(0, 10);
+  }
+
+  ouvrirDetailReparations(): void {
+    if (!this.stats) return;
+    this.detailReparationsOuvert = true;
+    this.detailReparationsChargement = true;
+    this.detailReparationsErreur = '';
+    const { startDate, endDate } = this.stats;
+    this.venteService.getVentes().subscribe({
+      next: (ventes) => {
+        this.detailReparationsLignes = ventes
+          .filter(v => !v.article) // repair lines only (deposits and pickups)
+          .filter(v => { const j = this.jourDeVente(v); return j >= startDate && j <= endDate; })
+          .map(v => ({
+            ...v,
+            benefice: v.cout === null || v.cout === undefined ? null : (v.qte || 1) * (Number(v.prix || 0) - Number(v.cout || 0)),
+          }))
+          .sort((a, b) => this.jourDeVente(b).localeCompare(this.jourDeVente(a)) || (b.id_vente ?? 0) - (a.id_vente ?? 0));
+        this.detailReparationsChargement = false;
+      },
+      error: () => {
+        this.detailReparationsErreur = 'Impossible de charger le détail des réparations.';
+        this.detailReparationsChargement = false;
+      }
+    });
+  }
+
+  fermerDetailReparations(): void {
+    this.detailReparationsOuvert = false;
   }
 }
