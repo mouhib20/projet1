@@ -82,55 +82,6 @@
 
     <ng-container *ngIf="!loading && stats">
 
-        <!-- Repairs: kept apart from articles sold -->
-        <div class="chart-card">
-            <div class="chart-header">🔧 Réparations — {{ periodeLabel }}</div>
-            <div class="kpi-row">
-                <div class="kpi-card">
-                    <div class="kpi-icon">💵</div>
-                    <div class="kpi-info">
-                        <span class="kpi-label">Prix encaissé</span>
-                        <span class="kpi-value">{{ stats.reparations.revenue | number:'1.3-3' }} DT</span>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon">🔩</div>
-                    <div class="kpi-info">
-                        <span class="kpi-label">Coût total des pièces</span>
-                        <span class="kpi-value">{{ stats.reparations.cout | number:'1.3-3' }} DT</span>
-                    </div>
-                </div>
-                <div class="kpi-card kpi-profit">
-                    <div class="kpi-icon">📈</div>
-                    <div class="kpi-info">
-                        <span class="kpi-label">Bénéfice réparations</span>
-                        <span class="kpi-value">{{ stats.reparations.benefice | number:'1.3-3' }} DT</span>
-                    </div>
-                </div>
-                <div class="kpi-card kpi-dette" *ngIf="stats.reparations.pertes > 0">
-                    <div class="kpi-icon">📉</div>
-                    <div class="kpi-info">
-                        <span class="kpi-label">Pertes sur réparations</span>
-                        <span class="kpi-value">{{ stats.reparations.pertes | number:'1.3-3' }} DT</span>
-                        <span class="kpi-sub">montant reçu sous le coût des pièces, ou pièce remplacée gratuitement
-                            après retour</span>
-                    </div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon">🏭</div>
-                    <div class="kpi-info">
-                        <span class="kpi-label">Capital de l'atelier</span>
-                        <span class="kpi-value">{{ valeurStockPieces !== null ? (valeurStockPieces | number:'1.3-3') :
-                            '…' }} DT</span>
-                        <span class="kpi-sub">pièces détachées en stock, au prix d'achat</span>
-                    </div>
-                </div>
-            </div>
-            <p class="empty-state" *ngIf="stats.reparations.revenue === 0">
-                <span>Aucune réparation encaissée sur cette période.</span>
-            </p>
-        </div>
-
         <!-- Accessories: kept apart from repair parts -->
         <div class="chart-card">
             <div class="chart-header">🎧 Accessoires — {{ periodeLabel }}</div>
