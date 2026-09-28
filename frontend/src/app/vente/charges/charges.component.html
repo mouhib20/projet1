@@ -1,9 +1,9 @@
 <div class="charges-container">
     <div class="header-section">
         <h2 class="title">{{ 'SIDEBAR.CHARGES' | translate | uppercase }}</h2>
-        <p class="subtitle">Gérez vos dépenses et charges (loyer, salaires, électricité...)</p>
+        <p class="subtitle">{{ 'CHARGES.SUBTITLE' | translate }}</p>
         <button class="btn-primary add-btn" (click)="openModal()">
-            + NOUVELLE CHARGE
+            + {{ 'CHARGES.NEW_EXPENSE' | translate }}
         </button>
     </div>
 
@@ -13,26 +13,26 @@
             <div class="stat-icon">🏷️</div>
             <div class="stat-info">
                 <span class="stat-value">{{ chargesChargees ? charges.length : '…' }}</span>
-                <span class="stat-label">Nombre de charges</span>
+                <span class="stat-label">{{ 'CHARGES.EXPENSE_COUNT' | translate }}</span>
             </div>
         </div>
         <div class="stat-card amount">
             <div class="stat-icon">💸</div>
             <div class="stat-info">
                 <span class="stat-value">{{ chargesChargees ? (totalAmount | number:'1.3-3') : '…' }}</span>
-                <span class="stat-label">Total Dépenses ({{ 'CURRENCY' | translate }})</span>
+                <span class="stat-label">{{ 'CHARGES.TOTAL_EXPENSES' | translate }} ({{ 'CURRENCY' | translate }})</span>
             </div>
         </div>
     </div>
 
     <!-- Summary: what must be earned to cover the expenses -->
     <div class="synthese" *ngIf="charges.length > 0">
-        <div class="synthese-titre">📅 Combien gagner pour couvrir mes dépenses</div>
+        <div class="synthese-titre">📅 {{ 'CHARGES.HOW_MUCH_TO_EARN' | translate }}</div>
         <div class="synthese-cartes">
             <div class="synthese-carte">
                 <span class="synthese-valeur">{{ objectifJournalier | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
-                <span class="synthese-label">à gagner chaque jour d'ici la fin du mois
-                    <small>({{ joursRestantsMois }} jour(s) restant(s))</small>
+                <span class="synthese-label">{{ 'CHARGES.TO_EARN_DAILY' | translate }}
+                    <small>({{ 'CHARGES.DAYS_REMAINING' | translate:{ days: joursRestantsMois } }})</small>
                 </span>
             </div>
             <div class="synthese-carte" [class.synthese-carte-positive]="ventesChargees && beneficeAujourdhui >= objectifJournalier">
@@ -40,54 +40,53 @@
                     <ng-container *ngIf="ventesChargees; else chargement2">{{ beneficeAujourdhui | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</ng-container>
                     <ng-template #chargement2>…</ng-template>
                 </span>
-                <span class="synthese-label">bénéfice aujourd'hui
-                    <small>(objectif : {{ objectifJournalier | number:'1.3-3' }})</small>
+                <span class="synthese-label">{{ 'CHARGES.PROFIT_TODAY' | translate }}
+                    <small>({{ 'CHARGES.TARGET' | translate }} : {{ objectifJournalier | number:'1.3-3' }})</small>
                 </span>
             </div>
             <div class="synthese-carte">
                 <span class="synthese-valeur">{{ depensesMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
-                <span class="synthese-label">déjà dépensé ce mois-ci</span>
+                <span class="synthese-label">{{ 'CHARGES.ALREADY_SPENT_THIS_MONTH' | translate }}</span>
             </div>
             <div class="synthese-carte" [class.synthese-carte-positive]="ventesChargees && beneficeMoisCourant >= depensesMoisCourant">
                 <span class="synthese-valeur">
                     <ng-container *ngIf="ventesChargees; else chargement">{{ beneficeMoisCourant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</ng-container>
                     <ng-template #chargement>…</ng-template>
                 </span>
-                <span class="synthese-label">bénéfice ce mois-ci
-                    <small>(objectif : {{ depensesMoisCourant | number:'1.3-3' }})</small>
+                <span class="synthese-label">{{ 'CHARGES.PROFIT_THIS_MONTH' | translate }}
+                    <small>({{ 'CHARGES.TARGET' | translate }} : {{ depensesMoisCourant | number:'1.3-3' }})</small>
                 </span>
             </div>
         </div>
 
         <div class="synthese-detail">
             <div class="synthese-ligne">
-                <span>📆 Dépenses mensuelles <small>(loyer, salaires…)</small></span>
-                <strong>{{ moyenneMensuelles.moyenne | number:'1.3-3' }} {{ 'CURRENCY' | translate }} / mois</strong>
+                <span>📆 {{ 'CHARGES.MONTHLY_EXPENSES' | translate }} <small>({{ 'CHARGES.RENT_SALARIES' | translate }})</small></span>
+                <strong>{{ moyenneMensuelles.moyenne | number:'1.3-3' }} {{ 'CURRENCY' | translate }} / {{ 'CHARGES.MONTH' | translate }}</strong>
             </div>
         </div>
         <p class="synthese-note">
-            <ng-container *ngIf="moyenneMensuelles.nbMois > 0 && !moyenneMensuelles.provisoire">Mensuelles : moyenne sur
-                {{ moyenneMensuelles.nbMois }} mois complet(s). </ng-container>
-            <ng-container *ngIf="moyenneMensuelles.provisoire">Mensuelles : seul le mois en cours existe, chiffre provisoire. </ng-container>
-            Le mois en cours n'est pas compté tant qu'il n'est pas terminé.
+            <ng-container *ngIf="moyenneMensuelles.nbMois > 0 && !moyenneMensuelles.provisoire">{{ 'CHARGES.MONTHLY_AVERAGE_NOTE' | translate:{ count: moyenneMensuelles.nbMois } }} </ng-container>
+            <ng-container *ngIf="moyenneMensuelles.provisoire">{{ 'CHARGES.MONTHLY_PROVISIONAL_NOTE' | translate }} </ng-container>
+            {{ 'CHARGES.CURRENT_MONTH_NOT_COUNTED' | translate }}
         </p>
 
         <table class="synthese-table">
             <thead>
                 <tr>
-                    <th>Mois</th>
-                    <th class="text-right">Mensuelles</th>
-                    <th class="text-right">Journalières</th>
-                    <th class="text-right">Total</th>
-                    <th class="text-right">Gagné ce mois-là</th>
-                    <th class="text-right">Gagné ou perdu</th>
+                    <th>{{ 'STATS.COL_MONTH' | translate }}</th>
+                    <th class="text-right">{{ 'STATS.COL_MONTHLY' | translate }}</th>
+                    <th class="text-right">{{ 'STATS.COL_DAILY' | translate }}</th>
+                    <th class="text-right">{{ 'STATS.COL_TOTAL' | translate }}</th>
+                    <th class="text-right">{{ 'STATS.COL_EARNED_THAT_MONTH' | translate }}</th>
+                    <th class="text-right">{{ 'STATS.COL_EARNED_OR_LOST' | translate }}</th>
                 </tr>
             </thead>
             <tbody>
                 <ng-container *ngFor="let m of depensesParMois">
                     <tr class="synthese-row-cliquable" (click)="basculerMois(m.key)">
                         <td>{{ moisEstOuvert(m.key) ? '📂' : '📁' }} {{ m.label }}
-                            <span class="synthese-badge" *ngIf="m.enCours">en cours</span>
+                            <span class="synthese-badge" *ngIf="m.enCours">{{ 'STATS.ONGOING' | translate }}</span>
                         </td>
                         <td class="text-right">{{ m.mensuelles | number:'1.3-3' }}</td>
                         <td class="text-right">{{ m.journalieres | number:'1.3-3' }}</td>
@@ -102,18 +101,16 @@
                     <tr *ngIf="moisEstOuvert(m.key)">
                         <td colspan="6" class="synthese-detail-jours">
                             <p class="synthese-note synthese-note-jours">
-                                Les dépenses mensuelles de {{ m.label }} ({{ m.mensuelles | number:'1.3-3' }}
-                                {{ 'CURRENCY' | translate }}) sont réparties à parts égales sur les
-                                {{ nbJoursDansMois(m.key) }} jours du mois.
+                                {{ 'STATS.MONTHLY_SPREAD_NOTE' | translate:{ month: m.label, amount: (m.mensuelles | number:'1.3-3'), currency: ('CURRENCY' | translate), days: nbJoursDansMois(m.key) } }}
                             </p>
                             <table class="synthese-table synthese-table-jours">
                                 <thead>
                                     <tr>
-                                        <th>Jour</th>
-                                        <th>Détail</th>
-                                        <th class="text-right">Part mensuelle</th>
-                                        <th class="text-right">Journalières</th>
-                                        <th class="text-right">Total du jour</th>
+                                        <th>{{ 'STATS.COL_DAY' | translate }}</th>
+                                        <th>{{ 'STATS.COL_DETAIL' | translate }}</th>
+                                        <th class="text-right">{{ 'STATS.COL_MONTHLY_SHARE' | translate }}</th>
+                                        <th class="text-right">{{ 'STATS.COL_DAILY' | translate }}</th>
+                                        <th class="text-right">{{ 'STATS.COL_DAY_TOTAL' | translate }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -142,61 +139,61 @@
     <!-- Supplier payments: amount owed to each supplier -->
     <div class="fourn">
         <div class="synthese-titre fourn-titre">
-            <span>🤝 Paiements aux fournisseurs</span>
-            <button class="btn-primary fourn-btn" (click)="ouvrirPaiement()">+ Payer un fournisseur</button>
+            <span>🤝 {{ 'CHARGES.SUPPLIER_PAYMENTS' | translate }}</span>
+            <button class="btn-primary fourn-btn" (click)="ouvrirPaiement()">+ {{ 'CHARGES.PAY_A_SUPPLIER' | translate }}</button>
         </div>
 
-        <div class="alerte-ok" *ngIf="paiementMessage">✅ {{ paiementMessage }}</div>
-        <div class="alerte-erreur" *ngIf="paiementErreur && !paiementOuvert">⚠️ {{ paiementErreur }}</div>
+        <div class="alerte-ok" *ngIf="paiementMessage">✅ {{ paiementMessage | translate }}</div>
+        <div class="alerte-erreur" *ngIf="paiementErreur && !paiementOuvert">⚠️ {{ paiementErreur | translate }}</div>
 
         <div class="synthese-cartes">
             <div class="synthese-carte synthese-due">
                 <span class="synthese-valeur">{{ totalDu | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
-                <span class="synthese-label">dû au total à mes fournisseurs</span>
+                <span class="synthese-label">{{ 'CHARGES.TOTAL_DUE_SUPPLIERS' | translate }}</span>
             </div>
         </div>
 
         <!-- Payment form -->
         <div class="sous-carte" *ngIf="paiementOuvert">
-            <div class="alerte-erreur" *ngIf="paiementErreur">⚠️ {{ paiementErreur }}</div>
+            <div class="alerte-erreur" *ngIf="paiementErreur">⚠️ {{ paiementErreur | translate }}</div>
             <div class="form-row">
                 <div class="form-group">
-                    <label>Fournisseur <span class="required">*</span></label>
+                    <label>{{ 'REPARATION.COL_SUPPLIER' | translate }} <span class="required">*</span></label>
                     <select class="form-control" [(ngModel)]="paiement.id_fournisseur" (ngModelChange)="onFournisseurPaiementChange()">
-                        <option [ngValue]="null">— Choisir —</option>
+                        <option [ngValue]="null">{{ 'STOCK.CHOOSE' | translate }}</option>
                         <option *ngFor="let f of fournisseursDus" [ngValue]="f.id_fournisseur">
-                            {{ nomFournisseur(f) }} — dû : {{ f.solde | number:'1.3-3' }}
+                            {{ nomFournisseur(f) }} — {{ 'CHARGES.DUE' | translate }} : {{ f.solde | number:'1.3-3' }}
                         </option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Montant payé <span class="required">*</span></label>
+                    <label>{{ 'CHARGES.AMOUNT_PAID' | translate }} <span class="required">*</span></label>
                     <div class="montant-ligne">
                         <input type="number" min="0" step="0.001" class="form-control" [(ngModel)]="paiement.montant" />
-                        <button type="button" class="btn-lien" *ngIf="fournisseurChoisi" (click)="toutPayer()">Tout payer</button>
+                        <button type="button" class="btn-lien" *ngIf="fournisseurChoisi" (click)="toutPayer()">{{ 'CHARGES.PAY_ALL' | translate }}</button>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Date</label>
+                    <label>{{ 'STATS.COL_DATE' | translate }}</label>
                     <input type="date" class="form-control" [(ngModel)]="paiement.date" />
                 </div>
             </div>
             <div class="form-group">
-                <label>Note (facultatif)</label>
-                <input type="text" class="form-control" [(ngModel)]="paiement.note" placeholder="Ex: virement, chèque n°…" />
+                <label>{{ 'CLIENTS.NOTE_LABEL' | translate }}</label>
+                <input type="text" class="form-control" [(ngModel)]="paiement.note" [placeholder]="'CHARGES.PAYMENT_NOTE_PLACEHOLDER' | translate" />
             </div>
             <label class="case-caisse">
                 <input type="checkbox" [(ngModel)]="paiement.paye_caisse" />
-                Payé en espèces depuis la caisse (sort du montant attendu en caisse)
+                {{ 'CHARGES.PAID_CASH_NOTE' | translate }}
             </label>
             <p class="synthese-note" *ngIf="fournisseurChoisi">
-                Il restera <strong [class.negatif]="resteApresPaiement < 0">{{ resteApresPaiement | number:'1.3-3' }}</strong>
-                à payer à {{ nomFournisseur(fournisseurChoisi) }} après ce paiement.
+                {{ 'CHARGES.REMAINING_AFTER_PAYMENT' | translate }} <strong [class.negatif]="resteApresPaiement < 0">{{ resteApresPaiement | number:'1.3-3' }}</strong>
+                {{ 'CHARGES.TO_PAY_TO' | translate }} {{ nomFournisseur(fournisseurChoisi) }} {{ 'CHARGES.AFTER_THIS_PAYMENT' | translate }}
             </p>
             <div class="fourn-actions">
-                <button class="btn-secondary" (click)="fermerPaiement()">Annuler</button>
+                <button class="btn-secondary" (click)="fermerPaiement()">{{ 'CANCEL' | translate }}</button>
                 <button class="btn-primary" [disabled]="paiementEnCours" (click)="enregistrerPaiement()">
-                    {{ paiementEnCours ? 'Enregistrement…' : 'Enregistrer le paiement' }}
+                    {{ (paiementEnCours ? 'STOCK.SAVING' : 'CHARGES.SAVE_PAYMENT') | translate }}
                 </button>
             </div>
         </div>
@@ -205,11 +202,11 @@
         <table class="synthese-table">
             <thead>
                 <tr>
-                    <th>Fournisseur</th>
-                    <th>Catégorie</th>
-                    <th class="text-right">Reste dû</th>
-                    <th class="text-right">Déjà payé</th>
-                    <th class="text-right">Action</th>
+                    <th>{{ 'REPARATION.COL_SUPPLIER' | translate }}</th>
+                    <th>{{ 'CHARGES.CATEGORY' | translate }}</th>
+                    <th class="text-right">{{ 'CHARGES.REMAINING_DUE' | translate }}</th>
+                    <th class="text-right">{{ 'CHARGES.ALREADY_PAID' | translate }}</th>
+                    <th class="text-right">{{ 'REPARATION.COL_ACTIONS' | translate }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -219,34 +216,34 @@
                         <span *ngFor="let cat of categories(f)" class="cat-badge"
                             [class.cat-reparation]="cat === 'Réparation'"
                             [class.cat-accessoires]="cat === 'Accessoires'">{{ cat }}</span>
-                        <span *ngIf="categories(f).length === 0" class="cat-badge cat-aucune">Non classé</span>
+                        <span *ngIf="categories(f).length === 0" class="cat-badge cat-aucune">{{ 'CHARGES.UNCLASSIFIED' | translate }}</span>
                     </td>
                     <td class="text-right fw-bold" [class.du-positif]="Number(f.solde) > 0">
                         {{ f.solde | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
                     </td>
                     <td class="text-right">{{ f.total_paye | number:'1.3-3' }}</td>
                     <td class="text-right">
-                        <button class="btn-lien" *ngIf="Number(f.solde) > 0" (click)="ouvrirPaiement(f)">Payer</button>
-                        <span class="text-muted" *ngIf="Number(f.solde) <= 0">Soldé</span>
+                        <button class="btn-lien" *ngIf="Number(f.solde) > 0" (click)="ouvrirPaiement(f)">{{ 'CHARGES.PAY' | translate }}</button>
+                        <span class="text-muted" *ngIf="Number(f.solde) <= 0">{{ 'CHARGES.SETTLED' | translate }}</span>
                     </td>
                 </tr>
                 <tr *ngIf="fournisseursDus.length === 0">
-                    <td colspan="5" class="text-center text-muted">Aucun fournisseur.</td>
+                    <td colspan="5" class="text-center text-muted">{{ 'CHARGES.NO_SUPPLIER' | translate }}</td>
                 </tr>
             </tbody>
         </table>
 
         <!-- History -->
         <div class="fourn-historique" *ngIf="paiements.length > 0">
-            <div class="fourn-sous-titre">Historique des paiements</div>
+            <div class="fourn-sous-titre">{{ 'CHARGES.PAYMENT_HISTORY' | translate }}</div>
             <table class="synthese-table">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Fournisseur</th>
-                        <th>Note</th>
-                        <th>Mode</th>
-                        <th class="text-right">Montant</th>
+                        <th>{{ 'STATS.COL_DATE' | translate }}</th>
+                        <th>{{ 'REPARATION.COL_SUPPLIER' | translate }}</th>
+                        <th>{{ 'CHARGES.NOTE' | translate }}</th>
+                        <th>{{ 'CHARGES.MODE' | translate }}</th>
+                        <th class="text-right">{{ 'CHARGES.AMOUNT' | translate }}</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -255,9 +252,9 @@
                         <td>{{ p.date | date:'dd/MM/yyyy' }}</td>
                         <td>{{ nomFournisseur(p) }}</td>
                         <td>{{ p.note || '—' }}</td>
-                        <td>{{ p.paye_caisse ? 'Caisse' : 'Hors caisse' }}</td>
+                        <td>{{ (p.paye_caisse ? 'CHARGES.CASH_REGISTER' : 'CHARGES.OUTSIDE_REGISTER') | translate }}</td>
                         <td class="text-right fw-bold">{{ p.montant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
-                        <td class="text-right"><button class="btn-icon delete-action" title="Annuler ce paiement" (click)="annulerPaiement(p)">🗑</button></td>
+                        <td class="text-right"><button class="btn-icon delete-action" [title]="'CHARGES.CANCEL_PAYMENT_TOOLTIP' | translate" (click)="annulerPaiement(p)">🗑</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -266,7 +263,7 @@
 
     <!-- Search -->
     <div class="search-bar">
-        <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 Rechercher par description..."
+        <input type="text" [(ngModel)]="searchTerm" [placeholder]="'CHARGES.SEARCH_PLACEHOLDER' | translate"
             class="search-input" />
     </div>
 
@@ -275,30 +272,30 @@
         <table class="modern-table">
             <thead>
                 <tr>
-                    <th width="15%">Date</th>
-                    <th width="15%">Type</th>
-                    <th width="35%">Description</th>
-                    <th width="20%" class="text-right">Montant</th>
-                    <th width="20%" class="text-center">Actions</th>
+                    <th width="15%">{{ 'STATS.COL_DATE' | translate }}</th>
+                    <th width="15%">{{ 'CHARGES.TYPE' | translate }}</th>
+                    <th width="35%">{{ 'CHARGES.DESCRIPTION' | translate }}</th>
+                    <th width="20%" class="text-right">{{ 'CHARGES.AMOUNT' | translate }}</th>
+                    <th width="20%" class="text-center">{{ 'REPARATION.COL_ACTIONS' | translate }}</th>
                 </tr>
             </thead>
             <tbody>
                 <tr *ngFor="let c of filteredCharges">
                     <td>{{ c.date_charge | date:'dd/MM/yyyy' }}</td>
-                    <td><span class="type-badge" [class.type-journaliere]="c.type_depense === 'journaliere'">{{ c.type_depense === 'journaliere' ? 'Journalière' : 'Mensuelle' }}</span></td>
+                    <td><span class="type-badge" [class.type-journaliere]="c.type_depense === 'journaliere'">{{ (c.type_depense === 'journaliere' ? 'CHARGES.DAILY' : 'CHARGES.MONTHLY') | translate }}</span></td>
                     <td class="fw-bold">{{ c.description }}</td>
                     <td class="text-right text-danger fw-bold">
                         - {{ c.montant | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
                     </td>
                     <td class="text-center">
-                        <button class="btn-icon delete-action" title="Supprimer" (click)="deleteCharge(c.id_charge!)">🗑
+                        <button class="btn-icon delete-action" [title]="'STOCK.DELETE' | translate" (click)="deleteCharge(c.id_charge!)">🗑
                         </button>
                     </td>
                 </tr>
             </tbody>
         </table>
         <div *ngIf="filteredCharges.length === 0" class="empty-state">
-            <p>Aucune charge trouvée.</p>
+            <p>{{ 'CHARGES.NO_EXPENSE_FOUND' | translate }}</p>
         </div>
     </div>
 </div>
@@ -309,54 +306,54 @@
 <div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
     <div class="modal-content scale-in small-modal" (click)="$event.stopPropagation()">
         <div class="modal-header">
-            <h3>Nouvelle Charge</h3>
+            <h3>{{ 'CHARGES.NEW_EXPENSE' | translate }}</h3>
             <button class="close-btn" (click)="closeModal()">✕</button>
         </div>
         <div class="modal-body custom-scroll">
             <div class="modern-form">
                 <div class="form-group mb-4">
-                    <label>Description (Raison) <span class="required">*</span></label>
+                    <label>{{ 'CHARGES.DESCRIPTION_REASON' | translate }} <span class="required">*</span></label>
                     <input type="text" [(ngModel)]="formData.description" class="form-control"
-                        placeholder="Ex: Loyer Avril 2026" />
+                        [placeholder]="'CHARGES.DESCRIPTION_PLACEHOLDER' | translate" />
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Date <span class="required">*</span></label>
+                        <label>{{ 'STATS.COL_DATE' | translate }} <span class="required">*</span></label>
                         <input type="date" [(ngModel)]="formData.date_charge" class="form-control" />
                     </div>
                     <div class="form-group">
-                        <label>Montant <span class="required">*</span></label>
+                        <label>{{ 'CHARGES.AMOUNT' | translate }} <span class="required">*</span></label>
                         <input type="number" min="0" step="0.001" [(ngModel)]="formData.montant" class="form-control" />
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Type de dépense <span class="required">*</span></label>
+                    <label>{{ 'CHARGES.EXPENSE_TYPE' | translate }} <span class="required">*</span></label>
                     <div class="type-choix">
                         <label class="type-option" [class.actif]="formData.type_depense === 'journaliere'">
                             <input type="radio" name="type_depense" value="journaliere" [(ngModel)]="formData.type_depense" />
-                            Journalière <small>(dépense du jour)</small>
+                            {{ 'CHARGES.DAILY' | translate }} <small>({{ 'CHARGES.DAILY_HINT' | translate }})</small>
                         </label>
                         <label class="type-option" [class.actif]="formData.type_depense === 'mensuelle'">
                             <input type="radio" name="type_depense" value="mensuelle" [(ngModel)]="formData.type_depense" />
-                            Mensuelle <small>(loyer, salaires…)</small>
+                            {{ 'CHARGES.MONTHLY' | translate }} <small>({{ 'CHARGES.RENT_SALARIES' | translate }})</small>
                         </label>
                     </div>
                 </div>
                 <div class="form-group" *ngIf="formData.type_depense === 'journaliere'">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                         <input type="checkbox" [(ngModel)]="formData.paye_caisse" />
-                        Payée en espèces depuis la caisse (sort du montant attendu en caisse)
+                        {{ 'CHARGES.PAID_CASH_NOTE' | translate }}
                     </label>
                 </div>
                 <p class="type-note" *ngIf="formData.type_depense === 'mensuelle'">
-                    Une dépense mensuelle (loyer, salaires…) ne sort pas de la caisse du jour.
+                    {{ 'CHARGES.MONTHLY_EXPENSE_NOTE' | translate }}
                 </p>
             </div>
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" (click)="closeModal()">{{ 'CANCEL' | translate }}</button>
             <button class="btn-primary" [disabled]="savingCharge" (click)="saveCharge()">
-                {{ savingCharge ? 'ENREGISTREMENT…' : 'AJOUTER LA DÉPENSE' }}
+                {{ (savingCharge ? 'STOCK.SAVING' : 'CHARGES.ADD_EXPENSE') | translate }}
             </button>
         </div>
     </div>

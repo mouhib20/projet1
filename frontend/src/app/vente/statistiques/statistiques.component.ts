@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { PerteReparation, VenteService } from '../../services/vente.service';
 import { ArticleService } from '../../services/article.service';
 import { PaiementFournisseurService } from '../../services/paiement-fournisseur.service';
@@ -12,7 +13,7 @@ import { Charge } from '../../models/charge.model';
 @Component({
   selector: 'app-statistiques',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslatePipe],
   templateUrl: './statistiques.component.html',
   styleUrls: ['./statistiques.component.css']
 })
@@ -23,10 +24,10 @@ export class StatistiquesComponent implements OnInit {
   periode: PeriodeStats = 'month';
 
   readonly periodes: { valeur: PeriodeStats; label: string }[] = [
-    { valeur: 'today', label: "Aujourd'hui" },
-    { valeur: 'week', label: 'Cette semaine' },
-    { valeur: 'month', label: 'Ce mois' },
-    { valeur: 'year', label: 'Cette année' },
+    { valeur: 'today', label: 'STATS.PERIOD_TODAY' },
+    { valeur: 'week', label: 'STATS.PERIOD_WEEK' },
+    { valeur: 'month', label: 'STATS.PERIOD_MONTH' },
+    { valeur: 'year', label: 'STATS.PERIOD_YEAR' },
   ];
 
   constructor(
@@ -34,6 +35,7 @@ export class StatistiquesComponent implements OnInit {
     private articleService: ArticleService,
     private paiementFournisseurService: PaiementFournisseurService,
     private chargeService: ChargeService,
+    private translate: TranslateService,
   ) { }
 
   ngOnInit(): void {
@@ -83,14 +85,15 @@ export class StatistiquesComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.errorMsg = 'Impossible de charger les statistiques. Vérifiez que le backend est démarré.';
+        this.errorMsg = 'STATS.ERR_LOAD_STATS';
         this.loading = false;
       }
     });
   }
 
   get periodeLabel(): string {
-    return this.periodes.find(p => p.valeur === this.periode)?.label || '';
+    const key = this.periodes.find(p => p.valeur === this.periode)?.label || '';
+    return key ? this.translate.instant(key) : '';
   }
 
   // ── Repair detail: every repair sale line behind box 1's totals ──
@@ -124,7 +127,7 @@ export class StatistiquesComponent implements OnInit {
         this.detailReparationsChargement = false;
       },
       error: () => {
-        this.detailReparationsErreur = 'Impossible de charger le détail des réparations.';
+        this.detailReparationsErreur = 'STATS.ERR_LOAD_REPAIR_DETAIL';
         this.detailReparationsChargement = false;
       }
     });
@@ -160,7 +163,7 @@ export class StatistiquesComponent implements OnInit {
         this.detailAccessoiresChargement = false;
       },
       error: () => {
-        this.detailAccessoiresErreur = 'Impossible de charger le détail des accessoires.';
+        this.detailAccessoiresErreur = 'STATS.ERR_LOAD_ACCESSORY_DETAIL';
         this.detailAccessoiresChargement = false;
       }
     });
@@ -187,7 +190,7 @@ export class StatistiquesComponent implements OnInit {
         this.detailPertesChargement = false;
       },
       error: () => {
-        this.detailPertesErreur = 'Impossible de charger le détail des pertes.';
+        this.detailPertesErreur = 'STATS.ERR_LOAD_LOSS_DETAIL';
         this.detailPertesChargement = false;
       }
     });
@@ -238,6 +241,12 @@ export class StatistiquesComponent implements OnInit {
     return item.key;
   }
 
+  /** Locale tag matching the active UI language, for date/month name formatting. */
+  private localeTag(): string {
+    const lang = this.translate.getCurrentLang() || this.translate.getBrowserLang() || 'fr';
+    return lang === 'ar' ? 'ar-TN' : lang === 'en' ? 'en-US' : 'fr-FR';
+  }
+
   beneficeVente(v: Vente): number | null {
     const cout = v.article ? v.article.prix_achat : v.cout;
     if (cout === null || cout === undefined) return null;
@@ -267,7 +276,7 @@ export class StatistiquesComponent implements OnInit {
     }
     return [...jours.entries()].map(([jour, ventes]) => {
       const nom = new Date(+jour.slice(0, 4), +jour.slice(5, 7) - 1, +jour.slice(8, 10))
-        .toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+        .toLocaleDateString(this.localeTag(), { weekday: 'long', day: 'numeric', month: 'long' });
       return { key: 'j' + jour, label: nom.charAt(0).toUpperCase() + nom.slice(1), ventes, total: this.totalListe(ventes) };
     });
   }
@@ -297,10 +306,10 @@ export class StatistiquesComponent implements OnInit {
     for (const m of [...parMois.keys()].sort().reverse()) {
       const annee = m.slice(0, 4);
       if (!annees.has(annee)) {
-        annees.set(annee, { key: 'a' + annee, label: annee === anneeCourante ? `${annee} (cette année)` : annee, ventes: [], total: 0, mois: [] });
+        annees.set(annee, { key: 'a' + annee, label: annee === anneeCourante ? this.translate.instant('STATS.CURRENT_YEAR_SUFFIX', { year: annee }) : annee, ventes: [], total: 0, mois: [] });
       }
       const ventes = this.trier(parMois.get(m)!);
-      const nom = new Date(+annee, +m.slice(5, 7) - 1, 1).toLocaleDateString('fr-FR', { month: 'long' });
+      const nom = new Date(+annee, +m.slice(5, 7) - 1, 1).toLocaleDateString(this.localeTag(), { month: 'long' });
       const groupe = annees.get(annee)!;
       groupe.ventes.push(...ventes);
       groupe.mois.push({ key: 'm' + m, label: nom.charAt(0).toUpperCase() + nom.slice(1), ventes, total: this.totalListe(ventes), jours: this.parJour(ventes) });
@@ -349,13 +358,13 @@ export class StatistiquesComponent implements OnInit {
   }
 
   private libelleMoisCharge(key: string): string {
-    const nom = new Date(+key.slice(0, 4), +key.slice(5, 7) - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    const nom = new Date(+key.slice(0, 4), +key.slice(5, 7) - 1, 1).toLocaleDateString(this.localeTag(), { month: 'long', year: 'numeric' });
     return nom.charAt(0).toUpperCase() + nom.slice(1);
   }
 
   private libelleJourCharge(jour: string): string {
     const nom = new Date(+jour.slice(0, 4), +jour.slice(5, 7) - 1, +jour.slice(8, 10))
-      .toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+      .toLocaleDateString(this.localeTag(), { weekday: 'long', day: 'numeric', month: 'long' });
     return nom.charAt(0).toUpperCase() + nom.slice(1);
   }
 

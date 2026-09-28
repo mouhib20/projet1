@@ -3,100 +3,101 @@
     <!-- ─── Page Header ──────────────────────────────────────── -->
     <div class="page-header">
         <div>
-            <div class="page-title">📦 Inventaire Stock</div>
-            <div class="page-subtitle">Gérez vos pièces et accessoires</div>
+            <div class="page-title">📦 {{ 'STOCK.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'STOCK.SUBTITLE' | translate }}</div>
         </div>
         <button class="btn btn-primary" (click)="openAddForm()" *ngIf="!showForm">
-            ＋ Ajouter
+            ＋ {{ 'STOCK.ADD' | translate }}
         </button>
     </div>
 
     <!-- ─── Alerts ────────────────────────────────────────────── -->
-    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg }}</div>
-    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg }}</div>
+    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg | translate }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
 
     <!-- ─── Form Card ─────────────────────────────────────────── -->
     <div class="form-card" *ngIf="showForm">
         <div class="form-card-header">
-            {{ isEditing ? '✏️ Modifier l\'article' : '➕ Ajouter un article' }}
+            <ng-container *ngIf="isEditing">✏️ {{ 'STOCK.EDIT_ARTICLE' | translate }}</ng-container>
+            <ng-container *ngIf="!isEditing">➕ {{ 'STOCK.ADD_ARTICLE' | translate }}</ng-container>
         </div>
 
         <div class="form-grid">
 
             <!-- Row 1: Name + Barcode -->
             <div class="form-group">
-                <label>Nom *</label>
-                <input type="text" [(ngModel)]="form.designation" placeholder="ex: Afficheur Samsung A32" />
+                <label>{{ 'STOCK.NAME_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.designation" [placeholder]="'STOCK.NAME_PLACEHOLDER' | translate" />
             </div>
             <div class="form-group">
-                <label>Barcode</label>
-                <input type="text" [(ngModel)]="form.barcode" placeholder="ex: 6901234567890" />
+                <label>{{ 'STOCK.BARCODE_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.barcode" [placeholder]="'STOCK.BARCODE_PLACEHOLDER' | translate" />
             </div>
 
             <!-- Row 2: Brand + Model -->
             <div class="form-group">
-                <label>Marque</label>
-                <input type="text" [(ngModel)]="form.marque" placeholder="ex: Samsung" />
+                <label>{{ 'STOCK.BRAND_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.marque" [placeholder]="'STOCK.BRAND_PLACEHOLDER' | translate" />
             </div>
             <div class="form-group">
-                <label>Modèle</label>
-                <input type="text" [(ngModel)]="form.modele" placeholder="ex: Galaxy A32" />
+                <label>{{ 'STOCK.MODEL_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.modele" [placeholder]="'STOCK.MODEL_PLACEHOLDER' | translate" />
             </div>
 
             <!-- Row 3: Type + Sub-category -->
             <div class="form-group">
-                <label>Type</label>
+                <label>{{ 'STOCK.TYPE_LABEL' | translate }}</label>
                 <select [(ngModel)]="form.type" (ngModelChange)="onFormTypeChange()">
-                    <option value="part">Pièce</option>
-                    <option value="accessory">Accessoire</option>
+                    <option value="part">{{ 'STOCK.TYPE_PART' | translate }}</option>
+                    <option value="accessory">{{ 'STOCK.TYPE_ACCESSORY' | translate }}</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>Sous-catégorie</label>
+                <label>{{ 'STOCK.SUBCAT_LABEL' | translate }}</label>
                 <select [(ngModel)]="form.sous_categorie">
-                    <option value="">— Sélectionner —</option>
+                    <option value="">{{ 'STOCK.SUBCAT_SELECT' | translate }}</option>
                     <option *ngFor="let cat of subCategories" [value]="cat.key">{{ cat.label }}</option>
                 </select>
             </div>
 
             <!-- Row 4: Quantity + Min Qty -->
             <div class="form-group">
-                <label>Quantité</label>
+                <label>{{ 'STOCK.QTY_LABEL' | translate }}</label>
                 <input type="number" [(ngModel)]="form.quantite" min="0" placeholder="0" />
             </div>
             <div class="form-group">
-                <label>Qté min (alerte)</label>
+                <label>{{ 'STOCK.QTY_MIN_LABEL' | translate }}</label>
                 <input type="number" [(ngModel)]="form.qte_min" min="0" placeholder="3" />
             </div>
 
             <!-- Row 5: Purchase Price + Sell Price -->
             <div class="form-group">
-                <label>Prix Achat (DT)</label>
+                <label>{{ 'STOCK.PRICE_BUY_LABEL' | translate }}</label>
                 <input type="number" [(ngModel)]="form.prix_achat" min="0" step="0.001" placeholder="0.000" />
             </div>
             <div class="form-group">
-                <label>Prix Vente (DT)</label>
+                <label>{{ 'STOCK.PRICE_SELL_LABEL' | translate }}</label>
                 <input type="number" [(ngModel)]="form.prix_vente" min="0" step="0.001" placeholder="0.000" />
             </div>
 
             <!-- Row 6: Description (full width) -->
             <div class="form-group full">
-                <label>Description</label>
-                <textarea [(ngModel)]="form.description" placeholder="Notes..."></textarea>
+                <label>{{ 'STOCK.DESCRIPTION_LABEL' | translate }}</label>
+                <textarea [(ngModel)]="form.description" [placeholder]="'STOCK.DESCRIPTION_PLACEHOLDER' | translate"></textarea>
             </div>
 
             <!-- Row 7: Image (full width) -->
             <div class="form-group full">
-                <label>Image du produit</label>
+                <label>{{ 'STOCK.IMAGE_LABEL' | translate }}</label>
                 <div class="image-upload-row">
-                    <img *ngIf="imageUrl(form.image)" [src]="imageUrl(form.image)" class="image-preview" alt="Aperçu" />
+                    <img *ngIf="imageUrl(form.image)" [src]="imageUrl(form.image)" class="image-preview" [alt]="'STOCK.IMAGE_PREVIEW_ALT' | translate" />
                     <div class="image-upload-controls">
                         <input type="file" accept="image/jpeg,image/png,image/webp,image/gif"
                             (change)="onImageSelected($event)" />
                         <button type="button" class="btn btn-secondary" *ngIf="form.image"
-                            (click)="removeImage()">Retirer l'image</button>
-                        <span *ngIf="imageUploading" class="text-muted">Téléchargement…</span>
-                        <span *ngIf="imageError" class="alert-error-inline">{{ imageError }}</span>
+                            (click)="removeImage()">{{ 'STOCK.REMOVE_IMAGE' | translate }}</button>
+                        <span *ngIf="imageUploading" class="text-muted">{{ 'STOCK.UPLOADING' | translate }}</span>
+                        <span *ngIf="imageError" class="alert-error-inline">{{ imageError | translate }}</span>
                     </div>
                 </div>
             </div>
@@ -104,88 +105,89 @@
         </div>
 
         <div class="form-actions">
-            <button class="btn btn-secondary" [disabled]="saving" (click)="cancelForm()">Annuler</button>
+            <button class="btn btn-secondary" [disabled]="saving" (click)="cancelForm()">{{ 'CANCEL' | translate }}</button>
             <button class="btn btn-success" [disabled]="saving" (click)="saveProduct()">
-                {{ saving ? 'Enregistrement…' : (isEditing ? 'Enregistrer' : 'Créer') }}
+                <ng-container *ngIf="saving">{{ 'STOCK.SAVING' | translate }}</ng-container>
+                <ng-container *ngIf="!saving">{{ (isEditing ? 'STOCK.SAVE' : 'STOCK.CREATE') | translate }}</ng-container>
             </button>
         </div>
     </div>
 
     <!-- ─── Send-back card: return a defective accessory to its supplier ── -->
     <div class="form-card" *ngIf="renvoiPiece">
-        <div class="form-card-header">↩ Renvoyer « {{ renvoiPiece.designation }} » au fournisseur</div>
+        <div class="form-card-header">↩ {{ 'STOCK.RETURN_TITLE' | translate:{ name: renvoiPiece.designation } }}</div>
         <div class="form-grid">
             <div class="form-group">
-                <label>Quantité renvoyée (en stock : {{ renvoiPiece.quantite }})</label>
+                <label>{{ 'STOCK.RETURN_QTY_LABEL' | translate:{ qty: renvoiPiece.quantite } }}</label>
                 <input type="number" min="1" [max]="renvoiPiece.quantite || 1" [(ngModel)]="renvoiQte" />
             </div>
             <div class="form-group">
-                <label>Problème *</label>
-                <input type="text" [(ngModel)]="renvoiProbleme" placeholder="ex: ne se charge pas, cassé à la réception…" />
+                <label>{{ 'STOCK.PROBLEM_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="renvoiProbleme" [placeholder]="'STOCK.PROBLEM_PLACEHOLDER_RETURN' | translate" />
             </div>
         </div>
         <div class="form-actions">
-            <button class="btn btn-secondary" [disabled]="renvoiEnCours" (click)="fermerRenvoi()">Annuler</button>
+            <button class="btn btn-secondary" [disabled]="renvoiEnCours" (click)="fermerRenvoi()">{{ 'CANCEL' | translate }}</button>
             <button class="btn btn-success" [disabled]="renvoiEnCours" (click)="confirmerRenvoi()">
-                {{ renvoiEnCours ? 'Envoi…' : 'Renvoyer' }}
+                {{ (renvoiEnCours ? 'STOCK.SENDING' : 'STOCK.SEND_BACK') | translate }}
             </button>
         </div>
     </div>
 
     <!-- ─── SAV card: declare a defective accessory brought back by a client ── -->
     <div class="form-card" *ngIf="savFormOpen">
-        <div class="form-card-header">🛠 Accessoire défectueux — service après-vente client</div>
+        <div class="form-card-header">🛠 {{ 'STOCK.SAV_TITLE' | translate }}</div>
         <div class="form-grid">
             <div class="form-group">
-                <label>Accessoire *</label>
+                <label>{{ 'STOCK.ACCESSORY_LABEL' | translate }}</label>
                 <select [(ngModel)]="savForm.id_article">
-                    <option [ngValue]="null">— Choisir —</option>
+                    <option [ngValue]="null">{{ 'STOCK.CHOOSE' | translate }}</option>
                     <option *ngFor="let a of accessoires" [ngValue]="a.id_article">
                         {{ a.designation }}{{ a.marque ? ' — ' + a.marque : '' }}{{ a.modele ? ' ' + a.modele : '' }}
                     </option>
                 </select>
             </div>
             <div class="form-group">
-                <label>Client</label>
+                <label>{{ 'STOCK.CLIENT_LABEL' | translate }}</label>
                 <select [(ngModel)]="savForm.id_client">
-                    <option [ngValue]="null">— Non précisé —</option>
+                    <option [ngValue]="null">{{ 'STOCK.CLIENT_UNSPECIFIED' | translate }}</option>
                     <option *ngFor="let c of clients" [ngValue]="c.id_client">{{ c.nom }}{{ c.telephone ? ' - ' + c.telephone : '' }}</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>Quantité</label>
+                <label>{{ 'STOCK.QTY_LABEL' | translate }}</label>
                 <input type="number" min="1" [(ngModel)]="savForm.qte" />
             </div>
             <div class="form-group">
-                <label>Degré de dommage *</label>
+                <label>{{ 'STOCK.DAMAGE_LEVEL_LABEL' | translate }}</label>
                 <select [(ngModel)]="savForm.degre_dommage">
-                    <option value="">— Choisir —</option>
-                    <option value="Léger">Léger</option>
-                    <option value="Moyen">Moyen</option>
-                    <option value="Grave">Grave</option>
+                    <option value="">{{ 'STOCK.CHOOSE' | translate }}</option>
+                    <option value="Léger">{{ 'STOCK.DAMAGE_LIGHT' | translate }}</option>
+                    <option value="Moyen">{{ 'STOCK.DAMAGE_MEDIUM' | translate }}</option>
+                    <option value="Grave">{{ 'STOCK.DAMAGE_SEVERE' | translate }}</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>Problème *</label>
-                <input type="text" [(ngModel)]="savForm.probleme" placeholder="ex: ne se charge plus, cassé…" />
+                <label>{{ 'STOCK.PROBLEM_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="savForm.probleme" [placeholder]="'STOCK.PROBLEM_PLACEHOLDER_SAV' | translate" />
             </div>
         </div>
         <div class="form-actions">
-            <button class="btn btn-secondary" [disabled]="savEnCours" (click)="fermerSav()">Annuler</button>
+            <button class="btn btn-secondary" [disabled]="savEnCours" (click)="fermerSav()">{{ 'CANCEL' | translate }}</button>
             <button class="btn btn-success" [disabled]="savEnCours" (click)="confirmerSav()">
-                {{ savEnCours ? 'Enregistrement…' : 'Enregistrer au SAV' }}
+                {{ (savEnCours ? 'STOCK.SAVING' : 'STOCK.SAVE_TO_SAV') | translate }}
             </button>
         </div>
     </div>
 
     <!-- ─── SAV replacement card: swap the defective accessory for one from stock ── -->
     <div class="form-card" *ngIf="savRemplacer">
-        <div class="form-card-header">🔧 Remplacer « {{ savRemplacer.designation }} » (SAV #{{ savRemplacer.id }})</div>
+        <div class="form-card-header">🔧 {{ 'STOCK.REPLACE_TITLE' | translate:{ name: savRemplacer.designation, id: savRemplacer.id } }}</div>
         <div class="form-grid">
             <div class="form-group">
-                <label>Accessoire de remplacement en stock (quantité : {{ savRemplacer.qte }})</label>
+                <label>{{ 'STOCK.REPLACEMENT_STOCK_LABEL' | translate:{ qty: savRemplacer.qte } }}</label>
                 <select [(ngModel)]="savRemplacementId">
-                    <option [ngValue]="null">— Choisir —</option>
+                    <option [ngValue]="null">{{ 'STOCK.CHOOSE' | translate }}</option>
                     <option *ngFor="let a of accessoiresEnStock" [ngValue]="a.id_article">
                         {{ a.designation }}{{ a.marque ? ' — ' + a.marque : '' }}{{ a.modele ? ' ' + a.modele : '' }} (stock : {{ a.quantite }})
                     </option>
@@ -193,9 +195,9 @@
             </div>
         </div>
         <div class="form-actions">
-            <button class="btn btn-secondary" [disabled]="savEnCours" (click)="fermerRemplacementSav()">Annuler</button>
+            <button class="btn btn-secondary" [disabled]="savEnCours" (click)="fermerRemplacementSav()">{{ 'CANCEL' | translate }}</button>
             <button class="btn btn-success" [disabled]="savEnCours" (click)="confirmerRemplacementSav()">
-                {{ savEnCours ? 'Remplacement…' : 'Remplacer' }}
+                {{ (savEnCours ? 'STOCK.REPLACING' : 'STOCK.REPLACE') | translate }}
             </button>
         </div>
     </div>
@@ -206,45 +208,45 @@
         <!-- Tab Bar -->
         <div class="tab-bar">
             <button class="tab-btn" [class.active]="activeTab === 'all'" (click)="setTab('all')">
-                📦 Tous <span class="tab-count">{{ products.length }}</span>
+                📦 {{ 'STOCK.TAB_ALL' | translate }} <span class="tab-count">{{ products.length }}</span>
             </button>
             <button class="tab-btn" [class.active]="activeTab === 'part'" (click)="setTab('part')">
-                🔧 Pièces
+                🔧 {{ 'STOCK.TAB_PARTS' | translate }}
             </button>
             <button class="tab-btn" [class.active]="activeTab === 'accessory'" (click)="setTab('accessory')">
-                🎧 Accessoires
+                🎧 {{ 'STOCK.TAB_ACCESSORIES' | translate }}
             </button>
             <button class="tab-btn" [class.active]="activeTab === 'retours'" (click)="setTab('retours')">
-                ↩ Retours <span class="tab-count">{{ retoursAccessoires.length }}</span>
+                ↩ {{ 'STOCK.TAB_RETURNS' | translate }} <span class="tab-count">{{ retoursAccessoires.length }}</span>
             </button>
             <button class="tab-btn" [class.active]="activeTab === 'sav'" (click)="setTab('sav')">
-                🛠 SAV client <span class="tab-count">{{ savPending }}</span>
+                🛠 {{ 'STOCK.TAB_SAV' | translate }} <span class="tab-count">{{ savPending }}</span>
             </button>
         </div>
 
         <!-- SAV client: defective accessories brought back by clients -->
         <div class="table-wrapper" *ngIf="activeTab === 'sav'">
             <div class="table-toolbar">
-                <button class="btn btn-success" (click)="ouvrirSav()">＋ Ajouter un accessoire défectueux</button>
+                <button class="btn btn-success" (click)="ouvrirSav()">＋ {{ 'STOCK.ADD_DEFECTIVE' | translate }}</button>
             </div>
             <table>
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Client</th>
-                        <th>Accessoire défectueux</th>
-                        <th class="text-center">Qté</th>
-                        <th>Dommage</th>
-                        <th>Problème</th>
-                        <th>Statut</th>
-                        <th class="text-center">Actions</th>
+                        <th>{{ 'STOCK.COL_DATE' | translate }}</th>
+                        <th>{{ 'STOCK.COL_CLIENT' | translate }}</th>
+                        <th>{{ 'STOCK.COL_DEFECTIVE_ACCESSORY' | translate }}</th>
+                        <th class="text-center">{{ 'STOCK.COL_QTY' | translate }}</th>
+                        <th>{{ 'STOCK.COL_DAMAGE' | translate }}</th>
+                        <th>{{ 'STOCK.COL_PROBLEM' | translate }}</th>
+                        <th>{{ 'STOCK.COL_STATUS' | translate }}</th>
+                        <th class="text-center">{{ 'STOCK.COL_ACTIONS' | translate }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr *ngFor="let s of savList">
                         <td>{{ s.date_retour | date:'dd/MM/yyyy' }}</td>
                         <td>{{ s.client_nom || '—' }}<small *ngIf="s.client_telephone" class="td-model">{{ s.client_telephone }}</small></td>
-                        <td class="td-name">{{ s.designation || ('Article #' + s.id_article) }}
+                        <td class="td-name">{{ s.designation || (('STOCK.ARTICLE_NUM' | translate:{ id: s.id_article })) }}
                             <small *ngIf="s.marque || s.modele" class="td-model">{{ s.marque }} {{ s.modele }}</small></td>
                         <td class="text-center">{{ s.qte }}</td>
                         <td>{{ s.degre_dommage || '—' }}</td>
@@ -254,12 +256,12 @@
                             <small *ngIf="s.remplacement" class="td-model">→ {{ s.remplacement }}</small>
                         </td>
                         <td class="text-center">
-                            <button class="btn-icon" *ngIf="s.statut === 'En attente'" title="Remplacer par un accessoire du stock"
+                            <button class="btn-icon" *ngIf="s.statut === 'En attente'" [title]="'STOCK.REPLACE_TOOLTIP' | translate"
                                 (click)="ouvrirRemplacementSav(s)">🔧</button>
                         </td>
                     </tr>
                     <tr *ngIf="savList.length === 0">
-                        <td colspan="8" class="text-center text-muted">Aucun accessoire au SAV.</td>
+                        <td colspan="8" class="text-center text-muted">{{ 'STOCK.NO_SAV' | translate }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -270,25 +272,25 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Article défectueux</th>
-                        <th>Marque / Modèle</th>
-                        <th class="text-center">Qté</th>
-                        <th>Problème</th>
-                        <th>Fournisseur</th>
+                        <th>{{ 'STOCK.COL_DATE' | translate }}</th>
+                        <th>{{ 'STOCK.COL_DEFECTIVE_ARTICLE' | translate }}</th>
+                        <th>{{ 'STOCK.COL_BRAND_MODEL' | translate }}</th>
+                        <th class="text-center">{{ 'STOCK.COL_QTY' | translate }}</th>
+                        <th>{{ 'STOCK.COL_PROBLEM' | translate }}</th>
+                        <th>{{ 'STOCK.COL_SUPPLIER' | translate }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr *ngFor="let r of retoursAccessoires">
                         <td>{{ r.date_retour | date:'dd/MM/yyyy' }}</td>
-                        <td class="td-name">{{ r.designation || ('Article #' + r.id_article) }}</td>
+                        <td class="td-name">{{ r.designation || (('STOCK.ARTICLE_NUM' | translate:{ id: r.id_article })) }}</td>
                         <td>{{ (r.marque || '') + ' ' + (r.modele || '') }}</td>
                         <td class="text-center">{{ r.qte }}</td>
                         <td>{{ r.probleme }}</td>
                         <td>{{ nomFournisseur(r) || '—' }}</td>
                     </tr>
                     <tr *ngIf="retoursAccessoires.length === 0">
-                        <td colspan="6" class="text-center text-muted">Aucun accessoire renvoyé.</td>
+                        <td colspan="6" class="text-center text-muted">{{ 'STOCK.NO_RETURNS' | translate }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -300,23 +302,23 @@
         <div class="table-toolbar">
             <div class="search-box">
                 <span class="search-icon">🔍</span>
-                <input class="search-input" type="text" placeholder="Chercher par nom, barcode, marque…"
+                <input class="search-input" type="text" [placeholder]="'STOCK.SEARCH_PLACEHOLDER' | translate"
                     [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()" />
             </div>
-            <div class="table-count">{{ filteredProducts.length }} article(s)</div>
+            <div class="table-count">{{ filteredProducts.length }} {{ 'STOCK.COUNT_SUFFIX' | translate }}</div>
         </div>
 
         <!-- Loading -->
         <div class="loading-state" *ngIf="loading">
             <div class="loading-icon">⟳</div>
-            <strong>Chargement…</strong>
+            <strong>{{ 'STOCK.LOADING' | translate }}</strong>
         </div>
 
         <!-- Empty -->
         <div class="empty-state" *ngIf="!loading && filteredProducts.length === 0 && !errorMsg">
             <div class="empty-icon">📭</div>
-            <strong>{{ searchTerm ? 'Aucun résultat' : 'Aucun article pour l\'instant' }}</strong>
-            <p>{{ searchTerm ? 'Essayez un autre terme.' : 'Cliquez sur « ＋ Ajouter » pour commencer.' }}</p>
+            <strong>{{ (searchTerm ? 'STOCK.NO_RESULT' : 'STOCK.NO_ARTICLE_YET') | translate }}</strong>
+            <p>{{ (searchTerm ? 'STOCK.TRY_ANOTHER' : 'STOCK.CLICK_ADD') | translate }}</p>
         </div>
 
         <!-- Table -->
@@ -325,16 +327,16 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Image</th>
-                        <th>Barcode</th>
-                        <th>Sous-cat</th>
-                        <th>Marque</th>
-                        <th>Modèle / Nom</th>
-                        <th class="text-center">Qté</th>
-                        <th class="text-right">Prix Achat</th>
-                        <th class="text-right">Prix Vente</th>
-                        <th class="text-center">Statut</th>
-                        <th class="text-center">Actions</th>
+                        <th>{{ 'STOCK.COL_IMAGE' | translate }}</th>
+                        <th>{{ 'STOCK.COL_BARCODE' | translate }}</th>
+                        <th>{{ 'STOCK.COL_SUBCAT' | translate }}</th>
+                        <th>{{ 'STOCK.COL_BRAND' | translate }}</th>
+                        <th>{{ 'STOCK.COL_MODEL_NAME' | translate }}</th>
+                        <th class="text-center">{{ 'STOCK.COL_QTY' | translate }}</th>
+                        <th class="text-right">{{ 'STOCK.COL_PRICE_BUY' | translate }}</th>
+                        <th class="text-right">{{ 'STOCK.COL_PRICE_SELL' | translate }}</th>
+                        <th class="text-center">{{ 'STOCK.COL_STATUS' | translate }}</th>
+                        <th class="text-center">{{ 'STOCK.COL_ACTIONS' | translate }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -356,22 +358,22 @@
                         </td>
                         <td class="text-center td-qty">{{ p.quantite ?? '—' }}</td>
                         <td class="text-right td-price-buy">
-                            {{ p.prix_achat != null ? (p.prix_achat | number:'1.3-3') + ' DT' : '—' }}
+                            {{ p.prix_achat != null ? (p.prix_achat | number:'1.3-3') + ' ' + ('CURRENCY' | translate) : '—' }}
                         </td>
                         <td class="text-right td-price-sell">
-                            {{ p.prix_vente != null ? (p.prix_vente | number:'1.3-3') + ' DT' : '—' }}
+                            {{ p.prix_vente != null ? (p.prix_vente | number:'1.3-3') + ' ' + ('CURRENCY' | translate) : '—' }}
                         </td>
                         <td class="text-center">
                             <span [class]="'stock-badge ' + getStockStatus(p).cls">
-                                {{ getStockStatus(p).label }}
+                                {{ getStockStatus(p).label | translate }}
                             </span>
                         </td>
                         <td>
                             <div class="actions-cell">
-                                <button class="btn-icon edit" title="Modifier" (click)="openEditForm(p)">✏️</button>
+                                <button class="btn-icon edit" [title]="'STOCK.EDIT' | translate" (click)="openEditForm(p)">✏️</button>
                                 <button class="btn-icon" *ngIf="p.type === 'accessory' && (p.quantite ?? 0) > 0"
-                                    title="Renvoyer au fournisseur" (click)="ouvrirRenvoi(p)">↩</button>
-                                <button class="btn-icon delete" title="Supprimer"
+                                    [title]="'STOCK.RETURN_TO_SUPPLIER' | translate" (click)="ouvrirRenvoi(p)">↩</button>
+                                <button class="btn-icon delete" [title]="'STOCK.DELETE' | translate"
                                     (click)="deleteProduct(p.id_article, p.designation)">🗑️</button>
                             </div>
                         </td>

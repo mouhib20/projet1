@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ArticleService, ArticleForm, articleImageUrl } from '../../services/article.service';
 import { ClientService } from '../../services/client.service';
-import { TranslatePipe, TranslateDirective } from '@ngx-translate/core';
+import { TranslatePipe, TranslateDirective, TranslateService } from '@ngx-translate/core';
 
 export type StockStatus = {
     label: string;
@@ -67,7 +67,7 @@ export class StockComponent implements OnInit {
         return articleImageUrl(image);
     }
 
-    constructor(private articleService: ArticleService, private clientService: ClientService) { }
+    constructor(private articleService: ArticleService, private clientService: ClientService, private translate: TranslateService) { }
 
     ngOnInit(): void {
         this.loadProducts();
@@ -97,9 +97,9 @@ export class StockComponent implements OnInit {
     getStockStatus(item: ArticleForm): StockStatus {
         const qty = item.quantite ?? 0;
         const min = item.qte_min ?? 3;
-        if (qty <= 0) return { label: 'منتهي', cls: 'badge-out' };
-        if (qty <= min) return { label: 'شارف على النفاد', cls: 'badge-low' };
-        return { label: 'متوفر', cls: 'badge-ok' };
+        if (qty <= 0) return { label: 'DASHBOARD.STATUS_OUT', cls: 'badge-out' };
+        if (qty <= min) return { label: 'DASHBOARD.STATUS_LOW', cls: 'badge-low' };
+        return { label: 'DASHBOARD.STATUS_OK', cls: 'badge-ok' };
     }
 
     // ── Load ──────────────────────────────────────────────────
@@ -114,7 +114,7 @@ export class StockComponent implements OnInit {
                 this.loading = false;
             },
             error: () => {
-                this.errorMsg = 'Impossible de charger les produits. Vérifiez que le backend est démarré.';
+                this.errorMsg = 'STOCK.ERR_LOAD_PRODUCTS';
                 this.loading = false;
             }
         });
@@ -156,7 +156,7 @@ export class StockComponent implements OnInit {
     loadSav(): void {
         this.articleService.getSav().subscribe({
             next: (data) => { this.savList = data; },
-            error: () => { this.errorMsg = 'Impossible de charger le SAV.'; }
+            error: () => { this.errorMsg = 'STOCK.ERR_LOAD_SAV'; }
         });
     }
 
@@ -174,10 +174,10 @@ export class StockComponent implements OnInit {
         if (this.savEnCours) return;
         this.clearMessages();
         const f = this.savForm;
-        if (!f.id_article) { this.errorMsg = "Choisissez l'accessoire défectueux."; return; }
-        if (!f.degre_dommage) { this.errorMsg = 'Indiquez le degré de dommage.'; return; }
-        if (!f.probleme.trim()) { this.errorMsg = 'Décrivez le problème.'; return; }
-        if (!f.qte || f.qte < 1) { this.errorMsg = 'Quantité invalide.'; return; }
+        if (!f.id_article) { this.errorMsg = 'STOCK.ERR_CHOOSE_DEFECTIVE'; return; }
+        if (!f.degre_dommage) { this.errorMsg = 'STOCK.ERR_DAMAGE_LEVEL'; return; }
+        if (!f.probleme.trim()) { this.errorMsg = 'STOCK.ERR_DESCRIBE_PROBLEM'; return; }
+        if (!f.qte || f.qte < 1) { this.errorMsg = 'STOCK.ERR_INVALID_QTY'; return; }
         this.savEnCours = true;
         this.articleService.creerSav({
             id_article: f.id_article,
@@ -189,12 +189,12 @@ export class StockComponent implements OnInit {
             next: () => {
                 this.savEnCours = false;
                 this.savFormOpen = false;
-                this.successMsg = 'Accessoire défectueux enregistré au service après-vente.';
+                this.successMsg = 'STOCK.SUCCESS_SAV_SAVED';
                 this.loadSav();
             },
             error: (err) => {
                 this.savEnCours = false;
-                this.errorMsg = err.error?.message || "Erreur lors de l'enregistrement du SAV.";
+                this.errorMsg = err.error?.message || 'STOCK.ERR_SAV_SAVE';
             }
         });
     }
@@ -213,19 +213,19 @@ export class StockComponent implements OnInit {
         const s = this.savRemplacer;
         if (!s || this.savEnCours) return;
         this.clearMessages();
-        if (!this.savRemplacementId) { this.errorMsg = "Choisissez l'accessoire de remplacement en stock."; return; }
+        if (!this.savRemplacementId) { this.errorMsg = 'STOCK.ERR_CHOOSE_REPLACEMENT'; return; }
         this.savEnCours = true;
         this.articleService.remplacerSav(s.id, this.savRemplacementId).subscribe({
             next: (res) => {
                 this.savEnCours = false;
                 this.savRemplacer = null;
-                this.successMsg = `Remplacé par « ${res.remplacement} » (stock diminué de ${s.qte}).`;
+                this.successMsg = this.translate.instant('STOCK.SUCCESS_REPLACED', { name: res.remplacement, qty: s.qte });
                 this.loadProducts();
                 this.loadSav();
             },
             error: (err) => {
                 this.savEnCours = false;
-                this.errorMsg = err.error?.message || 'Erreur lors du remplacement.';
+                this.errorMsg = err.error?.message || 'STOCK.ERR_REPLACEMENT';
             }
         });
     }
@@ -241,7 +241,7 @@ export class StockComponent implements OnInit {
     loadRetours(): void {
         this.articleService.getRetoursFournisseur().subscribe({
             next: (data) => { this.retoursAccessoires = data.filter(r => r.type === 'accessory'); },
-            error: () => { this.errorMsg = 'Impossible de charger les retours.'; }
+            error: () => { this.errorMsg = 'STOCK.ERR_LOAD_RETURNS'; }
         });
     }
 
@@ -265,11 +265,11 @@ export class StockComponent implements OnInit {
         if (!product?.id_article || this.renvoiEnCours) return;
         this.clearMessages();
         if (!this.renvoiProbleme.trim()) {
-            this.errorMsg = "Décrivez le problème de l'article.";
+            this.errorMsg = 'STOCK.ERR_DESCRIBE_ARTICLE_PROBLEM';
             return;
         }
         if (!this.renvoiQte || this.renvoiQte < 1 || this.renvoiQte > (product.quantite ?? 0)) {
-            this.errorMsg = `Quantité invalide (1 à ${product.quantite ?? 0}).`;
+            this.errorMsg = this.translate.instant('STOCK.ERR_INVALID_QTY_RANGE', { max: product.quantite ?? 0 });
             return;
         }
         this.renvoiEnCours = true;
@@ -281,14 +281,14 @@ export class StockComponent implements OnInit {
                 this.renvoiEnCours = false;
                 this.renvoiPiece = null;
                 this.successMsg = res.fournisseur
-                    ? `« ${product.designation} » renvoyé au fournisseur « ${res.fournisseur} ».`
-                    : `« ${product.designation} » retiré du stock (aucun fournisseur lié).`;
+                    ? this.translate.instant('STOCK.SUCCESS_RETURNED_TO_SUPPLIER', { name: product.designation, supplier: res.fournisseur })
+                    : this.translate.instant('STOCK.SUCCESS_REMOVED_NO_SUPPLIER', { name: product.designation });
                 this.loadProducts();
                 this.loadRetours();
             },
             error: (err) => {
                 this.renvoiEnCours = false;
-                this.errorMsg = err.error?.message || "Erreur lors du renvoi de l'article.";
+                this.errorMsg = err.error?.message || 'STOCK.ERR_RETURN_ARTICLE';
             }
         });
     }
@@ -342,7 +342,7 @@ export class StockComponent implements OnInit {
                 this.imageUploading = false;
             },
             error: (err) => {
-                this.imageError = err.error?.message || 'Erreur lors du téléchargement de l\'image.';
+                this.imageError = err.error?.message || 'STOCK.ERR_IMAGE_UPLOAD';
                 this.imageUploading = false;
             }
         });
@@ -363,7 +363,7 @@ export class StockComponent implements OnInit {
     saveProduct(): void {
         if (this.saving) return; // Avoid duplicate submissions on repeated clicks
         if (!this.form.designation) {
-            this.errorMsg = 'Le nom est obligatoire.';
+            this.errorMsg = 'STOCK.ERR_NAME_REQUIRED';
             return;
         }
         this.clearMessages();
@@ -372,35 +372,35 @@ export class StockComponent implements OnInit {
         if (this.isEditing && this.editingId !== null) {
             this.articleService.updateArticle(this.editingId, this.form as any).subscribe({
                 next: () => {
-                    this.successMsg = 'Produit mis à jour avec succès.';
+                    this.successMsg = 'STOCK.SUCCESS_UPDATE';
                     this.saving = false;
                     this.cancelForm();
                     this.loadProducts();
                 },
-                error: () => { this.errorMsg = 'Erreur lors de la mise à jour.'; this.saving = false; }
+                error: () => { this.errorMsg = 'STOCK.ERR_UPDATE'; this.saving = false; }
             });
         } else {
             this.articleService.createArticle(this.form).subscribe({
                 next: () => {
-                    this.successMsg = 'Produit ajouté avec succès.';
+                    this.successMsg = 'STOCK.SUCCESS_CREATE';
                     this.saving = false;
                     this.cancelForm();
                     this.loadProducts();
                 },
-                error: () => { this.errorMsg = 'Erreur lors de la création.'; this.saving = false; }
+                error: () => { this.errorMsg = 'STOCK.ERR_CREATE'; this.saving = false; }
             });
         }
     }
 
     deleteProduct(id: number | undefined, name: string): void {
         if (!id) return;
-        if (!confirm(`Supprimer « ${name} » ?`)) return;
+        if (!confirm(this.translate.instant('STOCK.CONFIRM_DELETE', { name }))) return;
         this.articleService.deleteArticle(id).subscribe({
             next: () => {
-                this.successMsg = `« ${name} » supprimé.`;
+                this.successMsg = this.translate.instant('STOCK.SUCCESS_DELETE', { name });
                 this.loadProducts();
             },
-            error: () => { this.errorMsg = 'Erreur lors de la suppression.'; }
+            error: () => { this.errorMsg = 'STOCK.ERR_DELETE'; }
         });
     }
 

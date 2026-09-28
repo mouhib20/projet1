@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ReparationService, CreateReparationDto } from '../services/reparation.service';
 import { ClientService } from '../services/client.service';
 import { ArticleService, ArticleForm } from '../services/article.service';
@@ -11,7 +12,7 @@ import { PosBridgeService } from '../services/pos-bridge.service';
 @Component({
     selector: 'app-reparation',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, TranslatePipe],
     templateUrl: './reparation.component.html',
     styleUrls: ['./reparation.component.css']
 })
@@ -73,6 +74,18 @@ export class ReparationComponent implements OnInit {
     retourDetails = '';
     savingRetour = false;
     static readonly PROBLEME_TECHNIQUE = 'Problème technique';
+
+    /** Values stay the stored French literals; only the displayed label is translated. */
+    readonly retourTypeOptions = [
+        { value: 'Écran', label: 'REPARATION.TYPE_ECRAN' },
+        { value: 'Batterie', label: 'REPARATION.TYPE_BATTERIE' },
+        { value: 'Problème technique', label: 'REPARATION.TYPE_TECH_PROBLEM' },
+    ];
+    readonly degreOptions = [
+        { value: 'Léger', label: 'STOCK.DAMAGE_LIGHT' },
+        { value: 'Moyen', label: 'STOCK.DAMAGE_MEDIUM' },
+        { value: 'Grave', label: 'STOCK.DAMAGE_SEVERE' },
+    ];
 
     /** Only once the phone has actually been repaired (awaiting pickup, or closed out). */
     peutDeclarerRetour(rep: any): boolean {

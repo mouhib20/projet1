@@ -2,12 +2,13 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../services/auth.service';
 
 @Component({
     selector: 'app-login',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, TranslatePipe],
     templateUrl: './login.component.html',
     styleUrl: './login.component.css'
 })
@@ -30,7 +31,7 @@ export class LoginComponent {
 
     login() {
         if (!this.username || !this.password) {
-            this.errorMsg = 'Veuillez remplir tous les champs.';
+            this.errorMsg = 'LOGIN.ERR_REQUIRED';
             return;
         }
         this.loading = true;
@@ -44,7 +45,7 @@ export class LoginComponent {
             error: (err) => {
                 this.loading = false;
                 const msg = err?.error?.message;
-                this.errorMsg = Array.isArray(msg) ? msg[0] : (msg || 'Identifiants incorrects.');
+                this.errorMsg = Array.isArray(msg) ? msg[0] : (msg || 'LOGIN.ERR_INVALID');
             }
         });
     }

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ChargeService } from '../../services/charge.service';
 import { Charge } from '../../models/charge.model';
 import { PaiementFournisseurService, FournisseurDu, PaiementFournisseur } from '../../services/paiement-fournisseur.service';
@@ -26,6 +26,7 @@ export class ChargesComponent implements OnInit {
     private chargeService: ChargeService,
     private paiementService: PaiementFournisseurService,
     private venteService: VenteService,
+    private translate: TranslateService,
   ) { }
 
   ngOnInit(): void {
@@ -354,9 +355,9 @@ export class ChargesComponent implements OnInit {
   enregistrerPaiement() {
     this.paiementErreur = '';
     this.paiementMessage = '';
-    if (!this.paiement.id_fournisseur) { this.paiementErreur = 'Choisissez le fournisseur.'; return; }
-    if (!this.paiement.montant || this.paiement.montant <= 0) { this.paiementErreur = 'Saisissez un montant supérieur à 0.'; return; }
-    if (this.resteApresPaiement < -0.0005) { this.paiementErreur = 'Le montant dépasse ce qui est dû à ce fournisseur.'; return; }
+    if (!this.paiement.id_fournisseur) { this.paiementErreur = 'CHARGES.ERR_CHOOSE_SUPPLIER'; return; }
+    if (!this.paiement.montant || this.paiement.montant <= 0) { this.paiementErreur = 'CHARGES.ERR_INVALID_AMOUNT'; return; }
+    if (this.resteApresPaiement < -0.0005) { this.paiementErreur = 'CHARGES.ERR_AMOUNT_EXCEEDS_DUE'; return; }
     this.paiementEnCours = true;
     this.paiementService.payer({
       id_fournisseur: this.paiement.id_fournisseur,
@@ -368,21 +369,21 @@ export class ChargesComponent implements OnInit {
       next: (res) => {
         this.paiementEnCours = false;
         this.paiementOuvert = false;
-        this.paiementMessage = `Paiement enregistré pour ${res.fournisseur} : il reste ${res.reste_du} à payer.`;
+        this.paiementMessage = this.translate.instant('CHARGES.SUCCESS_PAYMENT', { supplier: res.fournisseur, remaining: res.reste_du });
         this.chargerFournisseurs();
       },
       error: (err) => {
         this.paiementEnCours = false;
-        this.paiementErreur = err.error?.message || "Erreur lors de l'enregistrement du paiement.";
+        this.paiementErreur = err.error?.message || 'CHARGES.ERR_PAYMENT_SAVE';
       }
     });
   }
 
   annulerPaiement(p: PaiementFournisseur) {
-    if (!confirm(`Annuler ce paiement de ${p.montant} à ${this.nomFournisseur(p)} ? Le montant sera de nouveau dû.`)) return;
+    if (!confirm(this.translate.instant('CHARGES.CONFIRM_CANCEL_PAYMENT', { amount: p.montant, name: this.nomFournisseur(p) }))) return;
     this.paiementService.annuler(p.id).subscribe({
       next: () => this.chargerFournisseurs(),
-      error: (err) => { this.paiementErreur = err.error?.message || "Impossible d'annuler le paiement."; }
+      error: (err) => { this.paiementErreur = err.error?.message || 'CHARGES.ERR_CANCEL_PAYMENT'; }
     });
   }
 

@@ -3,22 +3,22 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <button class="back-btn" (click)="goHome()">
-                ← Retour
+                ← {{ 'REPARATION.BACK' | translate }}
             </button>
             <div class="nav-title" style="margin-top: 15px; font-size: 1.2rem;">
-                <span>🔧</span> Espace Réparation
+                <span>🔧</span> {{ 'SPACE.REPARATION_TITLE' | translate }}
             </div>
         </div>
 
         <nav class="sidebar-nav">
             <a class="nav-link" [class.active]="activeTab === 'tickets'" (click)="setTab('tickets')">
-                🎟️ Tickets de Réparation
+                🎟️ {{ 'REPARATION.TAB_TICKETS' | translate }}
             </a>
             <a class="nav-link" [class.active]="activeTab === 'retours'" (click)="setTab('retours')">
-                🔁 Retours
+                🔁 {{ 'REPARATION.TAB_RETURNS' | translate }}
             </a>
             <a class="nav-link" [class.active]="activeTab === 'stock'" (click)="setTab('stock')">
-                📦 Stocks Pièces
+                📦 {{ 'REPARATION.TAB_STOCK' | translate }}
             </a>
         </nav>
 
@@ -26,7 +26,7 @@
             <button class="btn btn-primary"
                 style="width: 100%; border-radius: 8px; padding: 12px; font-weight: bold; background: #6366f1; border: none; color: white; cursor: pointer;"
                 (click)="openTicketModal()">
-                + Nouveau Ticket
+                + {{ 'REPARATION.NEW_TICKET' | translate }}
             </button>
         </div>
     </aside>
@@ -36,7 +36,7 @@
         <header class="top-header">
             <div class="header-left">
                 <h2 style="color: #fff; margin: 0; font-size: 1.2rem;">
-                    {{ activeTab === 'tickets' ? 'Tous les Tickets' : (activeTab === 'retours' ? 'Téléphones retournés' : 'Stock de Pièces') }}
+                    {{ (activeTab === 'tickets' ? 'REPARATION.HEADER_TICKETS' : (activeTab === 'retours' ? 'REPARATION.HEADER_RETURNS' : 'REPARATION.HEADER_STOCK')) | translate }}
                 </h2>
             </div>
         </header>
@@ -49,21 +49,21 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Date</th>
-                                <th>Client</th>
-                                <th>Appareil</th>
-                                <th>Problème</th>
-                                <th>Statut</th>
-                                <th>Total</th>
-                                <th>Actions</th>
+                                <th>{{ 'REPARATION.COL_DATE' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_CLIENT' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_DEVICE' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_PROBLEM' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_STATUS' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_TOTAL' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_ACTIONS' | translate }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr *ngFor="let rep of reparations" style="cursor: pointer;" (click)="ouvrirDetails(rep)"
-                                title="Cliquer pour voir tous les détails">
+                                [title]="'REPARATION.CLICK_FOR_DETAILS' | translate">
                                 <td>#{{ rep.id_reparation }}</td>
                                 <td>{{ rep.date_reception | date:'dd/MM/yyyy' }}</td>
-                                <td>{{ rep.client?.nom || 'Inconnu' }}</td>
+                                <td>{{ rep.client?.nom || ('REPARATION.UNKNOWN' | translate) }}</td>
                                 <td>{{ rep.appareil }}</td>
                                 <td>{{ rep.description || '—' }}</td>
                                 <td>
@@ -74,39 +74,39 @@
                                         {{ rep.statut }}
                                     </span>
                                 </td>
-                                <td class="price-text">{{ rep.prix }} MAD</td>
+                                <td class="price-text">{{ rep.prix }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</td>
                                 <td (click)="$event.stopPropagation()">
                                     <!-- Step 1: repair in progress -->
                                     <div *ngIf="estEnCours(rep)" class="montant-recu-row">
                                         <button class="btn-step btn-step-primary" (click)="ouvrirFinalisation(rep)">
-                                            🔧 Maintenance terminée
+                                            🔧 {{ 'REPARATION.MAINTENANCE_DONE' | translate }}
                                         </button>
                                         <button class="btn-step btn-step-danger" (click)="ouvrirAnnulation(rep)"
-                                            title="Pièce indisponible ou désaccord avec le client">
-                                            ↩️ Rendre le téléphone
+                                            [title]="'REPARATION.RETURN_PHONE_TOOLTIP' | translate">
+                                            ↩️ {{ 'REPARATION.RETURN_PHONE' | translate }}
                                         </button>
                                     </div>
 
                                     <!-- Step 2: awaiting payment -->
                                     <div *ngIf="estEnLivraison(rep)" class="montant-recu-row">
                                         <button class="btn-step btn-step-success" (click)="envoyerEnCaisse(rep)">
-                                            🛒 Envoyer en caisse (POS)
+                                            🛒 {{ 'REPARATION.SEND_TO_POS' | translate }}
                                         </button>
                                     </div>
 
                                     <!-- Step 3: closed out -->
                                     <span *ngIf="estFinalise(rep)" class="montant-recu-final">
-                                        ✅ Reçu : {{ (rep.montant_recu ?? rep.prix) | number:'1.2-2' }} MAD
+                                        ✅ {{ 'REPARATION.RECEIVED' | translate }} : {{ (rep.montant_recu ?? rep.prix) | number:'1.2-2' }} {{ 'REPARATION.CURRENCY_MAD' | translate }}
                                     </span>
 
                                     <!-- Cancelled: phone returned to the client -->
                                     <span *ngIf="estAnnule(rep)" class="montant-recu-final text-muted">
-                                        ↩️ Téléphone rendu
+                                        ↩️ {{ 'REPARATION.PHONE_RETURNED' | translate }}
                                     </span>
                                 </td>
                             </tr>
                             <tr *ngIf="reparations.length === 0">
-                                <td colspan="8" class="text-center text-muted">Aucun ticket trouvé.</td>
+                                <td colspan="8" class="text-center text-muted">{{ 'REPARATION.NO_TICKET_FOUND' | translate }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -119,19 +119,19 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Retour</th>
-                                <th>Téléphone</th>
-                                <th>Problème</th>
-                                <th>Dommage</th>
-                                <th>Pièce défectueuse</th>
-                                <th>Fournisseur</th>
-                                <th>Remplacement</th>
-                                <th>Actions</th>
+                                <th>{{ 'REPARATION.COL_RETURN' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_PHONE' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_PROBLEM' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_DAMAGE' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_DEFECTIVE_PART' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_SUPPLIER' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_REPLACEMENT' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_ACTIONS' | translate }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr *ngFor="let r of retours">
-                                <td>#{{ r.id_reparation }}<br><small class="text-muted">du ticket #{{ r.ticket_origine
+                                <td>#{{ r.id_reparation }}<br><small class="text-muted">{{ 'REPARATION.FROM_TICKET' | translate }} #{{ r.ticket_origine
                                         }}</small></td>
                                 <td>{{ r.appareil }}<br><small class="text-muted">{{ r.client?.nom }}</small></td>
                                 <td>{{ r.description || '—' }}</td>
@@ -152,41 +152,41 @@
                                 <td>
                                     <button class="btn-step btn-step-primary" *ngIf="estEnCours(r)"
                                         (click)="ouvrirRemplacement(r)">
-                                        🔧 Remplacer (stock)
+                                        🔧 {{ 'REPARATION.REPLACE_STOCK' | translate }}
                                     </button>
                                 </td>
                             </tr>
                             <tr *ngIf="retours.length === 0">
-                                <td colspan="8" class="text-center text-muted">Aucun retour déclaré.</td>
+                                <td colspan="8" class="text-center text-muted">{{ 'REPARATION.NO_RETURN_DECLARED' | translate }}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div class="section-title" style="margin-top: 28px;">Pièces renvoyées au fournisseur</div>
+                <div class="section-title" style="margin-top: 28px;">{{ 'REPARATION.PARTS_RETURNED_TO_SUPPLIER' | translate }}</div>
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Pièce défectueuse</th>
-                                <th>Marque / Modèle</th>
-                                <th>Qté</th>
-                                <th>Problème</th>
-                                <th>Fournisseur</th>
+                                <th>{{ 'REPARATION.COL_DATE' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_DEFECTIVE_PART' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_BRAND_MODEL' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_QTY' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_PROBLEM' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_SUPPLIER' | translate }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr *ngFor="let rf of retoursFournisseur">
                                 <td>{{ rf.date_retour | date:'dd/MM/yyyy' }}</td>
-                                <td>{{ rf.designation || ('Article #' + rf.id_article) }}</td>
+                                <td>{{ rf.designation || (('REPARATION.ARTICLE_NUM' | translate:{ id: rf.id_article })) }}</td>
                                 <td>{{ (rf.marque || '') + ' ' + (rf.modele || '') }}</td>
                                 <td>{{ rf.qte }}</td>
                                 <td>{{ rf.probleme }}</td>
                                 <td>{{ nomFournisseur(rf) || '—' }}</td>
                             </tr>
                             <tr *ngIf="retoursFournisseur.length === 0">
-                                <td colspan="6" class="text-center text-muted">Aucune pièce renvoyée.</td>
+                                <td colspan="6" class="text-center text-muted">{{ 'REPARATION.NO_PART_RETURNED' | translate }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -200,31 +200,31 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Désignation</th>
-                                <th>Prix Achat</th>
-                                <th>Prix Vente</th>
-                                <th>Stock Actuel</th>
-                                <th>Actions</th>
+                                <th>{{ 'REPARATION.COL_DESIGNATION' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_PURCHASE_PRICE' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_SALE_PRICE' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_CURRENT_STOCK' | translate }}</th>
+                                <th>{{ 'REPARATION.COL_ACTIONS' | translate }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr *ngFor="let part of piecesEnStock">
                                 <td>{{ part.id_article }}</td>
                                 <td>{{ part.designation }}</td>
-                                <td class="price-text">{{ part.prix_achat }} MAD</td>
-                                <td class="price-text">{{ part.prix_vente }} MAD</td>
+                                <td class="price-text">{{ part.prix_achat }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</td>
+                                <td class="price-text">{{ part.prix_vente }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</td>
                                 <td>
                                     <span class="badge-stock" [class.danger]="(part.quantite || 0) < 5">{{ part.quantite
                                         || 0 }}</span>
                                 </td>
                                 <td>
                                     <button class="btn-step btn-step-primary" (click)="ouvrirRenvoi(part)">
-                                        ↩ Renvoyer
+                                        ↩ {{ 'REPARATION.SEND_BACK' | translate }}
                                     </button>
                                 </td>
                             </tr>
                             <tr *ngIf="piecesEnStock.length === 0">
-                                <td colspan="6" class="text-center text-muted">Aucune pièce en stock.</td>
+                                <td colspan="6" class="text-center text-muted">{{ 'REPARATION.NO_PART_IN_STOCK' | translate }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -238,62 +238,62 @@
 <div class="modal-overlay" *ngIf="detailRep" (click)="fermerDetails()">
     <div class="modal-content modal-sm" (click)="$event.stopPropagation()">
         <div class="modal-header">
-            <h2>Ticket #{{ detailRep.id_reparation }}</h2>
+            <h2>{{ 'REPARATION.TICKET_HASH' | translate }}{{ detailRep.id_reparation }}</h2>
             <button class="btn-close" (click)="fermerDetails()">✕</button>
         </div>
         <div class="modal-body">
             <div class="detail-grid">
-                <span class="detail-label">Statut</span>
+                <span class="detail-label">{{ 'REPARATION.COL_STATUS' | translate }}</span>
                 <span><span class="badge" [class.badge-primary]="estEnCours(detailRep)"
                         [class.badge-warning]="estEnLivraison(detailRep)"
                         [class.badge-success]="estFinalise(detailRep)"
                         [class.badge-danger]="estAnnule(detailRep)">{{ detailRep.statut }}</span></span>
-                <span class="detail-label">Date de réception</span>
+                <span class="detail-label">{{ 'REPARATION.RECEPTION_DATE' | translate }}</span>
                 <span>{{ detailRep.date_reception | date:'dd/MM/yyyy' }}</span>
-                <span class="detail-label">Client</span>
-                <span>{{ detailRep.client?.nom || 'Inconnu' }}</span>
-                <span class="detail-label">Téléphone</span>
+                <span class="detail-label">{{ 'REPARATION.COL_CLIENT' | translate }}</span>
+                <span>{{ detailRep.client?.nom || ('REPARATION.UNKNOWN' | translate) }}</span>
+                <span class="detail-label">{{ 'REPARATION.PHONE' | translate }}</span>
                 <span>{{ detailRep.client?.telephone || '—' }}</span>
-                <span class="detail-label">Appareil</span>
+                <span class="detail-label">{{ 'REPARATION.COL_DEVICE' | translate }}</span>
                 <span>{{ detailRep.appareil || '—' }}</span>
-                <span class="detail-label">Problème(s)</span>
+                <span class="detail-label">{{ 'REPARATION.PROBLEMS' | translate }}</span>
                 <span><strong>{{ detailRep.description || '—' }}</strong></span>
-                <span class="detail-label">Main d'œuvre</span>
-                <span>{{ detailRep.cout_main_oeuvre || 0 }} MAD</span>
-                <span class="detail-label">Prix convenu</span>
-                <span class="price-text">{{ detailRep.prix }} MAD</span>
-                <span class="detail-label" *ngIf="detailRep.acompte > 0">Acompte versé</span>
-                <span class="price-text" *ngIf="detailRep.acompte > 0">{{ detailRep.acompte }} MAD</span>
-                <span class="detail-label" *ngIf="detailRep.acompte > 0">Reste à payer</span>
-                <span class="price-text" *ngIf="detailRep.acompte > 0">{{ resteAPayer(detailRep) }} MAD</span>
+                <span class="detail-label">{{ 'REPARATION.LABOR' | translate }}</span>
+                <span>{{ detailRep.cout_main_oeuvre || 0 }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</span>
+                <span class="detail-label">{{ 'REPARATION.AGREED_PRICE' | translate }}</span>
+                <span class="price-text">{{ detailRep.prix }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</span>
+                <span class="detail-label" *ngIf="detailRep.acompte > 0">{{ 'REPARATION.DEPOSIT_PAID' | translate }}</span>
+                <span class="price-text" *ngIf="detailRep.acompte > 0">{{ detailRep.acompte }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</span>
+                <span class="detail-label" *ngIf="detailRep.acompte > 0">{{ 'REPARATION.REMAINING_DUE' | translate }}</span>
+                <span class="price-text" *ngIf="detailRep.acompte > 0">{{ resteAPayer(detailRep) }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</span>
                 <span class="detail-label" *ngIf="detailRep.montant_recu !== null && detailRep.montant_recu !== undefined">
-                    Montant reçu</span>
+                    {{ 'REPARATION.AMOUNT_RECEIVED' | translate }}</span>
                 <span class="price-text"
                     *ngIf="detailRep.montant_recu !== null && detailRep.montant_recu !== undefined">{{
-                    detailRep.montant_recu }} MAD</span>
+                    detailRep.montant_recu }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</span>
             </div>
 
-            <div class="section-title">Pièces utilisées</div>
+            <div class="section-title">{{ 'REPARATION.PARTS_USED' | translate }}</div>
             <div *ngIf="!detailRep.items || detailRep.items.length === 0" class="text-muted">
-                Aucune pièce pour le moment.
+                {{ 'REPARATION.NO_PART_YET' | translate }}
             </div>
             <div class="detail-part" *ngFor="let it of detailRep.items">
                 <div>
-                    {{ it.article?.designation || 'Pièce' }}
+                    {{ it.article?.designation || ('REPARATION.PART' | translate) }}
                     <small class="text-muted" *ngIf="marqueModeleAAjouter(it.article)">
                         — {{ marqueModeleAAjouter(it.article) }}</small>
                 </div>
                 <div class="text-muted">
-                    Qté {{ it.qte }} · achat {{ it.article?.prix_achat || 0 }} MAD · prix {{ it.prix }} MAD
+                    {{ 'REPARATION.QTY_ABBR' | translate }} {{ it.qte }} · {{ 'REPARATION.PURCHASE_ABBR' | translate }} {{ it.article?.prix_achat || 0 }} {{ 'REPARATION.CURRENCY_MAD' | translate }} · {{ 'REPARATION.PRICE_ABBR' | translate }} {{ it.prix }} {{ 'REPARATION.CURRENCY_MAD' | translate }}
                 </div>
             </div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" style="margin-right: auto;" *ngIf="peutDeclarerRetour(detailRep)"
                 (click)="ouvrirRetour(detailRep)">
-                🔁 Déclarer un retour
+                🔁 {{ 'REPARATION.DECLARE_RETURN' | translate }}
             </button>
-            <button class="btn btn-secondary" (click)="fermerDetails()">Fermer</button>
+            <button class="btn btn-secondary" (click)="fermerDetails()">{{ 'REPARATION.CLOSE' | translate }}</button>
         </div>
     </div>
 </div>
@@ -302,29 +302,29 @@
 <div class="modal-overlay" *ngIf="renvoiPiece">
     <div class="modal-content modal-sm">
         <div class="modal-header">
-            <h2>Renvoyer la pièce</h2>
+            <h2>{{ 'REPARATION.SEND_BACK_PART' | translate }}</h2>
             <button class="btn-close" (click)="fermerRenvoi()">✕</button>
         </div>
         <div class="modal-body">
             <p class="text-muted" style="margin-bottom: 12px;">
-                <strong>{{ renvoiPiece.designation }}</strong> — en stock : {{ renvoiPiece.quantite }}.
-                La pièce sera renvoyée au fournisseur et retirée du stock.
+                <strong>{{ renvoiPiece.designation }}</strong> — {{ 'REPARATION.IN_STOCK' | translate }} : {{ renvoiPiece.quantite }}.
+                {{ 'REPARATION.SEND_BACK_NOTE' | translate }}
             </p>
             <div class="form-group">
-                <label>Quantité renvoyée</label>
+                <label>{{ 'REPARATION.QTY_RETURNED' | translate }}</label>
                 <input type="number" min="1" [max]="renvoiPiece.quantite || 1" class="form-control"
                     [(ngModel)]="renvoiQte">
             </div>
             <div class="form-group">
-                <label>Quel est le problème ? <span class="required">*</span></label>
+                <label>{{ 'REPARATION.WHATS_THE_PROBLEM' | translate }} <span class="required">*</span></label>
                 <textarea class="form-control" rows="3" [(ngModel)]="renvoiProbleme"
-                    placeholder="Ex: l'écran ne s'allume pas, pixels morts…"></textarea>
+                    [placeholder]="'REPARATION.PROBLEM_PLACEHOLDER_SCREEN' | translate"></textarea>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="fermerRenvoi()">Annuler</button>
+            <button class="btn btn-secondary" (click)="fermerRenvoi()">{{ 'CANCEL' | translate }}</button>
             <button class="btn btn-primary" [disabled]="renvoiEnCours" (click)="confirmerRenvoi()">
-                {{ renvoiEnCours ? 'Envoi…' : 'Renvoyer la pièce' }}
+                {{ (renvoiEnCours ? 'STOCK.SENDING' : 'REPARATION.SEND_BACK_PART') | translate }}
             </button>
         </div>
     </div>
@@ -334,32 +334,32 @@
 <div class="modal-overlay" *ngIf="remplacerRep">
     <div class="modal-content modal-sm">
         <div class="modal-header">
-            <h2>Remplacer la pièce</h2>
+            <h2>{{ 'REPARATION.REPLACE_PART' | translate }}</h2>
             <button class="btn-close" (click)="fermerRemplacement()">✕</button>
         </div>
         <div class="modal-body">
             <p class="text-muted" style="margin-bottom: 12px;">
-                Retour #{{ remplacerRep.id_reparation }} — {{ remplacerRep.appareil }}
-                <span *ngIf="remplacerRep.piece_defectueuse"><br>Pièce défectueuse :
+                {{ 'REPARATION.RETURN_HASH' | translate }}{{ remplacerRep.id_reparation }} — {{ remplacerRep.appareil }}
+                <span *ngIf="remplacerRep.piece_defectueuse"><br>{{ 'REPARATION.DEFECTIVE_PART' | translate }} :
                     <strong>{{ remplacerRep.piece_defectueuse.designation }}</strong></span>
             </p>
             <div class="search-box">
-                <input type="text" class="form-control" placeholder="Rechercher une pièce de rechange en stock..."
+                <input type="text" class="form-control" [placeholder]="'REPARATION.SEARCH_REPLACEMENT_PLACEHOLDER' | translate"
                     [(ngModel)]="remplacerSearchTerm">
                 <div class="search-results" *ngIf="remplacementResultats.length > 0">
                     <div class="search-result-item" *ngFor="let part of remplacementResultats"
                         (click)="remplacerPar(part)">
-                        {{ part.designation }} <span class="stock-info">Stock: {{ part.quantite }}</span>
+                        {{ part.designation }} <span class="stock-info">{{ 'REPARATION.STOCK_LABEL' | translate }}: {{ part.quantite }}</span>
                     </div>
                 </div>
                 <p class="text-muted" *ngIf="remplacerSearchTerm && remplacementResultats.length === 0"
                     style="margin-top: 8px; font-size: 0.85rem;">
-                    Aucune pièce en stock trouvée.
+                    {{ 'REPARATION.NO_PART_FOUND_STOCK' | translate }}
                 </p>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="fermerRemplacement()">Fermer</button>
+            <button class="btn btn-secondary" (click)="fermerRemplacement()">{{ 'REPARATION.CLOSE' | translate }}</button>
         </div>
     </div>
 </div>
@@ -368,28 +368,27 @@
 <div class="modal-overlay" *ngIf="annulerRep">
     <div class="modal-content modal-sm">
         <div class="modal-header">
-            <h2>Rendre le téléphone au client</h2>
+            <h2>{{ 'REPARATION.RETURN_PHONE_TO_CLIENT' | translate }}</h2>
             <button class="btn-close" (click)="fermerAnnulation()">✕</button>
         </div>
         <div class="modal-body">
             <p class="text-muted" style="margin-bottom: 12px;">
-                Ticket #{{ annulerRep.id_reparation }} — {{ annulerRep.appareil }} ({{ annulerRep.client?.nom }}).
-                Le ticket sera marqué « Annulé » et les pièces déjà réservées reviendront au stock.
+                {{ 'REPARATION.TICKET_HASH' | translate }}{{ annulerRep.id_reparation }} — {{ annulerRep.appareil }} ({{ annulerRep.client?.nom }}).
+                {{ 'REPARATION.CANCEL_NOTE' | translate }}
             </p>
             <p class="text-muted" *ngIf="annulerRep.acompte > 0" style="margin-bottom: 12px;">
-                Un acompte de <strong>{{ annulerRep.acompte | number:'1.2-2' }} MAD</strong> a été versé : il sera
-                rendu au client et sortira de la caisse.
+                {{ 'REPARATION.DEPOSIT_REFUND_NOTE' | translate:{ amount: (annulerRep.acompte | number:'1.2-2'), currency: ('REPARATION.CURRENCY_MAD' | translate) } }}
             </p>
             <div class="form-group">
-                <label>Raison (facultatif)</label>
+                <label>{{ 'REPARATION.REASON_OPTIONAL' | translate }}</label>
                 <textarea class="form-control" rows="2" [(ngModel)]="annulerMotif"
-                    placeholder="Ex: pièce indisponible, désaccord sur le prix…"></textarea>
+                    [placeholder]="'REPARATION.CANCEL_REASON_PLACEHOLDER' | translate"></textarea>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="fermerAnnulation()">Fermer</button>
+            <button class="btn btn-secondary" (click)="fermerAnnulation()">{{ 'REPARATION.CLOSE' | translate }}</button>
             <button class="btn btn-danger" [disabled]="annulerEnCours" (click)="confirmerAnnulation()">
-                {{ annulerEnCours ? 'Annulation…' : 'Confirmer' }}
+                {{ (annulerEnCours ? 'REPARATION.CANCELLING' : 'REPARATION.CONFIRM') | translate }}
             </button>
         </div>
     </div>
@@ -399,42 +398,42 @@
 <div class="modal-overlay" *ngIf="retourRep">
     <div class="modal-content modal-sm">
         <div class="modal-header">
-            <h2>Déclarer un retour</h2>
+            <h2>{{ 'REPARATION.DECLARE_RETURN' | translate }}</h2>
             <button class="btn-close" (click)="fermerRetour()">✕</button>
         </div>
         <div class="modal-body">
             <p class="text-muted" style="margin-bottom: 12px;">
-                Ticket #{{ retourRep.id_reparation }} — {{ retourRep.appareil }} ({{ retourRep.client?.nom }}).
-                Un nouveau ticket sans frais sera créé pour ce retour.
+                {{ 'REPARATION.TICKET_HASH' | translate }}{{ retourRep.id_reparation }} — {{ retourRep.appareil }} ({{ retourRep.client?.nom }}).
+                {{ 'REPARATION.RETURN_TICKET_NOTE' | translate }}
             </p>
             <div class="form-group">
-                <label>Quel est le problème rencontré ? <span class="required">*</span></label>
+                <label>{{ 'REPARATION.WHATS_THE_PROBLEM_ENCOUNTERED' | translate }} <span class="required">*</span></label>
                 <div class="checkbox-chip-group">
-                    <label class="checkbox-chip" *ngFor="let t of ['Écran', 'Batterie', 'Problème technique']"
-                        [class.checked]="retourType === t">
-                        <input type="radio" name="retourType" [value]="t" [(ngModel)]="retourType"> {{ t }}
+                    <label class="checkbox-chip" *ngFor="let t of retourTypeOptions"
+                        [class.checked]="retourType === t.value">
+                        <input type="radio" name="retourType" [value]="t.value" [(ngModel)]="retourType"> {{ t.label | translate }}
                     </label>
                 </div>
             </div>
             <div class="form-group">
-                <label>Degré de dommage <span class="required">*</span></label>
+                <label>{{ 'REPARATION.DAMAGE_LEVEL' | translate }} <span class="required">*</span></label>
                 <div class="checkbox-chip-group">
-                    <label class="checkbox-chip" *ngFor="let d of ['Léger', 'Moyen', 'Grave']"
-                        [class.checked]="retourDegre === d">
-                        <input type="radio" name="retourDegre" [value]="d" [(ngModel)]="retourDegre"> {{ d }}
+                    <label class="checkbox-chip" *ngFor="let d of degreOptions"
+                        [class.checked]="retourDegre === d.value">
+                        <input type="radio" name="retourDegre" [value]="d.value" [(ngModel)]="retourDegre"> {{ d.label | translate }}
                     </label>
                 </div>
             </div>
             <div class="form-group" *ngIf="retourType === 'Problème technique'">
-                <label>Détails (facultatif)</label>
+                <label>{{ 'REPARATION.DETAILS_OPTIONAL' | translate }}</label>
                 <textarea class="form-control" rows="2" [(ngModel)]="retourDetails"
-                    placeholder="Ex: ne s'allume plus, pas de réseau…"></textarea>
+                    [placeholder]="'REPARATION.RETURN_DETAILS_PLACEHOLDER' | translate"></textarea>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="fermerRetour()">Annuler</button>
+            <button class="btn btn-secondary" (click)="fermerRetour()">{{ 'CANCEL' | translate }}</button>
             <button class="btn btn-primary" [disabled]="savingRetour" (click)="declarerRetour()">
-                {{ savingRetour ? 'Enregistrement…' : 'Déclarer le retour' }}
+                {{ (savingRetour ? 'STOCK.SAVING' : 'REPARATION.DECLARE_RETURN') | translate }}
             </button>
         </div>
     </div>
@@ -444,35 +443,35 @@
 <div class="modal-overlay" *ngIf="isTicketModalOpen">
     <div class="modal-content modal-lg">
         <div class="modal-header">
-            <h2>Nouveau Ticket de Réparation</h2>
+            <h2>{{ 'REPARATION.NEW_TICKET_TITLE' | translate }}</h2>
             <button class="btn-close" (click)="closeTicketModal()">✕</button>
         </div>
 
         <div class="modal-body">
             <div class="form-row">
                 <div class="form-group flex-1">
-                    <label>Client <span class="required">*</span></label>
+                    <label>{{ 'REPARATION.COL_CLIENT' | translate }} <span class="required">*</span></label>
                     <div class="input-with-button client-search-wrap">
                         <div class="client-search-box flex-1">
                             <input *ngIf="!clientChoisi" type="text" class="form-control" [(ngModel)]="clientSearchTerm"
                                 (focus)="clientResultsOuverts = true" (blur)="fermerResultatsClient()"
-                                placeholder="🔍 Chercher par nom ou téléphone…" />
+                                [placeholder]="'REPARATION.SEARCH_CLIENT_PLACEHOLDER' | translate" />
                             <div *ngIf="clientChoisi" class="client-choisi">
-                                <span>{{ clientChoisi.nom }} — {{ clientChoisi.telephone || 'sans téléphone' }}</span>
+                                <span>{{ clientChoisi.nom }} — {{ clientChoisi.telephone || ('REPARATION.NO_PHONE' | translate) }}</span>
                                 <button type="button" class="btn-icon" (click)="effacerClientChoisi()"
-                                    title="Changer de client">✕</button>
+                                    [title]="'REPARATION.CHANGE_CLIENT' | translate">✕</button>
                             </div>
                             <div class="client-search-results" *ngIf="!clientChoisi && clientResultsOuverts">
                                 <div class="client-search-item" *ngFor="let c of clientsFiltres"
                                     (mousedown)="choisirClient(c)">
-                                    {{ c.nom }} <small>{{ c.telephone || 'sans téléphone' }}</small>
+                                    {{ c.nom }} <small>{{ c.telephone || ('REPARATION.NO_PHONE' | translate) }}</small>
                                 </div>
                                 <div class="client-search-empty" *ngIf="clientsFiltres.length === 0">
-                                    Aucun client trouvé pour « {{ clientSearchTerm }} ».
+                                    {{ 'REPARATION.NO_CLIENT_FOUND_FOR' | translate:{ term: clientSearchTerm } }}
                                 </div>
                                 <div class="client-search-item client-search-add" (mousedown)="openClientModal()">
-                                    ➕ {{ clientSearchTerm ? ('Ajouter « ' + clientSearchTerm + ' » comme nouveau client')
-                                    : 'Nouveau client' }}
+                                    ➕ {{ clientSearchTerm ? (('REPARATION.ADD_AS_NEW_CLIENT' | translate:{ term: clientSearchTerm }))
+                                    : ('REPARATION.NEW_CLIENT' | translate) }}
                                 </div>
                             </div>
                         </div>
@@ -483,36 +482,36 @@
 
             <div class="form-row">
                 <div class="form-group flex-1">
-                    <label>Marque <span class="required">*</span></label>
+                    <label>{{ 'REPARATION.BRAND' | translate }} <span class="required">*</span></label>
                     <input type="text" class="form-control" [(ngModel)]="ticketForm.marqueAppareil"
-                        placeholder="Ex: Apple">
+                        [placeholder]="'REPARATION.BRAND_PLACEHOLDER' | translate">
                 </div>
                 <div class="form-group flex-1">
-                    <label>Modèle <span class="required">*</span></label>
+                    <label>{{ 'REPARATION.MODEL' | translate }} <span class="required">*</span></label>
                     <input type="text" class="form-control" [(ngModel)]="ticketForm.modeleAppareil"
-                        placeholder="Ex: iPhone 13 Pro">
+                        [placeholder]="'REPARATION.MODEL_PLACEHOLDER' | translate">
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group flex-1">
-                    <label>Problème(s) / Pièce(s) nécessaire(s)</label>
+                    <label>{{ 'REPARATION.PROBLEMS_PARTS_NEEDED' | translate }}</label>
                     <div class="checkbox-chip-group">
                         <label class="checkbox-chip" [class.checked]="panneTypes.includes('Écran')">
                             <input type="checkbox" [checked]="panneTypes.includes('Écran')"
-                                (change)="togglePanneType('Écran')"> Écran
+                                (change)="togglePanneType('Écran')"> {{ 'REPARATION.TYPE_ECRAN' | translate }}
                         </label>
                         <label class="checkbox-chip" [class.checked]="panneTypes.includes('Batterie')">
                             <input type="checkbox" [checked]="panneTypes.includes('Batterie')"
-                                (change)="togglePanneType('Batterie')"> Batterie
+                                (change)="togglePanneType('Batterie')"> {{ 'REPARATION.TYPE_BATTERIE' | translate }}
                         </label>
                         <label class="checkbox-chip" [class.checked]="panneTypes.includes('Filtre')">
                             <input type="checkbox" [checked]="panneTypes.includes('Filtre')"
-                                (change)="togglePanneType('Filtre')"> Filtre
+                                (change)="togglePanneType('Filtre')"> {{ 'REPARATION.TYPE_FILTRE' | translate }}
                         </label>
                         <label class="checkbox-chip" [class.checked]="panneTypes.includes('Autre')">
                             <input type="checkbox" [checked]="panneTypes.includes('Autre')"
-                                (change)="togglePanneType('Autre')"> Autre
+                                (change)="togglePanneType('Autre')"> {{ 'REPARATION.TYPE_AUTRE' | translate }}
                         </label>
                     </div>
                 </div>
@@ -520,20 +519,20 @@
 
             <div class="form-row" *ngIf="panneTypes.includes('Autre')">
                 <div class="form-group flex-1">
-                    <label>Décrivez le problème</label>
+                    <label>{{ 'REPARATION.DESCRIBE_PROBLEM' | translate }}</label>
                     <input type="text" class="form-control" [(ngModel)]="problemeAutre"
-                        placeholder="Ex: Connecteur de charge défectueux">
+                        [placeholder]="'REPARATION.DESCRIBE_PROBLEM_PLACEHOLDER' | translate">
                 </div>
             </div>
 
-            <div class="section-title">Pièces de rechange</div>
+            <div class="section-title">{{ 'REPARATION.SPARE_PARTS' | translate }}</div>
             <div class="search-box mb-3">
-                <input type="text" class="form-control" placeholder="Rechercher une pièce (nom ou code-barres)..."
+                <input type="text" class="form-control" [placeholder]="'REPARATION.SEARCH_PART_PLACEHOLDER' | translate"
                     [(ngModel)]="searchTerm">
                 <div class="search-results" *ngIf="filteredParts.length > 0">
                     <div class="search-result-item" *ngFor="let part of filteredParts" (click)="addPartToTicket(part)">
-                        {{ part.designation }} <span class="stock-info">Stock: {{ part.quantite }}</span> <span
-                            class="price-info">{{ part.prix_vente }} MAD</span>
+                        {{ part.designation }} <span class="stock-info">{{ 'REPARATION.STOCK_LABEL' | translate }}: {{ part.quantite }}</span> <span
+                            class="price-info">{{ part.prix_vente }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</span>
                     </div>
                 </div>
             </div>
@@ -541,16 +540,16 @@
             <table class="parts-table mb-3">
                 <thead>
                     <tr>
-                        <th>Pièce</th>
-                        <th>Prix U.</th>
-                        <th>Qte</th>
-                        <th>Total</th>
+                        <th>{{ 'REPARATION.COL_PART' | translate }}</th>
+                        <th>{{ 'REPARATION.COL_UNIT_PRICE' | translate }}</th>
+                        <th>{{ 'REPARATION.COL_QTY' | translate }}</th>
+                        <th>{{ 'REPARATION.COL_TOTAL' | translate }}</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr *ngFor="let item of ticketForm.items; let i = index">
-                        <td>{{ item.designation }} <br><small class="text-muted">Max: {{item.maxStock}}</small></td>
+                        <td>{{ item.designation }} <br><small class="text-muted">{{ 'REPARATION.MAX_ABBR' | translate }}: {{item.maxStock}}</small></td>
                         <td>
                             <input type="number" class="form-control text-right min-w-80" [(ngModel)]="item.prix">
                         </td>
@@ -558,37 +557,37 @@
                             <input type="number" class="form-control w-20" [(ngModel)]="item.qte" min="1"
                                 [max]="item.maxStock">
                         </td>
-                        <td class="text-right price-text">{{ item.prix * item.qte }} MAD</td>
+                        <td class="text-right price-text">{{ item.prix * item.qte }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</td>
                         <td><button class="btn-icon danger" (click)="removePart(i)">🗑️</button></td>
                     </tr>
                     <tr *ngIf="ticketForm.items.length === 0">
-                        <td colspan="5" class="text-center text-muted">Aucune pièce ajoutée.</td>
+                        <td colspan="5" class="text-center text-muted">{{ 'REPARATION.NO_PART_ADDED' | translate }}</td>
                     </tr>
                 </tbody>
             </table>
 
             <div class="form-row align-items-center justify-end">
                 <div class="form-group flex-item-fixed w-150 mr-3">
-                    <label>Main d'oeuvre</label>
+                    <label>{{ 'REPARATION.LABOR' | translate }}</label>
                     <input type="number" class="form-control text-right" [(ngModel)]="ticketForm.cout_main_oeuvre">
                 </div>
                 <div class="form-group flex-item-fixed w-150 mr-3">
-                    <label>Acompte versé</label>
+                    <label>{{ 'REPARATION.DEPOSIT_PAID' | translate }}</label>
                     <input type="number" min="0" class="form-control text-right" [(ngModel)]="ticketForm.acompte">
                 </div>
                 <div class="total-box mt-4">
-                    <strong>Total Ticket: </strong> <span>{{ ticketTotal }} MAD</span>
+                    <strong>{{ 'REPARATION.TICKET_TOTAL' | translate }}: </strong> <span>{{ ticketTotal }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</span>
                     <div *ngIf="ticketForm.acompte > 0" style="font-size: 13px;">
-                        Reste à payer : {{ ticketTotal - ticketForm.acompte }} MAD
+                        {{ 'REPARATION.REMAINING_DUE' | translate }} : {{ ticketTotal - ticketForm.acompte }} {{ 'REPARATION.CURRENCY_MAD' | translate }}
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="closeTicketModal()">Annuler</button>
+            <button class="btn btn-secondary" (click)="closeTicketModal()">{{ 'CANCEL' | translate }}</button>
             <button class="btn btn-primary" [disabled]="savingTicket" (click)="saveTicket()">
-                {{ savingTicket ? 'Création…' : 'Créer le Ticket' }}
+                {{ (savingTicket ? 'REPARATION.CREATING' : 'REPARATION.CREATE_TICKET') | translate }}
             </button>
         </div>
     </div>
@@ -598,23 +597,23 @@
 <div class="modal-overlay" *ngIf="isClientModalOpen" style="z-index: 1050;">
     <div class="modal-content modal-sm">
         <div class="modal-header">
-            <h2>Nouveau Client</h2>
+            <h2>{{ 'REPARATION.NEW_CLIENT' | translate }}</h2>
             <button class="btn-close" (click)="closeClientModal()">✕</button>
         </div>
         <div class="modal-body">
             <div class="form-group mb-3">
-                <label>Nom Complet <span class="required">*</span></label>
+                <label>{{ 'REPARATION.FULL_NAME' | translate }} <span class="required">*</span></label>
                 <input type="text" class="form-control" [(ngModel)]="newClient.nom">
             </div>
             <div class="form-group">
-                <label>Téléphone</label>
+                <label>{{ 'REPARATION.PHONE' | translate }}</label>
                 <input type="text" class="form-control" [(ngModel)]="newClient.telephone" placeholder="+212...">
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" (click)="closeClientModal()">Annuler</button>
+            <button class="btn btn-secondary" (click)="closeClientModal()">{{ 'CANCEL' | translate }}</button>
             <button class="btn btn-primary" [disabled]="savingClient" (click)="saveClient()">
-                {{ savingClient ? 'Enregistrement…' : 'Enregistrer' }}
+                {{ (savingClient ? 'STOCK.SAVING' : 'STOCK.SAVE') | translate }}
             </button>
         </div>
     </div>
@@ -624,41 +623,41 @@
 <div class="modal-overlay" *ngIf="isCustomPartModalOpen" style="z-index: 1050;">
     <div class="modal-content modal-sm">
         <div class="modal-header">
-            <h2>Tarification de la pièce et fournisseur</h2>
+            <h2>{{ 'REPARATION.PART_PRICING_TITLE' | translate }}</h2>
             <button class="btn-close" (click)="closeCustomPartModal()">✕</button>
         </div>
         <div class="modal-body">
             <p class="text-muted" style="margin-bottom: 12px;"
                 *ngIf="customPartContext === 'finalisation' && typesRestants.length > 0">
-                Pièce manquante pour {{ finaliserRep?.appareil }} : <strong>{{ typesRestants[0] }}</strong>
+                {{ 'REPARATION.MISSING_PART_FOR' | translate }} {{ finaliserRep?.appareil }} : <strong>{{ typesRestants[0] }}</strong>
             </p>
             <div class="finaliser-step">
-                <div class="finaliser-step-title">1. Rechercher dans l'inventaire</div>
+                <div class="finaliser-step-title">1. {{ 'REPARATION.SEARCH_INVENTORY' | translate }}</div>
                 <div class="search-box">
-                    <input type="text" class="form-control" placeholder="Nom, marque, modèle ou code-barres..."
+                    <input type="text" class="form-control" [placeholder]="'REPARATION.SEARCH_INVENTORY_PLACEHOLDER' | translate"
                         [(ngModel)]="customPartSearchTerm">
                     <div class="search-results" *ngIf="customPartSearchResults.length > 0">
                         <div class="search-result-item" *ngFor="let part of customPartSearchResults"
                             (click)="choisirPieceDepuisTarification(part)">
-                            {{ part.designation }} <span class="stock-info">Stock: {{ part.quantite }}</span> <span
-                                class="price-info">{{ part.prix_vente }} MAD</span>
+                            {{ part.designation }} <span class="stock-info">{{ 'REPARATION.STOCK_LABEL' | translate }}: {{ part.quantite }}</span> <span
+                                class="price-info">{{ part.prix_vente }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</span>
                         </div>
                     </div>
                     <p class="text-muted" *ngIf="customPartSearchTerm && customPartSearchResults.length === 0"
                         style="margin-top: 8px; font-size: 0.85rem;">
-                        Aucune pièce trouvée en stock.
+                        {{ 'REPARATION.NO_PART_FOUND_STOCK' | translate }}
                     </p>
                 </div>
             </div>
-            <div class="finaliser-step-title">2. Introuvable ? Saisissez le prix d'achat et le fournisseur</div>
+            <div class="finaliser-step-title">2. {{ 'REPARATION.IF_NOT_FOUND' | translate }}</div>
             <div class="form-group mb-3">
-                <label>Prix d'achat de la pièce (MAD)</label>
+                <label>{{ 'REPARATION.PART_PURCHASE_PRICE' | translate }}</label>
                 <input type="number" min="0" step="0.01" class="form-control" [(ngModel)]="customPart.prix_achat">
             </div>
             <div class="form-group">
-                <label>Fournisseur de la pièce</label>
+                <label>{{ 'REPARATION.PART_SUPPLIER' | translate }}</label>
                 <select class="form-control" [(ngModel)]="customPart.fournisseurId">
-                    <option [ngValue]="undefined">-- Sans fournisseur --</option>
+                    <option [ngValue]="undefined">{{ 'REPARATION.NO_SUPPLIER' | translate }}</option>
                     <option *ngFor="let f of fournisseurs" [ngValue]="f.id_fournisseur">
                         {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}{{ f.type_articles ? ' · ' + f.type_articles : '' }}
                     </option>
@@ -668,11 +667,11 @@
         <div class="modal-footer">
             <button type="button" class="btn-link" style="margin-right: auto;"
                 *ngIf="customPartContext === 'finalisation'" (click)="closeCustomPartModal(); finaliserSansPiece()">
-                Aucune pièce
+                {{ 'REPARATION.NO_PART' | translate }}
             </button>
-            <button class="btn btn-secondary" (click)="closeCustomPartModal()">Annuler</button>
+            <button class="btn btn-secondary" (click)="closeCustomPartModal()">{{ 'CANCEL' | translate }}</button>
             <button class="btn btn-primary" [disabled]="savingCustomPart" (click)="saveCustomPart()">
-                {{ savingCustomPart ? 'Enregistrement…' : 'Enregistrer prix et détails de la pièce' }}
+                {{ (savingCustomPart ? 'STOCK.SAVING' : 'REPARATION.SAVE_PART_DETAILS') | translate }}
             </button>
         </div>
     </div>
@@ -682,66 +681,66 @@
 <div class="modal-overlay" *ngIf="isFinaliserModalOpen && !isCustomPartModalOpen">
     <div class="modal-content modal-sm">
         <div class="modal-header">
-            <h2>Maintenance terminée</h2>
+            <h2>{{ 'REPARATION.MAINTENANCE_DONE' | translate }}</h2>
             <button class="btn-close" (click)="fermerFinalisation()">✕</button>
         </div>
         <div class="modal-body">
             <p class="text-muted" style="margin-bottom: 12px;" *ngIf="!finaliserTypePreselected">
-                Quelle(s) pièce(s) avez-vous utilisée(s) pour {{ finaliserRep?.appareil }} ?
+                {{ 'REPARATION.WHICH_PARTS_USED_FOR' | translate }} {{ finaliserRep?.appareil }} ?
             </p>
             <p class="text-muted" style="margin-bottom: 12px;" *ngIf="finaliserTypePreselected">
                 <ng-container *ngIf="typesRestants.length > 0; else pieceGenerique">
-                    Pièce manquante pour {{ finaliserRep?.appareil }} : <strong>{{ typesRestants.join(', ') }}</strong>
+                    {{ 'REPARATION.MISSING_PART_FOR' | translate }} {{ finaliserRep?.appareil }} : <strong>{{ typesRestants.join(', ') }}</strong>
                 </ng-container>
-                <ng-template #pieceGenerique>Pièce utilisée pour {{ finaliserRep?.appareil }} :</ng-template>
+                <ng-template #pieceGenerique>{{ 'REPARATION.PART_USED_FOR' | translate }} {{ finaliserRep?.appareil }} :</ng-template>
             </p>
 
             <div class="form-group mb-3" *ngIf="!finaliserTypePreselected">
                 <div class="checkbox-chip-group">
                     <label class="checkbox-chip" [class.checked]="finaliserTypesSelected.includes('Écran')">
                         <input type="checkbox" [checked]="finaliserTypesSelected.includes('Écran')"
-                            (change)="toggleFinaliserType('Écran')"> Écran
+                            (change)="toggleFinaliserType('Écran')"> {{ 'REPARATION.TYPE_ECRAN' | translate }}
                     </label>
                     <label class="checkbox-chip" [class.checked]="finaliserTypesSelected.includes('Batterie')">
                         <input type="checkbox" [checked]="finaliserTypesSelected.includes('Batterie')"
-                            (change)="toggleFinaliserType('Batterie')"> Batterie
+                            (change)="toggleFinaliserType('Batterie')"> {{ 'REPARATION.TYPE_BATTERIE' | translate }}
                     </label>
                     <label class="checkbox-chip" [class.checked]="finaliserTypesSelected.includes('Filtre')">
                         <input type="checkbox" [checked]="finaliserTypesSelected.includes('Filtre')"
-                            (change)="toggleFinaliserType('Filtre')"> Filtre
+                            (change)="toggleFinaliserType('Filtre')"> {{ 'REPARATION.TYPE_FILTRE' | translate }}
                     </label>
                 </div>
             </div>
 
             <div class="finaliser-step">
-                <div class="finaliser-step-title">1. Rechercher en stock</div>
+                <div class="finaliser-step-title">1. {{ 'REPARATION.SEARCH_IN_STOCK' | translate }}</div>
                 <div class="search-box mb-3" *ngIf="!selectedStockPart">
-                    <input type="text" class="form-control" placeholder="Rechercher une pièce en stock..."
+                    <input type="text" class="form-control" [placeholder]="'REPARATION.SEARCH_PART_STOCK_PLACEHOLDER' | translate"
                         [(ngModel)]="finaliserSearchTerm">
                     <div class="search-results" *ngIf="finaliserFilteredParts.length > 0">
                         <div class="search-result-item" *ngFor="let part of finaliserFilteredParts"
                             (click)="choisirPieceFinalisation(part)">
-                            {{ part.designation }} <span class="stock-info">Stock: {{ part.quantite }}</span> <span
-                                class="price-info">{{ part.prix_vente }} MAD</span>
+                            {{ part.designation }} <span class="stock-info">{{ 'REPARATION.STOCK_LABEL' | translate }}: {{ part.quantite }}</span> <span
+                                class="price-info">{{ part.prix_vente }} {{ 'REPARATION.CURRENCY_MAD' | translate }}</span>
                         </div>
                     </div>
                     <p class="text-muted" *ngIf="finaliserSearchTerm && finaliserFilteredParts.length === 0"
                         style="margin-top: 8px; font-size: 0.85rem;">
-                        Aucune pièce trouvée en stock.
+                        {{ 'REPARATION.NO_PART_FOUND_STOCK' | translate }}
                     </p>
                     <button type="button" class="btn-link" style="margin-top: 10px;"
                         (click)="openCustomPartModal('finalisation')">
-                        + La pièce n'est pas dans l'inventaire — la tarifer manuellement
+                        + {{ 'REPARATION.PART_NOT_IN_INVENTORY' | translate }}
                     </button>
                 </div>
 
                 <div class="occasion-row" *ngIf="selectedStockPart">
-                    <label>{{ selectedStockPart.designation }} — confirmer le prix et le fournisseur :</label>
+                    <label>{{ selectedStockPart.designation }} — {{ 'REPARATION.CONFIRM_PRICE_SUPPLIER' | translate }} :</label>
                     <div class="occasion-input-row">
                         <input type="number" min="0" step="0.01" class="form-control"
-                            [(ngModel)]="stockPartPrix" placeholder="Prix (MAD)">
+                            [(ngModel)]="stockPartPrix" [placeholder]="'REPARATION.PRICE_PLACEHOLDER' | translate">
                         <select class="form-control" [(ngModel)]="stockPartFournisseurId">
-                            <option [ngValue]="undefined">-- Sans fournisseur --</option>
+                            <option [ngValue]="undefined">{{ 'REPARATION.NO_SUPPLIER' | translate }}</option>
                             <option *ngFor="let f of fournisseurs" [ngValue]="f.id_fournisseur">
                                 {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}{{ f.type_articles ? ' · ' + f.type_articles : '' }}
                             </option>
@@ -749,18 +748,18 @@
                     </div>
                     <div class="occasion-input-row" style="margin-top: 8px;">
                         <button type="button" class="btn btn-secondary" (click)="annulerPieceStock()">
-                            Annuler
+                            {{ 'CANCEL' | translate }}
                         </button>
                         <button type="button" class="btn btn-primary" [disabled]="finalisationEnCours"
                             (click)="confirmerPieceStock()">
-                            {{ finalisationEnCours ? 'Ajout…' : 'Ajouter' }}
+                            {{ (finalisationEnCours ? 'REPARATION.ADDING' : 'REPARATION.ADD') | translate }}
                         </button>
                     </div>
                 </div>
             </div>
 
             <div class="finaliser-step">
-                <div class="finaliser-step-title">2. Ou, pièce d'occasion</div>
+                <div class="finaliser-step-title">2. {{ 'REPARATION.OR_USED_PART' | translate }}</div>
                 <div class="occasion-row">
                     <select class="form-control" *ngIf="typesRestants.length > 1"
                         style="margin-bottom: 8px;" [(ngModel)]="occasionType">
@@ -768,26 +767,26 @@
                     </select>
                     <div class="marque-modele-connus" *ngIf="occasionMarqueModeleReadonly">
                         📱 {{ finaliserMarqueModeleConnus?.marque }} {{ finaliserMarqueModeleConnus?.modele }}
-                        <span class="text-muted">(déjà saisi)</span>
+                        <span class="text-muted">({{ 'REPARATION.ALREADY_ENTERED' | translate }})</span>
                     </div>
                     <div class="occasion-input-row" *ngIf="!occasionMarqueModeleReadonly">
-                        <input type="text" class="form-control" [(ngModel)]="occasionMarque" placeholder="Marque">
-                        <input type="text" class="form-control" [(ngModel)]="occasionModele" placeholder="Modèle">
+                        <input type="text" class="form-control" [(ngModel)]="occasionMarque" [placeholder]="'REPARATION.BRAND' | translate">
+                        <input type="text" class="form-control" [(ngModel)]="occasionModele" [placeholder]="'REPARATION.MODEL' | translate">
                     </div>
                     <div class="occasion-input-row" style="margin-top: 8px;">
                         <input type="number" min="0" step="0.01" class="form-control" [(ngModel)]="occasionPrix"
-                            placeholder="Prix (MAD)">
+                            [placeholder]="'REPARATION.PRICE_PLACEHOLDER' | translate">
                     </div>
                     <div class="occasion-input-row" style="margin-top: 8px;">
                         <select class="form-control" [(ngModel)]="occasionFournisseurId">
-                            <option [ngValue]="undefined">-- Sans fournisseur --</option>
+                            <option [ngValue]="undefined">{{ 'REPARATION.NO_SUPPLIER' | translate }}</option>
                             <option *ngFor="let f of fournisseurs" [ngValue]="f.id_fournisseur">
                                 {{ f.entreprise || (f.nom + ' ' + (f.prenom || '')) }}{{ f.type_articles ? ' · ' + f.type_articles : '' }}
                             </option>
                         </select>
                         <button type="button" class="btn btn-secondary" [disabled]="savingOccasion"
                             (click)="ajouterPieceOccasion()">
-                            {{ savingOccasion ? 'Ajout…' : 'Ajouter' }}
+                            {{ (savingOccasion ? 'REPARATION.ADDING' : 'REPARATION.ADD') | translate }}
                         </button>
                     </div>
                 </div>
@@ -795,7 +794,7 @@
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" (click)="finaliserSansPiece()">
-                {{ finaliserRep?.items?.length > 0 ? 'Continuer' : "Aucune pièce (main d'œuvre seulement)" }}
+                {{ (finaliserRep?.items?.length > 0 ? 'REPARATION.CONTINUE' : 'REPARATION.NO_PART_LABOR_ONLY') | translate }}
             </button>
         </div>
     </div>

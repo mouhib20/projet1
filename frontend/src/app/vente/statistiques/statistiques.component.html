@@ -3,94 +3,92 @@
     <!-- Header -->
     <div class="page-header">
         <div>
-            <div class="page-title">📊 Statistiques des Ventes</div>
-            <div class="page-subtitle">Performance des ventes, produits phares et rentabilité</div>
+            <div class="page-title">📊 {{ 'STATS.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'STATS.SUBTITLE' | translate }}</div>
         </div>
         <div class="period-selector">
             <button class="period-btn" *ngFor="let p of periodes" [class.active]="periode === p.valeur"
-                (click)="setPeriod(p.valeur)">{{ p.label }}</button>
+                (click)="setPeriod(p.valeur)">{{ p.label | translate }}</button>
         </div>
     </div>
 
     <!-- Numbered recap, one line per question you asked -->
     <div class="chart-card recap-card" *ngIf="stats">
-        <div class="chart-header">✅ Réponses à vos questions — {{ periodeLabel }}</div>
+        <div class="chart-header">✅ {{ 'STATS.RECAP_HEADER' | translate }} — {{ periodeLabel }}</div>
         <div class="recap-grid">
             <div class="recap-box recap-box-cliquable" (click)="ouvrirDetailReparations()"
-                title="Cliquer pour voir le détail de chaque réparation">
+                [title]="'STATS.TOOLTIP_REPAIR_DETAIL' | translate">
                 <div class="recap-num">1</div>
                 <div class="recap-body">
-                    <strong>Bénéfice des réparations, coût et prix des pièces (dont d'occasion)
-                        <span class="recap-voir-plus">Voir le détail →</span>
+                    <strong>{{ 'STATS.BOX1_TITLE' | translate }}
+                        <span class="recap-voir-plus">{{ 'STATS.SEE_DETAIL' | translate }}</span>
                     </strong>
-                    <div class="recap-line"><span>Bénéfice</span><b>{{ stats.reparations.benefice | number:'1.3-3'
-                            }} DT</b></div>
-                    <div class="recap-line"><span>Prix encaissé</span><b>{{ stats.reparations.revenue |
-                            number:'1.3-3' }} DT</b></div>
-                    <div class="recap-line"><span>Coût des pièces</span><b>{{ stats.reparations.cout | number:'1.3-3'
-                            }} DT</b></div>
+                    <div class="recap-line"><span>{{ 'STATS.PROFIT' | translate }}</span><b>{{ stats.reparations.benefice | number:'1.3-3'
+                            }} {{ 'CURRENCY' | translate }}</b></div>
+                    <div class="recap-line"><span>{{ 'STATS.AMOUNT_COLLECTED' | translate }}</span><b>{{ stats.reparations.revenue |
+                            number:'1.3-3' }} {{ 'CURRENCY' | translate }}</b></div>
+                    <div class="recap-line"><span>{{ 'STATS.PARTS_COST' | translate }}</span><b>{{ stats.reparations.cout | number:'1.3-3'
+                            }} {{ 'CURRENCY' | translate }}</b></div>
                 </div>
             </div>
             <div class="recap-box recap-box-cliquable" (click)="ouvrirDetailAccessoires()"
-                title="Cliquer pour voir le détail de chaque accessoire vendu">
+                [title]="'STATS.TOOLTIP_ACCESSORY_DETAIL' | translate">
                 <div class="recap-num">2</div>
                 <div class="recap-body">
-                    <strong>Coût de vente des accessoires, marge bénéficiaire et prix d'achat
-                        <span class="recap-voir-plus">Voir le détail →</span>
+                    <strong>{{ 'STATS.BOX2_TITLE' | translate }}
+                        <span class="recap-voir-plus">{{ 'STATS.SEE_DETAIL' | translate }}</span>
                     </strong>
-                    <div class="recap-line"><span>Bénéfice</span><b>{{ stats.accessoires.benefice | number:'1.3-3'
-                            }} DT</b></div>
-                    <div class="recap-line"><span>Prix total</span><b>{{ stats.accessoires.revenue | number:'1.3-3'
-                            }} DT</b></div>
-                    <div class="recap-line"><span>Coût des accessoires</span><b>{{ stats.accessoires.cout |
-                            number:'1.3-3' }} DT</b></div>
+                    <div class="recap-line"><span>{{ 'STATS.PROFIT' | translate }}</span><b>{{ stats.accessoires.benefice | number:'1.3-3'
+                            }} {{ 'CURRENCY' | translate }}</b></div>
+                    <div class="recap-line"><span>{{ 'STATS.TOTAL_PRICE' | translate }}</span><b>{{ stats.accessoires.revenue | number:'1.3-3'
+                            }} {{ 'CURRENCY' | translate }}</b></div>
+                    <div class="recap-line"><span>{{ 'STATS.ACCESSORIES_COST' | translate }}</span><b>{{ stats.accessoires.cout |
+                            number:'1.3-3' }} {{ 'CURRENCY' | translate }}</b></div>
                 </div>
             </div>
             <div class="recap-box">
                 <div class="recap-num">3</div>
                 <div class="recap-body">
-                    <strong>Capital total (pièces détachées + accessoires disponibles dans le magasin)</strong>
-                    <div class="recap-line"><span>Capital pièces détachées</span><b>{{ valeurStockPieces !== null ?
-                            (valeurStockPieces | number:'1.3-3') : '…' }} DT</b></div>
-                    <div class="recap-line"><span>Capital accessoires</span><b>{{ valeurStockAccessoires !== null ?
-                            (valeurStockAccessoires | number:'1.3-3') : '…' }} DT</b></div>
-                    <div class="recap-line recap-total"><span>Total</span><b>{{ valeurStock !== null ? (valeurStock |
-                            number:'1.3-3') : '…' }} DT</b></div>
+                    <strong>{{ 'STATS.BOX3_TITLE' | translate }}</strong>
+                    <div class="recap-line"><span>{{ 'STATS.PARTS_CAPITAL' | translate }}</span><b>{{ valeurStockPieces !== null ?
+                            (valeurStockPieces | number:'1.3-3') : '…' }} {{ 'CURRENCY' | translate }}</b></div>
+                    <div class="recap-line"><span>{{ 'STATS.ACCESSORIES_CAPITAL' | translate }}</span><b>{{ valeurStockAccessoires !== null ?
+                            (valeurStockAccessoires | number:'1.3-3') : '…' }} {{ 'CURRENCY' | translate }}</b></div>
+                    <div class="recap-line recap-total"><span>{{ 'STATS.TOTAL' | translate }}</span><b>{{ valeurStock !== null ? (valeurStock |
+                            number:'1.3-3') : '…' }} {{ 'CURRENCY' | translate }}</b></div>
                 </div>
             </div>
             <div class="recap-box">
                 <div class="recap-num">4</div>
                 <div class="recap-body">
-                    <strong>Montant de la dette (aux fournisseurs)</strong>
-                    <div class="recap-line recap-total"><span>Dette</span><b>{{ detteFournisseurs !== null ?
-                            (detteFournisseurs | number:'1.3-3') : '…' }} DT</b></div>
+                    <strong>{{ 'STATS.BOX4_TITLE' | translate }}</strong>
+                    <div class="recap-line recap-total"><span>{{ 'STATS.DEBT' | translate }}</span><b>{{ detteFournisseurs !== null ?
+                            (detteFournisseurs | number:'1.3-3') : '…' }} {{ 'CURRENCY' | translate }}</b></div>
                 </div>
             </div>
             <div class="recap-box recap-box-cliquable" (click)="ouvrirDetailPertes()"
-                title="Cliquer pour voir le détail de chaque perte">
+                [title]="'STATS.TOOLTIP_LOSS_DETAIL' | translate">
                 <div class="recap-num">5</div>
                 <div class="recap-body">
-                    <strong>Pertes subies lors des réparations
-                        <span class="recap-voir-plus">Voir le détail →</span>
+                    <strong>{{ 'STATS.BOX5_TITLE' | translate }}
+                        <span class="recap-voir-plus">{{ 'STATS.SEE_DETAIL' | translate }}</span>
                     </strong>
-                    <div class="recap-line recap-total"><span>Pertes</span><b>{{ stats.reparations.pertes |
-                            number:'1.3-3' }} DT</b></div>
-                    <p class="text-muted">Montant reçu sous le coût des pièces, ou pièce remplacée gratuitement après
-                        retour pour défaut.</p>
+                    <div class="recap-line recap-total"><span>{{ 'STATS.LOSSES' | translate }}</span><b>{{ stats.reparations.pertes |
+                            number:'1.3-3' }} {{ 'CURRENCY' | translate }}</b></div>
+                    <p class="text-muted">{{ 'STATS.BOX5_NOTE' | translate }}</p>
                 </div>
             </div>
             <div class="recap-box recap-box-cliquable" (click)="ouvrirDetailTop('pieces')"
-                title="Cliquer pour voir le classement complet">
+                [title]="'STATS.TOOLTIP_TOP_DETAIL' | translate">
                 <div class="recap-num">6</div>
                 <div class="recap-body">
-                    <strong>Produits et pièces détachées les plus fréquemment utilisés
-                        <span class="recap-voir-plus">Voir le détail →</span>
+                    <strong>{{ 'STATS.BOX6_TITLE' | translate }}
+                        <span class="recap-voir-plus">{{ 'STATS.SEE_DETAIL' | translate }}</span>
                     </strong>
                     <div class="recap-line" *ngFor="let p of stats.topPieces.slice(0, 3)">
                         <span>{{ p.designation }}</span><b>{{ p.qte }}</b>
                     </div>
-                    <p class="text-muted" *ngIf="stats.topPieces.length === 0">Aucune pièce utilisée sur cette
-                        période.</p>
+                    <p class="text-muted" *ngIf="stats.topPieces.length === 0">{{ 'STATS.NO_PARTS_USED_PERIOD' | translate }}</p>
                 </div>
             </div>
         </div>
@@ -98,19 +96,19 @@
 
     <!-- Sales history grouped by day → month → year, same view as the Ventes page -->
     <div class="chart-card">
-        <div class="chart-header">📜 Historique des ventes</div>
+        <div class="chart-header">📜 {{ 'STATS.SALES_HISTORY' | translate }}</div>
 
         <ng-template #tableVentesHisto let-liste>
             <table class="modern-table">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Client</th>
-                        <th>Article</th>
-                        <th>Qté</th>
-                        <th>Prix Unit.</th>
-                        <th>Total</th>
-                        <th>Bénéfice</th>
+                        <th>{{ 'STATS.COL_DATE' | translate }}</th>
+                        <th>{{ 'STATS.COL_CLIENT' | translate }}</th>
+                        <th>{{ 'STATS.COL_ARTICLE' | translate }}</th>
+                        <th>{{ 'STATS.COL_QTY' | translate }}</th>
+                        <th>{{ 'STATS.COL_UNIT_PRICE' | translate }}</th>
+                        <th>{{ 'STATS.COL_TOTAL' | translate }}</th>
+                        <th>{{ 'STATS.COL_PROFIT' | translate }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -121,7 +119,7 @@
                         <td class="text-center">{{ v.qte || 1 }}</td>
                         <td class="text-right">{{ v.prix | number:'1.3-3' }}</td>
                         <td class="fw-bold text-success text-right">{{ (v.qte || 1) * (v.prix || 0) |
-                            number:'1.3-3' }} DT</td>
+                            number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
                         <td class="text-right" [class.text-success]="(beneficeVente(v) ?? 0) >= 0"
                             [class.text-danger]="(beneficeVente(v) ?? 0) < 0">
                             {{ beneficeVente(v) === null ? '—' : (beneficeVente(v) | number:'1.3-3') }}
@@ -135,9 +133,9 @@
             <div class="dossier dossier-mois" *ngFor="let j of jours; trackBy: trackByKey">
                 <button type="button" class="dossier-header" (click)="basculerDossier(j.key)">
                     <span>{{ dossierOuvert(j.key) ? '📂' : '📁' }} {{ j.label }}</span>
-                    <span class="dossier-info">{{ j.ventes.length }} vente(s) · {{ j.total | number:'1.3-3' }} DT
-                        <span class="dossier-benefice" [class.negatif]="beneficeListe(j.ventes) < 0">· Bénéfice : {{
-                            beneficeListe(j.ventes) | number:'1.3-3' }} DT</span>
+                    <span class="dossier-info">{{ j.ventes.length }} {{ 'STATS.SALES_COUNT' | translate }} · {{ j.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                        <span class="dossier-benefice" [class.negatif]="beneficeListe(j.ventes) < 0">· {{ 'STATS.PROFIT' | translate }} : {{
+                            beneficeListe(j.ventes) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
                     </span>
                 </button>
                 <div class="table-container" *ngIf="dossierOuvert(j.key)">
@@ -148,17 +146,17 @@
 
         <div class="loading-state" *ngIf="historiqueChargement">
             <div class="loading-icon">⟳</div>
-            <strong>Chargement…</strong>
+            <strong>{{ 'STATS.LOADING' | translate }}</strong>
         </div>
 
         <div class="ventes-groupes" *ngIf="!historiqueChargement && historiqueGroupes as g">
             <div class="dossier">
                 <button type="button" class="dossier-header" (click)="basculerDossier('aujourdhui')">
-                    <span>{{ dossierOuvert('aujourdhui') ? '📂' : '📁' }} Aujourd'hui</span>
-                    <span class="dossier-info">{{ g.aujourdhui.ventes.length }} vente(s) · {{ g.aujourdhui.total |
-                        number:'1.3-3' }} DT
+                    <span>{{ dossierOuvert('aujourdhui') ? '📂' : '📁' }} {{ 'STATS.TODAY' | translate }}</span>
+                    <span class="dossier-info">{{ g.aujourdhui.ventes.length }} {{ 'STATS.SALES_COUNT' | translate }} · {{ g.aujourdhui.total |
+                        number:'1.3-3' }} {{ 'CURRENCY' | translate }}
                         <span class="dossier-benefice" [class.negatif]="beneficeListe(g.aujourdhui.ventes) < 0">·
-                            Bénéfice : {{ beneficeListe(g.aujourdhui.ventes) | number:'1.3-3' }} DT</span>
+                            {{ 'STATS.PROFIT' | translate }} : {{ beneficeListe(g.aujourdhui.ventes) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
                     </span>
                 </button>
                 <div class="table-container" *ngIf="dossierOuvert('aujourdhui')">
@@ -168,7 +166,7 @@
                     </ng-container>
                     <ng-template #aucuneVenteJourHisto>
                         <div class="empty-state">
-                            <p>Aucune vente aujourd'hui.</p>
+                            <p>{{ 'STATS.NO_SALES_TODAY' | translate }}</p>
                         </div>
                     </ng-template>
                 </div>
@@ -176,11 +174,11 @@
 
             <div class="dossier" *ngIf="g.ceMois.ventes.length > 0">
                 <button type="button" class="dossier-header" (click)="basculerDossier('ce-mois')">
-                    <span>{{ dossierOuvert('ce-mois') ? '📂' : '📁' }} Ce mois-ci</span>
-                    <span class="dossier-info">{{ g.ceMois.ventes.length }} vente(s) · {{ g.ceMois.total |
-                        number:'1.3-3' }} DT
+                    <span>{{ dossierOuvert('ce-mois') ? '📂' : '📁' }} {{ 'STATS.THIS_MONTH' | translate }}</span>
+                    <span class="dossier-info">{{ g.ceMois.ventes.length }} {{ 'STATS.SALES_COUNT' | translate }} · {{ g.ceMois.total |
+                        number:'1.3-3' }} {{ 'CURRENCY' | translate }}
                         <span class="dossier-benefice" [class.negatif]="beneficeListe(g.ceMois.ventes) < 0">·
-                            Bénéfice : {{ beneficeListe(g.ceMois.ventes) | number:'1.3-3' }} DT</span>
+                            {{ 'STATS.PROFIT' | translate }} : {{ beneficeListe(g.ceMois.ventes) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
                     </span>
                 </button>
                 <div class="dossier-contenu" *ngIf="dossierOuvert('ce-mois')">
@@ -192,19 +190,19 @@
             <div class="dossier" *ngFor="let a of g.annees; trackBy: trackByKey">
                 <button type="button" class="dossier-header" (click)="basculerDossier(a.key)">
                     <span>{{ dossierOuvert(a.key) ? '📂' : '📁' }} {{ a.label }}</span>
-                    <span class="dossier-info">{{ a.ventes.length }} vente(s) · {{ a.total | number:'1.3-3' }} DT
-                        <span class="dossier-benefice" [class.negatif]="beneficeListe(a.ventes) < 0">· Bénéfice : {{
-                            beneficeListe(a.ventes) | number:'1.3-3' }} DT</span>
+                    <span class="dossier-info">{{ a.ventes.length }} {{ 'STATS.SALES_COUNT' | translate }} · {{ a.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
+                        <span class="dossier-benefice" [class.negatif]="beneficeListe(a.ventes) < 0">· {{ 'STATS.PROFIT' | translate }} : {{
+                            beneficeListe(a.ventes) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
                     </span>
                 </button>
                 <div class="dossier-contenu" *ngIf="dossierOuvert(a.key)">
                     <div class="dossier dossier-mois" *ngFor="let mo of a.mois; trackBy: trackByKey">
                         <button type="button" class="dossier-header" (click)="basculerDossier(mo.key)">
                             <span>{{ dossierOuvert(mo.key) ? '📂' : '📁' }} {{ mo.label }}</span>
-                            <span class="dossier-info">{{ mo.ventes.length }} vente(s) · {{ mo.total |
-                                number:'1.3-3' }} DT
+                            <span class="dossier-info">{{ mo.ventes.length }} {{ 'STATS.SALES_COUNT' | translate }} · {{ mo.total |
+                                number:'1.3-3' }} {{ 'CURRENCY' | translate }}
                                 <span class="dossier-benefice" [class.negatif]="beneficeListe(mo.ventes) < 0">·
-                                    Bénéfice : {{ beneficeListe(mo.ventes) | number:'1.3-3' }} DT</span>
+                                    {{ 'STATS.PROFIT' | translate }} : {{ beneficeListe(mo.ventes) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
                             </span>
                         </button>
                         <div class="dossier-contenu" *ngIf="dossierOuvert(mo.key)">
@@ -216,60 +214,59 @@
             </div>
 
             <div *ngIf="historique.length === 0" class="empty-state">
-                <p>Aucune vente enregistrée.</p>
+                <p>{{ 'STATS.NO_SALES_RECORDED' | translate }}</p>
             </div>
         </div>
     </div>
 
     <!-- Expenses, grouped by month → day, same view as the Dépenses page -->
     <div class="chart-card">
-        <div class="chart-header">💸 Dépenses de la boutique</div>
+        <div class="chart-header">💸 {{ 'STATS.SHOP_EXPENSES' | translate }}</div>
 
         <div class="loading-state" *ngIf="depensesChargement">
             <div class="loading-icon">⟳</div>
-            <strong>Chargement…</strong>
+            <strong>{{ 'STATS.LOADING' | translate }}</strong>
         </div>
 
         <table class="stats-table" *ngIf="!depensesChargement && depensesParMois.length > 0">
             <thead>
                 <tr>
-                    <th>Mois</th>
-                    <th class="text-right">Mensuelles</th>
-                    <th class="text-right">Journalières</th>
-                    <th class="text-right">Total</th>
-                    <th class="text-right">Gagné ce mois-là</th>
-                    <th class="text-right">Gagné ou perdu</th>
+                    <th>{{ 'STATS.COL_MONTH' | translate }}</th>
+                    <th class="text-right">{{ 'STATS.COL_MONTHLY' | translate }}</th>
+                    <th class="text-right">{{ 'STATS.COL_DAILY' | translate }}</th>
+                    <th class="text-right">{{ 'STATS.COL_TOTAL' | translate }}</th>
+                    <th class="text-right">{{ 'STATS.COL_EARNED_THAT_MONTH' | translate }}</th>
+                    <th class="text-right">{{ 'STATS.COL_EARNED_OR_LOST' | translate }}</th>
                 </tr>
             </thead>
             <tbody>
                 <ng-container *ngFor="let m of depensesParMois">
                     <tr class="dossier-row-cliquable" (click)="basculerMoisDepenses(m.key)">
                         <td>{{ moisDepensesEstOuvert(m.key) ? '📂' : '📁' }} {{ m.label }}
-                            <span class="badge-raison" *ngIf="m.enCours">en cours</span>
+                            <span class="badge-raison" *ngIf="m.enCours">{{ 'STATS.ONGOING' | translate }}</span>
                         </td>
                         <td class="text-right">{{ m.mensuelles | number:'1.3-3' }}</td>
                         <td class="text-right">{{ m.journalieres | number:'1.3-3' }}</td>
-                        <td class="text-right fw-bold">{{ m.total | number:'1.3-3' }} DT</td>
-                        <td class="text-right">{{ m.benefice | number:'1.3-3' }} DT</td>
+                        <td class="text-right fw-bold">{{ m.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
+                        <td class="text-right">{{ m.benefice | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
                         <td class="text-right fw-bold" [class.text-success]="m.resultat >= 0"
                             [class.text-danger]="m.resultat < 0">
-                            {{ m.resultat >= 0 ? '+' : '' }}{{ m.resultat | number:'1.3-3' }} DT
+                            {{ m.resultat >= 0 ? '+' : '' }}{{ m.resultat | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
                         </td>
                     </tr>
                     <tr *ngIf="moisDepensesEstOuvert(m.key)">
                         <td colspan="6" class="detail-jours-mois">
                             <p class="text-muted" style="margin: 0 0 12px;">
-                                Les dépenses mensuelles de {{ m.label }} ({{ m.mensuelles | number:'1.3-3' }} DT) sont
-                                réparties à parts égales sur les {{ nbJoursDansMoisCharge(m.key) }} jours du mois.
+                                {{ 'STATS.MONTHLY_SPREAD_NOTE' | translate:{ month: m.label, amount: (m.mensuelles | number:'1.3-3'), currency: ('CURRENCY' | translate), days: nbJoursDansMoisCharge(m.key) } }}
                             </p>
                             <table class="stats-table">
                                 <thead>
                                     <tr>
-                                        <th>Jour</th>
-                                        <th>Détail</th>
-                                        <th class="text-right">Part mensuelle</th>
-                                        <th class="text-right">Journalières</th>
-                                        <th class="text-right">Total du jour</th>
+                                        <th>{{ 'STATS.COL_DAY' | translate }}</th>
+                                        <th>{{ 'STATS.COL_DETAIL' | translate }}</th>
+                                        <th class="text-right">{{ 'STATS.COL_MONTHLY_SHARE' | translate }}</th>
+                                        <th class="text-right">{{ 'STATS.COL_DAILY' | translate }}</th>
+                                        <th class="text-right">{{ 'STATS.COL_DAY_TOTAL' | translate }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -284,7 +281,7 @@
                                         </td>
                                         <td class="text-right">{{ j.partMensuelle | number:'1.3-3' }}</td>
                                         <td class="text-right">{{ j.journalieres | number:'1.3-3' }}</td>
-                                        <td class="text-right fw-bold">{{ j.total | number:'1.3-3' }} DT</td>
+                                        <td class="text-right fw-bold">{{ j.total | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -294,16 +291,16 @@
             </tbody>
         </table>
         <div class="empty-state" *ngIf="!depensesChargement && depensesParMois.length === 0">
-            <p>Aucune dépense enregistrée.</p>
+            <p>{{ 'STATS.NO_EXPENSES_RECORDED' | translate }}</p>
         </div>
     </div>
 
     <!-- Loading / Error -->
     <div class="loading-state" *ngIf="loading">
         <div class="loading-icon">⟳</div>
-        <strong>Chargement…</strong>
+        <strong>{{ 'STATS.LOADING' | translate }}</strong>
     </div>
-    <div class="alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg }}</div>
+    <div class="alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
 
 </div>
 
@@ -311,41 +308,41 @@
 <div class="detail-overlay" *ngIf="detailReparationsOuvert" (click)="fermerDetailReparations()">
     <div class="detail-modal" (click)="$event.stopPropagation()">
         <div class="detail-header">
-            <h3>🔧 Détail des réparations — {{ periodeLabel }}</h3>
+            <h3>🔧 {{ 'STATS.REPAIR_DETAIL_TITLE' | translate }} — {{ periodeLabel }}</h3>
             <button type="button" class="detail-close" (click)="fermerDetailReparations()">✕</button>
         </div>
         <div class="detail-body">
             <div class="loading-state" *ngIf="detailReparationsChargement">
                 <div class="loading-icon">⟳</div>
-                <strong>Chargement…</strong>
+                <strong>{{ 'STATS.LOADING' | translate }}</strong>
             </div>
-            <div class="alert-error" *ngIf="detailReparationsErreur">⚠️ {{ detailReparationsErreur }}</div>
+            <div class="alert-error" *ngIf="detailReparationsErreur">⚠️ {{ detailReparationsErreur | translate }}</div>
             <table class="stats-table" *ngIf="!detailReparationsChargement && detailReparationsLignes.length > 0">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Désignation</th>
-                        <th class="text-right">Prix</th>
-                        <th class="text-right">Coût</th>
-                        <th class="text-right">Bénéfice</th>
+                        <th>{{ 'STATS.COL_DATE' | translate }}</th>
+                        <th>{{ 'STATS.COL_DESIGNATION' | translate }}</th>
+                        <th class="text-right">{{ 'STATS.COL_PRICE' | translate }}</th>
+                        <th class="text-right">{{ 'STATS.COL_COST' | translate }}</th>
+                        <th class="text-right">{{ 'STATS.COL_PROFIT' | translate }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr *ngFor="let l of detailReparationsLignes">
                         <td>{{ l.date | date:'dd/MM/yyyy' }}</td>
                         <td class="fw-bold">{{ l.designation }}</td>
-                        <td class="text-right">{{ (l.qte || 1) * (l.prix || 0) | number:'1.3-3' }} DT</td>
+                        <td class="text-right">{{ (l.qte || 1) * (l.prix || 0) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
                         <td class="text-right">{{ l.cout === null || l.cout === undefined ? '—' : (l.cout |
-                            number:'1.3-3') + ' DT' }}</td>
+                            number:'1.3-3') + ' ' + ('CURRENCY' | translate) }}</td>
                         <td class="text-right" [class.text-success]="(l.benefice ?? 0) >= 0"
                             [class.text-danger]="(l.benefice ?? 0) < 0">
-                            {{ l.benefice === null ? '—' : (l.benefice | number:'1.3-3') + ' DT' }}
+                            {{ l.benefice === null ? '—' : (l.benefice | number:'1.3-3') + ' ' + ('CURRENCY' | translate) }}
                         </td>
                     </tr>
                 </tbody>
             </table>
             <div class="empty-state" *ngIf="!detailReparationsChargement && !detailReparationsErreur && detailReparationsLignes.length === 0">
-                <p>Aucune réparation encaissée sur cette période.</p>
+                <p>{{ 'STATS.NO_REPAIR_COLLECTED_PERIOD' | translate }}</p>
             </div>
         </div>
     </div>
@@ -355,24 +352,24 @@
 <div class="detail-overlay" *ngIf="detailAccessoiresOuvert" (click)="fermerDetailAccessoires()">
     <div class="detail-modal" (click)="$event.stopPropagation()">
         <div class="detail-header">
-            <h3>🎧 Détail des accessoires vendus — {{ periodeLabel }}</h3>
+            <h3>🎧 {{ 'STATS.ACCESSORY_DETAIL_TITLE' | translate }} — {{ periodeLabel }}</h3>
             <button type="button" class="detail-close" (click)="fermerDetailAccessoires()">✕</button>
         </div>
         <div class="detail-body">
             <div class="loading-state" *ngIf="detailAccessoiresChargement">
                 <div class="loading-icon">⟳</div>
-                <strong>Chargement…</strong>
+                <strong>{{ 'STATS.LOADING' | translate }}</strong>
             </div>
-            <div class="alert-error" *ngIf="detailAccessoiresErreur">⚠️ {{ detailAccessoiresErreur }}</div>
+            <div class="alert-error" *ngIf="detailAccessoiresErreur">⚠️ {{ detailAccessoiresErreur | translate }}</div>
             <table class="stats-table" *ngIf="!detailAccessoiresChargement && detailAccessoiresLignes.length > 0">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Article</th>
-                        <th class="text-center">Qté</th>
-                        <th class="text-right">Prix d'achat</th>
-                        <th class="text-right">Prix vendu</th>
-                        <th class="text-right">Bénéfice</th>
+                        <th>{{ 'STATS.COL_DATE' | translate }}</th>
+                        <th>{{ 'STATS.COL_ARTICLE' | translate }}</th>
+                        <th class="text-center">{{ 'STATS.COL_QTY' | translate }}</th>
+                        <th class="text-right">{{ 'STATS.COL_PURCHASE_PRICE' | translate }}</th>
+                        <th class="text-right">{{ 'STATS.COL_SOLD_PRICE' | translate }}</th>
+                        <th class="text-right">{{ 'STATS.COL_PROFIT' | translate }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -380,17 +377,17 @@
                         <td>{{ l.date | date:'dd/MM/yyyy' }}</td>
                         <td class="fw-bold">{{ l.designation }}</td>
                         <td class="text-center">{{ l.qte || 1 }}</td>
-                        <td class="text-right">{{ l.article.prix_achat | number:'1.3-3' }} DT</td>
-                        <td class="text-right">{{ (l.qte || 1) * (l.prix || 0) | number:'1.3-3' }} DT</td>
+                        <td class="text-right">{{ l.article.prix_achat | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
+                        <td class="text-right">{{ (l.qte || 1) * (l.prix || 0) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
                         <td class="text-right" [class.text-success]="l.benefice >= 0"
                             [class.text-danger]="l.benefice < 0">
-                            {{ l.benefice | number:'1.3-3' }} DT
+                            {{ l.benefice | number:'1.3-3' }} {{ 'CURRENCY' | translate }}
                         </td>
                     </tr>
                 </tbody>
             </table>
             <div class="empty-state" *ngIf="!detailAccessoiresChargement && !detailAccessoiresErreur && detailAccessoiresLignes.length === 0">
-                <p>Aucun accessoire vendu sur cette période.</p>
+                <p>{{ 'STATS.NO_ACCESSORY_SOLD_PERIOD' | translate }}</p>
             </div>
         </div>
     </div>
@@ -400,24 +397,24 @@
 <div class="detail-overlay" *ngIf="detailPertesOuvert" (click)="fermerDetailPertes()">
     <div class="detail-modal" (click)="$event.stopPropagation()">
         <div class="detail-header">
-            <h3>📉 Détail des pertes — {{ periodeLabel }}</h3>
+            <h3>📉 {{ 'STATS.LOSS_DETAIL_TITLE' | translate }} — {{ periodeLabel }}</h3>
             <button type="button" class="detail-close" (click)="fermerDetailPertes()">✕</button>
         </div>
         <div class="detail-body">
             <div class="loading-state" *ngIf="detailPertesChargement">
                 <div class="loading-icon">⟳</div>
-                <strong>Chargement…</strong>
+                <strong>{{ 'STATS.LOADING' | translate }}</strong>
             </div>
-            <div class="alert-error" *ngIf="detailPertesErreur">⚠️ {{ detailPertesErreur }}</div>
+            <div class="alert-error" *ngIf="detailPertesErreur">⚠️ {{ detailPertesErreur | translate }}</div>
             <table class="stats-table" *ngIf="!detailPertesChargement && detailPertesLignes.length > 0">
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Téléphone</th>
-                        <th>Raison</th>
-                        <th>Pièce (nature / marque / modèle)</th>
-                        <th>Fournisseur</th>
-                        <th class="text-right">Manque à gagner</th>
+                        <th>{{ 'STATS.COL_DATE' | translate }}</th>
+                        <th>{{ 'STATS.COL_PHONE' | translate }}</th>
+                        <th>{{ 'STATS.COL_REASON' | translate }}</th>
+                        <th>{{ 'STATS.COL_PART_INFO' | translate }}</th>
+                        <th>{{ 'STATS.COL_SUPPLIER' | translate }}</th>
+                        <th class="text-right">{{ 'STATS.COL_SHORTFALL' | translate }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -426,7 +423,7 @@
                         <td class="fw-bold">{{ l.appareil }}</td>
                         <td>
                             <span class="badge-raison" [class.badge-raison-retour]="l.raison === 'retour'">
-                                {{ l.raison === 'retour' ? 'Retour pour défaut' : 'Écart prix/coût' }}
+                                {{ (l.raison === 'retour' ? 'STATS.REASON_RETURN' : 'STATS.REASON_PRICE_GAP') | translate }}
                             </span>
                         </td>
                         <td>
@@ -438,12 +435,12 @@
                             <ng-template #piecInconnue><span class="text-muted">—</span></ng-template>
                         </td>
                         <td>{{ l.fournisseur || '—' }}</td>
-                        <td class="text-right text-danger">{{ l.manque_a_gagner | number:'1.3-3' }} DT</td>
+                        <td class="text-right text-danger">{{ l.manque_a_gagner | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
                     </tr>
                 </tbody>
             </table>
             <div class="empty-state" *ngIf="!detailPertesChargement && !detailPertesErreur && detailPertesLignes.length === 0">
-                <p>Aucune perte sur réparation sur cette période.</p>
+                <p>{{ 'STATS.NO_LOSS_PERIOD' | translate }}</p>
             </div>
         </div>
     </div>
@@ -453,15 +450,15 @@
 <div class="detail-overlay" *ngIf="detailTopOuvert && stats" (click)="fermerDetailTop()">
     <div class="detail-modal" (click)="$event.stopPropagation()">
         <div class="detail-header">
-            <h3>🏆 Les plus utilisés — {{ periodeLabel }}</h3>
+            <h3>🏆 {{ 'STATS.MOST_USED_TITLE' | translate }} — {{ periodeLabel }}</h3>
             <button type="button" class="detail-close" (click)="fermerDetailTop()">✕</button>
         </div>
         <div class="detail-body">
             <div class="top-tabs">
                 <button type="button" class="top-tab" [class.active]="topVue === 'pieces'"
-                    (click)="topVue = 'pieces'">🔧 Pièces détachées</button>
+                    (click)="topVue = 'pieces'">🔧 {{ 'STATS.TAB_PARTS' | translate }}</button>
                 <button type="button" class="top-tab" [class.active]="topVue === 'accessoires'"
-                    (click)="topVue = 'accessoires'">🎧 Accessoires</button>
+                    (click)="topVue = 'accessoires'">🎧 {{ 'STATS.TAB_ACCESSORIES' | translate }}</button>
             </div>
 
             <ng-container *ngIf="topVue === 'pieces'">
@@ -469,9 +466,9 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Pièce</th>
-                            <th>Marque / Modèle</th>
-                            <th class="text-right">Fois utilisée</th>
+                            <th>{{ 'STATS.COL_PART' | translate }}</th>
+                            <th>{{ 'STATS.COL_BRAND_MODEL' | translate }}</th>
+                            <th class="text-right">{{ 'STATS.COL_TIMES_USED' | translate }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -485,7 +482,7 @@
                     </tbody>
                 </table>
                 <div class="empty-state" *ngIf="stats.topPieces.length === 0">
-                    <p>Aucune pièce utilisée sur cette période.</p>
+                    <p>{{ 'STATS.NO_PARTS_USED_PERIOD' | translate }}</p>
                 </div>
             </ng-container>
 
@@ -494,10 +491,10 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Accessoire</th>
-                            <th>Marque / Modèle</th>
-                            <th class="text-right">Qté vendue</th>
-                            <th class="text-right">Revenu</th>
+                            <th>{{ 'STATS.COL_ACCESSORY' | translate }}</th>
+                            <th>{{ 'STATS.COL_BRAND_MODEL' | translate }}</th>
+                            <th class="text-right">{{ 'STATS.COL_QTY_SOLD' | translate }}</th>
+                            <th class="text-right">{{ 'STATS.COL_REVENUE' | translate }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -507,12 +504,12 @@
                             <td class="text-muted">{{ p.marque || p.modele ? (p.marque || '') + ' ' + (p.modele || '')
                                 : '—' }}</td>
                             <td class="text-right">{{ p.qte }}</td>
-                            <td class="text-right text-success">{{ p.revenue | number:'1.3-3' }} DT</td>
+                            <td class="text-right text-success">{{ p.revenue | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</td>
                         </tr>
                     </tbody>
                 </table>
                 <div class="empty-state" *ngIf="stats.topAccessoires.length === 0">
-                    <p>Aucun accessoire vendu sur cette période.</p>
+                    <p>{{ 'STATS.NO_ACCESSORY_SOLD_PERIOD' | translate }}</p>
                 </div>
             </ng-container>
         </div>
