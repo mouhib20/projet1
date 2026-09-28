@@ -182,4 +182,17 @@ export class ClientsService {
         client.solde = Number(client.solde) - montant;
         await this.repo.save(client);
     }
+
+    /**
+     * Records a credit sale: the client took the goods without paying this part now, so it becomes
+     * a debt (the balance can go negative — unlike utiliserSolde, there is no "enough balance" check,
+     * since going into debt is exactly the point).
+     */
+    async ajouterDette(clientId: number, montant: number): Promise<void> {
+        if (!montant || montant <= 0) return;
+        const client = await this.repo.findOne({ where: { id_client: clientId } });
+        if (!client) throw new NotFoundException(`Client #${clientId} introuvable`);
+        client.solde = Number(client.solde || 0) - montant;
+        await this.repo.save(client);
+    }
 }

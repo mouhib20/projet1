@@ -268,6 +268,23 @@ input:focus {
     font-weight: 700;
 }
 
+.text-danger {
+    color: #f87171;
+    font-weight: 700;
+}
+
+.badge-dette {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(248, 113, 113, 0.12);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    color: #f87171;
+}
+
 /* States */
 .loading-state,
 .empty-state {
@@ -398,6 +415,14 @@ input:focus {
     color: #4ade80;
     font-size: 18px;
     font-family: 'Inter', monospace;
+}
+
+.solde-banner-dette {
+    border-color: rgba(248, 113, 113, 0.35);
+}
+
+.solde-banner-dette strong {
+    color: #f87171;
 }
 
 .depot-form {

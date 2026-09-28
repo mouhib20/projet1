@@ -449,6 +449,17 @@ export class OperationsComponent implements OnInit {
 
   onPosClientChange(): void {
     this.posMontantSolde = 0;
+    this.posACredit = false;
+    this.posMontantPaye = 0;
+  }
+
+  /** Sale partly or fully on credit: the client takes the goods now, pays the rest later. */
+  posACredit = false;
+  posMontantPaye: number | null = 0;
+
+  get posMontantCredit(): number {
+    if (!this.posACredit) return 0;
+    return Math.max(0, this.posResteAPayer - (this.posMontantPaye || 0));
   }
 
   posResetCart(): void {
@@ -457,6 +468,8 @@ export class OperationsComponent implements OnInit {
     this.posRemiseAmount = 0;
     this.posRemiseType = 'fixed';
     this.posMontantSolde = 0;
+    this.posACredit = false;
+    this.posMontantPaye = 0;
     this.posSearchTerm = '';
   }
 
@@ -468,10 +481,17 @@ export class OperationsComponent implements OnInit {
     }
     this.posSaving = true;
 
+    if (this.posACredit && !this.posClientId) {
+      alert('Choisissez un client pour vendre à crédit.');
+      this.posSaving = false;
+      return;
+    }
+
     const payload = {
       clientId: this.posClientId || null,
       remise: this.posRemiseValue,
       montantSolde: this.posMontantSoldeEffectif,
+      montantPaye: this.posACredit ? (this.posMontantPaye || 0) : undefined,
       items: this.posCart.map(i => ({
         articleId: i.articleId ?? null,
         reparationId: i.reparationId ?? null,

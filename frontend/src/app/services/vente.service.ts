@@ -30,6 +30,7 @@ export class VenteService {
         clientId?: number | null;
         remise?: number;
         montantSolde?: number;
+        montantPaye?: number;
         date?: string;
         items: { articleId?: number | null; reparationId?: number | null; designation?: string; qte: number; prix: number }[];
     }): Observable<Vente[]> {

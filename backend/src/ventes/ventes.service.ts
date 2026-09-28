@@ -98,6 +98,10 @@ export class VentesService {
         clientId?: number | null;
         remise?: number;
         montantSolde?: number;
+        /** What the client actually pays now, in cash. Omitted = the old behaviour (everything left
+         *  after the solde is assumed paid in cash). Less than what's left after the solde = the
+         *  shortfall becomes a debt on the client's account, to be paid back later. */
+        montantPaye?: number;
         date?: string;
         items: { articleId?: number | null; reparationId?: number | null; designation?: string; qte: number; prix: number }[];
     }, authorization?: string): Promise<Vente[]> {
@@ -108,6 +112,10 @@ export class VentesService {
 
         if (data.montantSolde && data.montantSolde > 0 && !data.clientId) {
             throw new BadRequestException('Un client doit être sélectionné pour utiliser un solde.');
+        }
+        if (data.montantPaye !== undefined && data.montantPaye !== null) {
+            if (data.montantPaye < 0) throw new BadRequestException('Le montant payé ne peut pas être négatif.');
+            if (!data.clientId) throw new BadRequestException('Un client doit être sélectionné pour laisser un reste à payer à crédit.');
         }
 
         const queryRunner = this.dataSource.createQueryRunner();
@@ -202,17 +210,27 @@ export class VentesService {
                 );
             }
 
+            // Whatever is still left after the solde, and not paid now, becomes a debt on the client
+            let montantCredit = 0;
+            if (data.montantPaye !== undefined && data.montantPaye !== null && data.clientId) {
+                const netTotal = Math.max(0, totalHt - remise);
+                const resteApresSolde = Math.max(0, netTotal - montantSoldeUtilise);
+                montantCredit = Math.max(0, resteApresSolde - data.montantPaye);
+                if (montantCredit > 0) await this.clientsService.ajouterDette(data.clientId, montantCredit);
+            }
+
             await queryRunner.commitTransaction();
             const ventes = await Promise.all(savedIds.map(id => this.findOne(id)));
 
-            // Cash that actually entered the drawer: the sale total minus the part paid from a client balance
+            // Cash that actually entered the drawer: the sale total minus the part paid from a client
+            // balance minus whatever was left as a credit (not paid now)
             const total = ventes.reduce((s, v) => s + (v.qte || 1) * Number(v.prix || 0), 0);
             const acteur = await this.caisseService.acteurOuSysteme(authorization);
             await this.caisseService.enregistrerAuto(acteur, {
                 type: 'entree',
                 source: 'vente',
-                montant: total - montantSoldeUtilise,
-                motif: `Vente ${ventes.map(v => '#' + v.id_vente).join(', ')}`,
+                montant: total - montantSoldeUtilise - montantCredit,
+                motif: `Vente ${ventes.map(v => '#' + v.id_vente).join(', ')}` + (montantCredit > 0 ? ` (dont ${montantCredit} à crédit)` : ''),
                 reference: 'vente:' + savedIds.join(','),
             });
             return ventes;
