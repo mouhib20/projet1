@@ -34,4 +34,10 @@ export interface VenteStats {
         /** Sum of the shortfall on repairs where the amount received was below the parts cost. */
         pertes: number;
     };
+    /** Accessory articles sold, kept apart from repair parts and other articles. */
+    accessoires: {
+        revenue: number;
+        cout: number;
+        benefice: number;
+    };
 }

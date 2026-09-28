@@ -274,6 +274,9 @@ export class VentesService {
         let reparationsRevenue = 0;
         let reparationsCout = 0;
         let reparationsPertes = 0;
+        // Accessories sold, tracked apart from repair parts and other articles
+        let accessoiresRevenue = 0;
+        let accessoiresCout = 0;
         const revenueByDayMap = new Map<string, number>();
         const productMap = new Map<number, { designation: string; qte: number; revenue: number }>();
 
@@ -293,6 +296,11 @@ export class VentesService {
                 entry.qte += v.qte || 0;
                 entry.revenue += lineRevenue;
                 productMap.set(id, entry);
+
+                if (v.article.type === 'accessory') {
+                    accessoiresRevenue += lineRevenue;
+                    accessoiresCout += (v.qte || 0) * (Number(v.article.prix_achat) || 0);
+                }
             } else {
                 reparationsRevenue += lineRevenue;
                 if (v.cout !== null && v.cout !== undefined) {
@@ -353,6 +361,11 @@ export class VentesService {
                 cout: reparationsCout,
                 benefice: reparationsRevenue - reparationsCout,
                 pertes: reparationsPertes,
+            },
+            accessoires: {
+                revenue: accessoiresRevenue,
+                cout: accessoiresCout,
+                benefice: accessoiresRevenue - accessoiresCout,
             },
         };
     }

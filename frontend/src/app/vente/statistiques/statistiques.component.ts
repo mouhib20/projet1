@@ -46,6 +46,9 @@ export class StatistiquesComponent implements OnInit {
   // ── Capital: a snapshot, independent of the selected period ──
 
   valeurStock: number | null = null;
+  /** Stock value split by kind: repair parts ('part') vs accessories ('accessory'). */
+  valeurStockPieces: number | null = null;
+  valeurStockAccessoires: number | null = null;
   soldeCaisse: number | null = null;
   detteFournisseurs: number | null = null;
 
@@ -60,9 +63,12 @@ export class StatistiquesComponent implements OnInit {
   loadCapital(): void {
     this.articleService.getArticles().subscribe({
       next: (articles) => {
-        this.valeurStock = articles.reduce((s, a) => s + (Number(a.quantite) || 0) * (Number(a.prix_achat) || 0), 0);
+        const valeur = (a: { quantite?: number; prix_achat?: number }) => (Number(a.quantite) || 0) * (Number(a.prix_achat) || 0);
+        this.valeurStock = articles.reduce((s, a) => s + valeur(a), 0);
+        this.valeurStockPieces = articles.filter(a => a.type !== 'accessory').reduce((s, a) => s + valeur(a), 0);
+        this.valeurStockAccessoires = articles.filter(a => a.type === 'accessory').reduce((s, a) => s + valeur(a), 0);
       },
-      error: () => { this.valeurStock = 0; }
+      error: () => { this.valeurStock = 0; this.valeurStockPieces = 0; this.valeurStockAccessoires = 0; }
     });
     this.caisseService.getStatus().subscribe({
       next: (status) => {
