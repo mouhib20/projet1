@@ -24,9 +24,9 @@
             </li>
             <li>
                 <strong>Coût de vente des accessoires, marge bénéficiaire et prix d'achat :</strong>
-                vendu {{ stats.accessoires.revenue | number:'1.3-3' }} DT · marge {{ margeAccessoires !== null ?
-                (margeAccessoires | number:'1.1-1') + '%' : '—' }} · prix d'achat en stock {{ valeurStockAccessoires
-                !== null ? (valeurStockAccessoires | number:'1.3-3') : '…' }} DT
+                Bénéfice : {{ stats.accessoires.benefice | number:'1.3-3' }} DT · Prix total : {{
+                stats.accessoires.revenue | number:'1.3-3' }} DT · Coût des accessoires : {{ stats.accessoires.cout |
+                number:'1.3-3' }} DT
             </li>
             <li>
                 <strong>Coût des pièces détachées en stock (capital de l'atelier) :</strong>
