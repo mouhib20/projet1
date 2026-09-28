@@ -191,4 +191,18 @@ export class StatistiquesComponent implements OnInit {
   fermerDetailPertes(): void {
     this.detailPertesOuvert = false;
   }
+
+  // ── Most used detail: parts used in repairs vs accessories sold (box 6) ──
+
+  detailTopOuvert = false;
+  topVue: 'pieces' | 'accessoires' = 'pieces';
+
+  ouvrirDetailTop(vue: 'pieces' | 'accessoires' = 'pieces'): void {
+    this.topVue = vue;
+    this.detailTopOuvert = true;
+  }
+
+  fermerDetailTop(): void {
+    this.detailTopOuvert = false;
+  }
 }

@@ -10,6 +10,15 @@ export interface VenteStatsProduct {
     revenue: number;
 }
 
+export interface VenteStatsPiece {
+    articleId: number;
+    designation: string;
+    marque: string | null;
+    modele: string | null;
+    qte: number;
+    revenue?: number;
+}
+
 export type PeriodeStats = 'today' | 'week' | 'month' | 'year';
 
 export interface VenteStats {
@@ -26,6 +35,10 @@ export interface VenteStats {
     growthPercent: number | null;
     revenueByDay: VenteStatsDay[];
     topProducts: VenteStatsProduct[];
+    /** Parts used on repair tickets this period, most used first. */
+    topPieces: VenteStatsPiece[];
+    /** Accessories sold this period, most used first. */
+    topAccessoires: VenteStatsPiece[];
     /** Repair lines (deposits and pickups) only, kept apart from articles sold. */
     reparations: {
         revenue: number;

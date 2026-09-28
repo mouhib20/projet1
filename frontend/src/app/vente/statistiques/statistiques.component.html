@@ -79,6 +79,20 @@
                         retour pour défaut.</p>
                 </div>
             </div>
+            <div class="recap-box recap-box-cliquable" (click)="ouvrirDetailTop('pieces')"
+                title="Cliquer pour voir le classement complet">
+                <div class="recap-num">6</div>
+                <div class="recap-body">
+                    <strong>Produits et pièces détachées les plus fréquemment utilisés
+                        <span class="recap-voir-plus">Voir le détail →</span>
+                    </strong>
+                    <div class="recap-line" *ngFor="let p of stats.topPieces.slice(0, 3)">
+                        <span>{{ p.designation }}</span><b>{{ p.qte }}</b>
+                    </div>
+                    <p class="text-muted" *ngIf="stats.topPieces.length === 0">Aucune pièce utilisée sur cette
+                        période.</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -229,6 +243,76 @@
             <div class="empty-state" *ngIf="!detailPertesChargement && !detailPertesErreur && detailPertesLignes.length === 0">
                 <p>Aucune perte sur réparation sur cette période.</p>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Most used detail modal: parts used in repairs vs accessories sold -->
+<div class="detail-overlay" *ngIf="detailTopOuvert && stats" (click)="fermerDetailTop()">
+    <div class="detail-modal" (click)="$event.stopPropagation()">
+        <div class="detail-header">
+            <h3>🏆 Les plus utilisés — {{ periodeLabel }}</h3>
+            <button type="button" class="detail-close" (click)="fermerDetailTop()">✕</button>
+        </div>
+        <div class="detail-body">
+            <div class="top-tabs">
+                <button type="button" class="top-tab" [class.active]="topVue === 'pieces'"
+                    (click)="topVue = 'pieces'">🔧 Pièces détachées</button>
+                <button type="button" class="top-tab" [class.active]="topVue === 'accessoires'"
+                    (click)="topVue = 'accessoires'">🎧 Accessoires</button>
+            </div>
+
+            <ng-container *ngIf="topVue === 'pieces'">
+                <table class="stats-table" *ngIf="stats.topPieces.length > 0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Pièce</th>
+                            <th>Marque / Modèle</th>
+                            <th class="text-right">Fois utilisée</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let p of stats.topPieces; let i = index">
+                            <td class="text-muted">{{ i + 1 }}</td>
+                            <td class="fw-bold">{{ p.designation }}</td>
+                            <td class="text-muted">{{ p.marque || p.modele ? (p.marque || '') + ' ' + (p.modele || '')
+                                : '—' }}</td>
+                            <td class="text-right">{{ p.qte }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="empty-state" *ngIf="stats.topPieces.length === 0">
+                    <p>Aucune pièce utilisée sur cette période.</p>
+                </div>
+            </ng-container>
+
+            <ng-container *ngIf="topVue === 'accessoires'">
+                <table class="stats-table" *ngIf="stats.topAccessoires.length > 0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Accessoire</th>
+                            <th>Marque / Modèle</th>
+                            <th class="text-right">Qté vendue</th>
+                            <th class="text-right">Revenu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let p of stats.topAccessoires; let i = index">
+                            <td class="text-muted">{{ i + 1 }}</td>
+                            <td class="fw-bold">{{ p.designation }}</td>
+                            <td class="text-muted">{{ p.marque || p.modele ? (p.marque || '') + ' ' + (p.modele || '')
+                                : '—' }}</td>
+                            <td class="text-right">{{ p.qte }}</td>
+                            <td class="text-right text-success">{{ p.revenue | number:'1.3-3' }} DT</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="empty-state" *ngIf="stats.topAccessoires.length === 0">
+                    <p>Aucun accessoire vendu sur cette période.</p>
+                </div>
+            </ng-container>
         </div>
     </div>
 </div>

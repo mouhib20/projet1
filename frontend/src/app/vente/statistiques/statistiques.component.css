@@ -491,6 +491,35 @@
     overflow-y: auto;
 }
 
+.top-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.top-tab {
+    background: #0f1117;
+    border: 1px solid #21263a;
+    color: #8b949e;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.top-tab:hover {
+    border-color: #4ade80;
+    color: #e1e4e8;
+}
+
+.top-tab.active {
+    background: rgba(74, 222, 128, 0.12);
+    border-color: #4ade80;
+    color: #4ade80;
+}
+
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .stats-page {

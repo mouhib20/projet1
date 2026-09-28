@@ -280,6 +280,7 @@ export class VentesService {
         let accessoiresCout = 0;
         const revenueByDayMap = new Map<string, number>();
         const productMap = new Map<number, { designation: string; qte: number; revenue: number }>();
+        const accessoireMap = new Map<number, { designation: string; marque: string | null; modele: string | null; qte: number; revenue: number }>();
 
         const dayKey = (d: string | Date) => typeof d === 'string' ? d : this.jourLocal(new Date(d));
 
@@ -301,6 +302,11 @@ export class VentesService {
                 if (v.article.type === 'accessory') {
                     accessoiresRevenue += lineRevenue;
                     accessoiresCout += (v.qte || 0) * (Number(v.article.prix_achat) || 0);
+
+                    const ea = accessoireMap.get(id) || { designation: v.article.designation, marque: v.article.marque ?? null, modele: v.article.modele ?? null, qte: 0, revenue: 0 };
+                    ea.qte += v.qte || 0;
+                    ea.revenue += lineRevenue;
+                    accessoireMap.set(id, ea);
                 }
             } else {
                 reparationsRevenue += lineRevenue;
@@ -348,6 +354,32 @@ export class VentesService {
             .sort((a, b) => b.revenue - a.revenue)
             .slice(0, 8);
 
+        const topAccessoires = [...accessoireMap.entries()]
+            .map(([articleId, v]) => ({ articleId, ...v }))
+            .sort((a, b) => b.qte - a.qte)
+            .slice(0, 8);
+
+        // Parts used on repair tickets this period (reparation_item, not the sales table: most
+        // parts used in a repair never appear as their own line in Vente)
+        const piecesRows = await this.dataSource.query(
+            `SELECT a.id_article, a.designation, a.marque, a.modele, SUM(ri.qte)::int AS qte
+               FROM reparation_item ri
+               JOIN reparation r ON r.id_reparation = ri.id_reparation
+               JOIN article a ON a.id_article = ri.id_article
+              WHERE r.date_reception BETWEEN $1 AND $2
+              GROUP BY a.id_article, a.designation, a.marque, a.modele
+              ORDER BY SUM(ri.qte) DESC
+              LIMIT 8`,
+            [startStr, endStr],
+        );
+        const topPieces = piecesRows.map((r: any) => ({
+            articleId: r.id_article,
+            designation: r.designation,
+            marque: r.marque ?? null,
+            modele: r.modele ?? null,
+            qte: Number(r.qte) || 0,
+        }));
+
         // Immediately preceding period of the same length, for a growth percentage
         const prevEnd = new Date(start);
         prevEnd.setDate(prevEnd.getDate() - 1);
@@ -373,6 +405,8 @@ export class VentesService {
             growthPercent: prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : null,
             revenueByDay,
             topProducts,
+            topPieces,
+            topAccessoires,
             reparations: {
                 revenue: reparationsRevenue,
                 cout: reparationsCout,
