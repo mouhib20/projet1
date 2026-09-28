@@ -117,47 +117,6 @@
             </p>
         </div>
 
-        <!-- KPI Cards -->
-        <div class="kpi-row">
-            <div class="kpi-card">
-                <div class="kpi-icon">💰</div>
-                <div class="kpi-info">
-                    <span class="kpi-label">Chiffre d'affaires</span>
-                    <span class="kpi-value">{{ stats.totalRevenue | number:'1.3-3' }} DT</span>
-                    <span class="kpi-growth" *ngIf="stats.growthPercent !== null"
-                        [class.growth-up]="stats.growthPercent >= 0" [class.growth-down]="stats.growthPercent < 0">
-                        {{ stats.growthPercent >= 0 ? '▲' : '▼' }} {{ stats.growthPercent | number:'1.1-1' }}% vs
-                        période précédente
-                    </span>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon">🧾</div>
-                <div class="kpi-info">
-                    <span class="kpi-label">Tickets de vente</span>
-                    <span class="kpi-value">{{ stats.totalTickets }}</span>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon">🛒</div>
-                <div class="kpi-info">
-                    <span class="kpi-label">Panier moyen</span>
-                    <span class="kpi-value">{{ stats.avgBasket | number:'1.3-3' }} DT</span>
-                </div>
-            </div>
-            <div class="kpi-card kpi-profit">
-                <div class="kpi-icon">📈</div>
-                <div class="kpi-info">
-                    <span class="kpi-label">Bénéfice net</span>
-                    <span class="kpi-value">{{ beneficeNet | number:'1.3-3' }} DT</span>
-                    <span class="kpi-sub">après {{ totalCharges | number:'1.3-3' }} DT de charges
-                        <ng-container *ngIf="margeBrute !== null"> · marge brute {{ margeBrute | number:'1.1-1'
-                            }}%</ng-container>
-                    </span>
-                </div>
-            </div>
-        </div>
-
         <!-- Revenue chart -->
         <div class="chart-card">
             <div class="chart-header">Chiffre d'affaires {{ stats.granularite === 'mois' ? 'par mois' : 'par jour' }}

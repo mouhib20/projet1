@@ -2,11 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { VenteService } from '../../services/vente.service';
-import { ChargeService } from '../../services/charge.service';
 import { ArticleService } from '../../services/article.service';
 import { PaiementFournisseurService } from '../../services/paiement-fournisseur.service';
 import { PeriodeStats, VenteStats } from '../../models/vente-stats.model';
-import { Charge } from '../../models/charge.model';
 
 @Component({
   selector: 'app-statistiques',
@@ -20,7 +18,6 @@ export class StatistiquesComponent implements OnInit {
   loading = true;
   errorMsg = '';
   periode: PeriodeStats = 'month';
-  totalCharges = 0;
 
   readonly periodes: { valeur: PeriodeStats; label: string }[] = [
     { valeur: 'today', label: "Aujourd'hui" },
@@ -31,7 +28,6 @@ export class StatistiquesComponent implements OnInit {
 
   constructor(
     private venteService: VenteService,
-    private chargeService: ChargeService,
     private articleService: ArticleService,
     private paiementFournisseurService: PaiementFournisseurService,
   ) { }
@@ -79,37 +75,12 @@ export class StatistiquesComponent implements OnInit {
       next: (data) => {
         this.stats = data;
         this.loading = false;
-        this.loadCharges(data.startDate, data.endDate);
       },
       error: () => {
         this.errorMsg = 'Impossible de charger les statistiques. Vérifiez que le backend est démarré.';
         this.loading = false;
       }
     });
-  }
-
-  loadCharges(startDate: string, endDate: string): void {
-    this.chargeService.getCharges().subscribe({
-      next: (charges: Charge[]) => {
-        this.totalCharges = charges
-          .filter(c => {
-            const d = typeof c.date_charge === 'string' ? c.date_charge : new Date(c.date_charge).toISOString().split('T')[0];
-            return d >= startDate && d <= endDate;
-          })
-          .reduce((sum, c) => sum + Number(c.montant || 0), 0);
-      },
-      error: () => { this.totalCharges = 0; }
-    });
-  }
-
-  /** Real profit for the period: price minus cost on every sale, minus the period's expenses. */
-  get beneficeNet(): number {
-    return (this.stats?.estimatedProfit || 0) - this.totalCharges;
-  }
-
-  get margeBrute(): number | null {
-    if (!this.stats || this.stats.totalRevenue <= 0) return null;
-    return (this.stats.estimatedProfit / this.stats.totalRevenue) * 100;
   }
 
   get margeAccessoires(): number | null {
