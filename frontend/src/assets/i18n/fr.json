@@ -12,7 +12,8 @@
         "EMPLOYEES": "Employés",
         "COMPATIBILITY": "Compatibilité",
         "WHOLESALE_CATALOG": "Catalogue de gros",
-        "WHOLESALE_ORDERS": "Mes commandes de gros"
+        "WHOLESALE_ORDERS": "Mes commandes de gros",
+        "WHOLESALE_ADMIN": "Gestion de la vente en gros"
     },
     "HOME": {
         "WELCOME": "Votre espace de",
@@ -313,7 +314,13 @@
         "SAVE_MODULES": "Enregistrer",
         "SUCCESS_MODULES_SAVED": "Sections enregistrées avec succès.",
         "ERR_SAVE_MODULES": "Erreur lors de l'enregistrement des sections.",
-        "COMPAT_EDITORS_LINK": "Éditeurs de compatibilité"
+        "COMPAT_EDITORS_LINK": "Éditeurs de compatibilité",
+        "BADGE_GROSSISTE": "Magasin de gros",
+        "BTN_SET_GROSSISTE": "Désigner comme magasin de gros",
+        "BTN_UNSET_GROSSISTE": "Retirer le statut de magasin de gros",
+        "SUCCESS_GROSSISTE_SET": "Ce magasin est maintenant le magasin de gros",
+        "SUCCESS_GROSSISTE_UNSET": "Le statut de magasin de gros a été retiré",
+        "ERR_GROSSISTE": "Erreur lors du changement du statut de magasin de gros"
     },
     "COMPAT_EDITORS": {
         "TITLE": "Éditeurs de compatibilité",
@@ -909,5 +916,34 @@
         "ACCEPT_ADJUSTMENT": "Accepter l'ajustement",
         "CONFIRM_RECEIPT": "Confirmer la réception",
         "CANCEL": "Annuler"
+    },
+    "WHOLESALE_ADMIN": {
+        "TITLE": "Gestion de la vente en gros",
+        "SUBTITLE": "Offres et commandes reçues de tous les magasins",
+        "TAB_ORDERS": "Commandes",
+        "TAB_LISTINGS": "Offres",
+        "ERR_LOAD_ORDERS": "Erreur lors du chargement des commandes",
+        "ERR_LOAD_LISTINGS": "Erreur lors du chargement des offres",
+        "ERR_ACTION": "Erreur lors de l'action",
+        "ERR_CREATE_LISTING": "Erreur lors de la création de l'offre",
+        "EMPTY_ORDERS": "Aucune commande reçue pour le moment",
+        "EMPTY_LISTINGS": "Aucune offre créée pour le moment",
+        "REQUESTED": "demandé",
+        "CONFIRM_ORDER": "Confirmer la commande",
+        "WAITING_STORE_HINT": "En attente de la validation du magasin demandeur",
+        "START_PREPARATION": "Démarrer la préparation",
+        "SEND": "Envoyer",
+        "ADD_LISTING": "Ajouter une offre",
+        "PICK_ARTICLE": "Choisir un article...",
+        "WHOLESALE_PRICE": "Prix de gros",
+        "MIN_QTY_PLACEHOLDER": "Quantité min",
+        "ADD": "Ajouter",
+        "COL_ARTICLE": "Article",
+        "COL_STOCK": "Stock",
+        "COL_PRICE": "Prix de gros",
+        "COL_MIN_QTY": "Qté min",
+        "COL_VISIBLE": "Visible",
+        "VISIBLE": "Visible",
+        "HIDDEN": "Masqué"
     }
 }

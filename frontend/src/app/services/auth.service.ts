@@ -28,6 +28,7 @@ export class AuthService {
                 localStorage.setItem('permissions', JSON.stringify(res.permissions || {}));
                 localStorage.setItem('id_magasin', res.id_magasin == null ? '' : String(res.id_magasin));
                 localStorage.setItem('modules', JSON.stringify(res.modules || {}));
+                localStorage.setItem('est_grossiste', res.est_grossiste ? '1' : '');
             })
         );
     }
@@ -40,6 +41,7 @@ export class AuthService {
         localStorage.removeItem('permissions');
         localStorage.removeItem('id_magasin');
         localStorage.removeItem('modules');
+        localStorage.removeItem('est_grossiste');
         this.router.navigate(['/login']);
     }
 
@@ -79,6 +81,11 @@ export class AuthService {
     getMagasinId(): number | null {
         const raw = localStorage.getItem('id_magasin');
         return raw ? Number(raw) : null;
+    }
+
+    /** True only for an employee of the ONE store Super Admin has flagged as the wholesale supplier. */
+    isMagasinGrossiste(): boolean {
+        return localStorage.getItem('est_grossiste') === '1';
     }
 
     getPermissions(): PermissionMatrix {

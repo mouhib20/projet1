@@ -12,7 +12,8 @@
         "EMPLOYEES": "الموظفون",
         "COMPATIBILITY": "التوافقية",
         "WHOLESALE_CATALOG": "كتالوج الجملة",
-        "WHOLESALE_ORDERS": "طلبات الجملة"
+        "WHOLESALE_ORDERS": "طلبات الجملة",
+        "WHOLESALE_ADMIN": "إدارة بيع الجملة"
     },
     "HOME": {
         "WELCOME": "مساحتك لـ",
@@ -313,7 +314,13 @@
         "SAVE_MODULES": "حفظ",
         "SUCCESS_MODULES_SAVED": "تم حفظ الأقسام بنجاح.",
         "ERR_SAVE_MODULES": "خطأ أثناء حفظ الأقسام.",
-        "COMPAT_EDITORS_LINK": "خدام التوافقات"
+        "COMPAT_EDITORS_LINK": "خدام التوافقات",
+        "BADGE_GROSSISTE": "محل الجملة",
+        "BTN_SET_GROSSISTE": "تعيين كمحل جملة",
+        "BTN_UNSET_GROSSISTE": "إزالة صفة محل الجملة",
+        "SUCCESS_GROSSISTE_SET": "أصبح هذا المحل الآن محل الجملة",
+        "SUCCESS_GROSSISTE_UNSET": "تمت إزالة صفة محل الجملة",
+        "ERR_GROSSISTE": "خطأ أثناء تغيير صفة محل الجملة"
     },
     "COMPAT_EDITORS": {
         "TITLE": "خدام التوافقات",
@@ -909,5 +916,34 @@
         "ACCEPT_ADJUSTMENT": "قبول التعديل",
         "CONFIRM_RECEIPT": "تأكيد الاستلام",
         "CANCEL": "إلغاء"
+    },
+    "WHOLESALE_ADMIN": {
+        "TITLE": "إدارة بيع الجملة",
+        "SUBTITLE": "العروض والطلبات الواردة من جميع المحلات",
+        "TAB_ORDERS": "الطلبات",
+        "TAB_LISTINGS": "العروض",
+        "ERR_LOAD_ORDERS": "خطأ في تحميل الطلبات",
+        "ERR_LOAD_LISTINGS": "خطأ في تحميل العروض",
+        "ERR_ACTION": "خطأ أثناء تنفيذ الإجراء",
+        "ERR_CREATE_LISTING": "خطأ أثناء إنشاء العرض",
+        "EMPTY_ORDERS": "لا توجد طلبات واردة حاليًا",
+        "EMPTY_LISTINGS": "لا توجد عروض منشأة حاليًا",
+        "REQUESTED": "مطلوب",
+        "CONFIRM_ORDER": "تأكيد الطلب",
+        "WAITING_STORE_HINT": "بانتظار موافقة المحل الطالب",
+        "START_PREPARATION": "بدء التجهيز",
+        "SEND": "إرسال",
+        "ADD_LISTING": "إضافة عرض",
+        "PICK_ARTICLE": "اختر منتجًا...",
+        "WHOLESALE_PRICE": "سعر الجملة",
+        "MIN_QTY_PLACEHOLDER": "الكمية الدنيا",
+        "ADD": "إضافة",
+        "COL_ARTICLE": "المنتج",
+        "COL_STOCK": "المخزون",
+        "COL_PRICE": "سعر الجملة",
+        "COL_MIN_QTY": "الكمية الدنيا",
+        "COL_VISIBLE": "ظاهر",
+        "VISIBLE": "ظاهر",
+        "HIDDEN": "مخفي"
     }
 }

@@ -112,7 +112,10 @@
                         <img *ngIf="logoUrl(s) as url" [src]="url" class="store-logo" [alt]="s.nom" />
                         <span *ngIf="!s.logo" class="store-logo-placeholder">🏬</span>
                     </td>
-                    <td class="fw-bold">{{ s.nom }}</td>
+                    <td class="fw-bold">
+                        {{ s.nom }}
+                        <span class="badge-grossiste" *ngIf="s.est_grossiste">🏭 {{ 'SUPER_ADMIN.BADGE_GROSSISTE' | translate }}</span>
+                    </td>
                     <td>{{ s.telephone || '—' }}</td>
                     <td class="text-center">
                         <span class="badge-dette" *ngIf="!s.actif">{{ 'SUPER_ADMIN.STATUS_SUSPENDED' | translate }}</span>
@@ -122,6 +125,9 @@
                         <button class="btn-outline btn-sm" (click)="openModules(s)">🧩 {{ 'SUPER_ADMIN.BTN_MODULES' | translate }}</button>
                         <button class="btn-outline btn-sm" (click)="toggleStatut(s)">
                             {{ (s.actif ? 'SUPER_ADMIN.BTN_SUSPEND' : 'SUPER_ADMIN.BTN_REACTIVATE') | translate }}
+                        </button>
+                        <button class="btn-outline btn-sm" (click)="toggleGrossiste(s)">
+                            🏭 {{ (s.est_grossiste ? 'SUPER_ADMIN.BTN_UNSET_GROSSISTE' : 'SUPER_ADMIN.BTN_SET_GROSSISTE') | translate }}
                         </button>
                     </td>
                 </tr>

@@ -297,6 +297,18 @@ input:focus {
     font-weight: 700;
 }
 
+.badge-grossiste {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(165, 180, 252, 0.12);
+    border: 1px solid rgba(165, 180, 252, 0.35);
+    color: #a5b4fc;
+    margin-left: 6px;
+}
+
 .badge-dette {
     display: inline-block;
     font-size: 10.5px;

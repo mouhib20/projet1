@@ -12,7 +12,8 @@
         "EMPLOYEES": "Employees",
         "COMPATIBILITY": "Compatibility",
         "WHOLESALE_CATALOG": "Wholesale Catalog",
-        "WHOLESALE_ORDERS": "My Wholesale Orders"
+        "WHOLESALE_ORDERS": "My Wholesale Orders",
+        "WHOLESALE_ADMIN": "Wholesale Management"
     },
     "HOME": {
         "WELCOME": "Your workspace for",
@@ -313,7 +314,13 @@
         "SAVE_MODULES": "Save",
         "SUCCESS_MODULES_SAVED": "Sections saved successfully.",
         "ERR_SAVE_MODULES": "Error saving the sections.",
-        "COMPAT_EDITORS_LINK": "Compatibility editors"
+        "COMPAT_EDITORS_LINK": "Compatibility editors",
+        "BADGE_GROSSISTE": "Wholesale store",
+        "BTN_SET_GROSSISTE": "Designate as wholesale store",
+        "BTN_UNSET_GROSSISTE": "Remove wholesale store status",
+        "SUCCESS_GROSSISTE_SET": "This store is now the wholesale store",
+        "SUCCESS_GROSSISTE_UNSET": "Wholesale store status removed",
+        "ERR_GROSSISTE": "Error changing wholesale store status"
     },
     "COMPAT_EDITORS": {
         "TITLE": "Compatibility editors",
@@ -909,5 +916,34 @@
         "ACCEPT_ADJUSTMENT": "Accept adjustment",
         "CONFIRM_RECEIPT": "Confirm receipt",
         "CANCEL": "Cancel"
+    },
+    "WHOLESALE_ADMIN": {
+        "TITLE": "Wholesale Management",
+        "SUBTITLE": "Listings and orders received from every store",
+        "TAB_ORDERS": "Orders",
+        "TAB_LISTINGS": "Listings",
+        "ERR_LOAD_ORDERS": "Error loading orders",
+        "ERR_LOAD_LISTINGS": "Error loading listings",
+        "ERR_ACTION": "Error performing the action",
+        "ERR_CREATE_LISTING": "Error creating the listing",
+        "EMPTY_ORDERS": "No orders received yet",
+        "EMPTY_LISTINGS": "No listings created yet",
+        "REQUESTED": "requested",
+        "CONFIRM_ORDER": "Confirm order",
+        "WAITING_STORE_HINT": "Waiting for the requesting store's approval",
+        "START_PREPARATION": "Start preparation",
+        "SEND": "Send",
+        "ADD_LISTING": "Add a listing",
+        "PICK_ARTICLE": "Pick an article...",
+        "WHOLESALE_PRICE": "Wholesale price",
+        "MIN_QTY_PLACEHOLDER": "Min quantity",
+        "ADD": "Add",
+        "COL_ARTICLE": "Article",
+        "COL_STOCK": "Stock",
+        "COL_PRICE": "Wholesale price",
+        "COL_MIN_QTY": "Min qty",
+        "COL_VISIBLE": "Visible",
+        "VISIBLE": "Visible",
+        "HIDDEN": "Hidden"
     }
 }

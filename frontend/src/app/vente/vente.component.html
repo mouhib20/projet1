@@ -35,6 +35,8 @@
                 'SIDEBAR.WHOLESALE_CATALOG' | translate }}</a>
             <a *ngIf="auth.hasAnyPermission('wholesale')" routerLink="wholesale/commandes" routerLinkActive="active" class="nav-link">🧾 {{
                 'SIDEBAR.WHOLESALE_ORDERS' | translate }}</a>
+            <a *ngIf="auth.hasAnyPermission('wholesale') && auth.isMagasinGrossiste()" routerLink="wholesale/admin" routerLinkActive="active" class="nav-link">🏭 {{
+                'SIDEBAR.WHOLESALE_ADMIN' | translate }}</a>
             <a *ngIf="auth.isAdmin()" routerLink="employees" routerLinkActive="active" class="nav-link">👤 {{
                 'SIDEBAR.EMPLOYEES' | translate }}</a>
         </nav>
