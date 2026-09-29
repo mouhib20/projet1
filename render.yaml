@@ -38,3 +38,5 @@ services:
         value: true
       - key: SEED_ADMIN_PASSWORD
         sync: false # mot de passe du compte "admin" (10 caractères minimum) : à choisir vous-même
+      - key: SEED_SUPER_ADMIN_PASSWORD
+        sync: false # optionnel : mot de passe du compte "super_admin" (10 caractères minimum), pour la lecture/gestion multi-magasins
