@@ -21,8 +21,13 @@ export class LoginComponent {
 
     constructor(private authService: AuthService, private router: Router) {
         if (this.authService.isLoggedIn()) {
-            this.router.navigate(['/vente']);
+            this.router.navigate([this.landingRoute()]);
         }
+    }
+
+    /** Super Admin has no store of its own and never sees the regular POS/stock/etc. pages. */
+    private landingRoute(): string {
+        return this.authService.isSuperAdmin() ? '/super-admin/stores' : '/vente/accueil';
     }
 
     togglePassword() {
@@ -40,7 +45,7 @@ export class LoginComponent {
         this.authService.login(this.username, this.password).subscribe({
             next: () => {
                 this.loading = false;
-                this.router.navigate(['/vente']);
+                this.router.navigate([this.landingRoute()]);
             },
             error: (err) => {
                 this.loading = false;

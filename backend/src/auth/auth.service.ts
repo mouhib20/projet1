@@ -3,6 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import { DataSource } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { PermissionsService } from '../permissions/permissions.service';
+import { MagasinModulesService } from '../magasin-modules/magasin-modules.service';
+import { DEPARTEMENTS } from '../permissions/permission.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -11,6 +13,7 @@ export class AuthService {
         private usersService: UsersService,
         private jwtService: JwtService,
         private permissionsService: PermissionsService,
+        private magasinModulesService: MagasinModulesService,
         private dataSource: DataSource,
     ) { }
 
@@ -29,6 +32,14 @@ export class AuthService {
         }
 
         const payload = { sub: user.id, username: user.username, role: user.role, id_magasin: user.id_magasin };
+
+        // Which departments are enabled for this account's store (Super Admin's switch); all true
+        // for super_admin, who has no store of its own and isn't subject to any store's switches.
+        const modules: Record<string, boolean> = {};
+        for (const dep of DEPARTEMENTS) {
+            modules[dep] = user.id_magasin == null ? true : await this.magasinModulesService.estActif(user.id_magasin, dep);
+        }
+
         return {
             access_token: this.jwtService.sign(payload),
             role: user.role,
@@ -36,6 +47,7 @@ export class AuthService {
             nom: user.nom,
             id_magasin: user.id_magasin,
             permissions: await this.permissionsService.getMatrix(user.id),
+            modules,
         };
     }
 }

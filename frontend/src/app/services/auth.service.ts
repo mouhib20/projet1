@@ -5,11 +5,12 @@ import { tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-export type UserRole = 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
+export type UserRole = 'super_admin' | 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
 export type Departement = 'ventes' | 'stock' | 'reparation' | 'fournisseurs' | 'charges' | 'clients' | 'rapports';
 export type PermissionAction = 'voir' | 'ajouter' | 'modifier' | 'supprimer';
 export type PermissionEntry = { voir: boolean; ajouter: boolean; modifier: boolean; supprimer: boolean };
 export type PermissionMatrix = Partial<Record<Departement, PermissionEntry>>;
+export type ModulesMatrix = Partial<Record<Departement, boolean>>;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -25,6 +26,8 @@ export class AuthService {
                 localStorage.setItem('username', res.username);
                 localStorage.setItem('nom', res.nom);
                 localStorage.setItem('permissions', JSON.stringify(res.permissions || {}));
+                localStorage.setItem('id_magasin', res.id_magasin == null ? '' : String(res.id_magasin));
+                localStorage.setItem('modules', JSON.stringify(res.modules || {}));
             })
         );
     }
@@ -35,6 +38,8 @@ export class AuthService {
         localStorage.removeItem('username');
         localStorage.removeItem('nom');
         localStorage.removeItem('permissions');
+        localStorage.removeItem('id_magasin');
+        localStorage.removeItem('modules');
         this.router.navigate(['/login']);
     }
 
@@ -62,12 +67,43 @@ export class AuthService {
         return this.getRole() === 'admin';
     }
 
+    isSuperAdmin(): boolean {
+        return this.getRole() === 'super_admin';
+    }
+
+    /** null for super_admin (no store of its own), otherwise the account's store id. */
+    getMagasinId(): number | null {
+        const raw = localStorage.getItem('id_magasin');
+        return raw ? Number(raw) : null;
+    }
+
     getPermissions(): PermissionMatrix {
         try {
             return JSON.parse(localStorage.getItem('permissions') || '{}');
         } catch {
             return {};
         }
+    }
+
+    private getModules(): ModulesMatrix {
+        try {
+            return JSON.parse(localStorage.getItem('modules') || '{}');
+        } catch {
+            return {};
+        }
+    }
+
+    /**
+     * Whether Super Admin has this department turned on for the account's store. Always true for
+     * super_admin (has no store, isn't subject to any store's switches) and for an account whose
+     * login response carried no modules map at all (nothing to gate on — fails open, same default
+     * the backend uses for a department nobody has ever toggled).
+     */
+    isModuleEnabled(dept: Departement): boolean {
+        if (this.isSuperAdmin()) return true;
+        const modules = this.getModules();
+        if (Object.keys(modules).length === 0) return true;
+        return modules[dept] !== false;
     }
 
     /** For an account with no permission rows (predates this feature): today's exact visibility per department. */
@@ -87,12 +123,14 @@ export class AuthService {
     }
 
     /**
-     * Admins always pass. An employee with no permission rows at all (every account that existed
-     * before this feature) falls back to reproducing exactly today's behavior for that department
-     * (see legacyPeutParDefaut). Employees created via the Employees page are checked strictly
-     * against their granted matrix.
+     * Admins always pass (unless Super Admin has switched this department off for their store —
+     * checked first, since a store's own admin is not exempt from that). An employee with no
+     * permission rows at all (every account that existed before this feature) falls back to
+     * reproducing exactly today's behavior for that department (see legacyPeutParDefaut).
+     * Employees created via the Employees page are checked strictly against their granted matrix.
      */
     hasPermission(dept: Departement, action: PermissionAction): boolean {
+        if (!this.isModuleEnabled(dept)) return false;
         if (this.isAdmin()) return true;
         const perms = this.getPermissions();
         if (Object.keys(perms).length === 0) return this.legacyPeutParDefaut(dept, action);
@@ -103,9 +141,11 @@ export class AuthService {
      * True if the employee has been granted at least one of the four actions on this department
      * (e.g. can add expenses without being able to browse the existing list). Used to decide
      * whether a page/section is reachable at all; the page itself still hides its "view" content
-     * when 'voir' specifically is not granted.
+     * when 'voir' specifically is not granted. Also false whenever Super Admin has switched the
+     * department off for this store, even for that store's own admin.
      */
     hasAnyPermission(dept: Departement): boolean {
+        if (!this.isModuleEnabled(dept)) return false;
         if (this.isAdmin()) return true;
         const perms = this.getPermissions();
         if (Object.keys(perms).length === 0) return this.legacyPeutParDefaut(dept, 'voir');
