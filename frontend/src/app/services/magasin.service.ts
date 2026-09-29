@@ -33,10 +33,6 @@ export class MagasinService {
         return this.http.patch<Magasin>(`${this.apiUrl}/${id}/statut`, { actif });
     }
 
-    setGrossiste(id: number, grossiste: boolean): Observable<Magasin> {
-        return this.http.patch<Magasin>(`${this.apiUrl}/${id}/grossiste`, { grossiste });
-    }
-
     getModules(id: number): Observable<MagasinModulesMatrix> {
         return this.http.get<MagasinModulesMatrix>(`${this.apiUrl}/${id}/modules`);
     }

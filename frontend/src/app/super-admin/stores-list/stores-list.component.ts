@@ -134,19 +134,6 @@ export class StoresListComponent implements OnInit {
         });
     }
 
-    /** Flags this store as THE wholesale supplier (auto-unflags any previously-flagged store). */
-    toggleGrossiste(store: Magasin): void {
-        if (!store.id_magasin) return;
-        const next = !store.est_grossiste;
-        this.magasinService.setGrossiste(store.id_magasin, next).subscribe({
-            next: () => {
-                this.successMsg = next ? 'SUPER_ADMIN.SUCCESS_GROSSISTE_SET' : 'SUPER_ADMIN.SUCCESS_GROSSISTE_UNSET';
-                this.loadStores();
-            },
-            error: (err) => { this.errorMsg = err.error?.message || 'SUPER_ADMIN.ERR_GROSSISTE'; }
-        });
-    }
-
     openModules(store: Magasin): void {
         if (!store.id_magasin) return;
         this.router.navigate(['/super-admin/stores', store.id_magasin, 'modules']);
@@ -154,6 +141,10 @@ export class StoresListComponent implements OnInit {
 
     goToCompatEditors(): void {
         this.router.navigate(['/super-admin/compat-editors']);
+    }
+
+    goToWholesaleEditors(): void {
+        this.router.navigate(['/super-admin/wholesale-editors']);
     }
 
     logout(): void {

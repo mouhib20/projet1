@@ -7,7 +7,6 @@ export interface Magasin {
     telephone?: string | null;
     logo?: string | null;
     actif?: boolean;
-    est_grossiste?: boolean;
     date_creation?: string;
 }
 

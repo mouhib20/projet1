@@ -16,18 +16,20 @@ import { EmployeePermissionsComponent } from './vente/employees/permissions/empl
 import { CompatibiliteComponent } from './vente/compatibilite/compatibilite.component';
 import { WholesaleCatalogueComponent } from './vente/wholesale/catalogue/wholesale-catalogue.component';
 import { WholesaleOrdersComponent } from './vente/wholesale/mes-commandes/wholesale-orders.component';
-import { WholesaleAdminComponent } from './vente/wholesale/admin/wholesale-admin.component';
 import { authGuard } from './guards/auth.guard';
 import { adminGuard } from './guards/admin.guard';
 import { permissionGuard } from './guards/permission.guard';
 import { superAdminGuard } from './guards/super-admin.guard';
 import { compatEditorGuard } from './guards/compat-editor.guard';
-import { wholesaleAdminGuard } from './guards/wholesale-admin.guard';
+import { wholesaleEditorGuard } from './guards/wholesale-editor.guard';
 import { StoresListComponent } from './super-admin/stores-list/stores-list.component';
 import { StoreModulesComponent } from './super-admin/store-modules/store-modules.component';
 import { CompatEditorsComponent } from './super-admin/compat-editors/compat-editors.component';
+import { WholesaleEditorsComponent } from './super-admin/wholesale-editors/wholesale-editors.component';
 import { CompatGroupsComponent } from './compat-editor/compat-groups/compat-groups.component';
 import { SuggestionsComponent } from './compat-editor/suggestions/suggestions.component';
+import { WholesaleEditorProductsComponent } from './wholesale-editor/products/wholesale-editor-products.component';
+import { WholesaleEditorOrdersComponent } from './wholesale-editor/orders/wholesale-editor-orders.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -49,7 +51,6 @@ export const routes: Routes = [
             { path: 'compatibilite', component: CompatibiliteComponent, canActivate: [permissionGuard('compatibilite')] },
             { path: 'wholesale/catalogue', component: WholesaleCatalogueComponent, canActivate: [permissionGuard('wholesale')] },
             { path: 'wholesale/commandes', component: WholesaleOrdersComponent, canActivate: [permissionGuard('wholesale')] },
-            { path: 'wholesale/admin', component: WholesaleAdminComponent, canActivate: [wholesaleAdminGuard] },
             { path: 'employees', component: EmployeesComponent, canActivate: [adminGuard] },
             { path: 'employees/:id/permissions', component: EmployeePermissionsComponent, canActivate: [adminGuard] },
         ]
@@ -65,10 +66,19 @@ export const routes: Routes = [
         path: 'super-admin/compat-editors', component: CompatEditorsComponent, canActivate: [superAdminGuard],
     },
     {
+        path: 'super-admin/wholesale-editors', component: WholesaleEditorsComponent, canActivate: [superAdminGuard],
+    },
+    {
         path: 'compat-editor/groups', component: CompatGroupsComponent, canActivate: [compatEditorGuard],
     },
     {
         path: 'compat-editor/suggestions', component: SuggestionsComponent, canActivate: [compatEditorGuard],
+    },
+    {
+        path: 'wholesale-editor/products', component: WholesaleEditorProductsComponent, canActivate: [wholesaleEditorGuard],
+    },
+    {
+        path: 'wholesale-editor/orders', component: WholesaleEditorOrdersComponent, canActivate: [wholesaleEditorGuard],
     },
     { path: '**', redirectTo: '' }
 ];

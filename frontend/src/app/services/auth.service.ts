@@ -5,7 +5,7 @@ import { tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-export type UserRole = 'super_admin' | 'compat_editor' | 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
+export type UserRole = 'super_admin' | 'compat_editor' | 'wholesale_editor' | 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
 export type Departement = 'ventes' | 'stock' | 'reparation' | 'fournisseurs' | 'charges' | 'clients' | 'rapports' | 'compatibilite' | 'wholesale';
 export type PermissionAction = 'voir' | 'ajouter' | 'modifier' | 'supprimer';
 export type PermissionEntry = { voir: boolean; ajouter: boolean; modifier: boolean; supprimer: boolean };
@@ -28,7 +28,6 @@ export class AuthService {
                 localStorage.setItem('permissions', JSON.stringify(res.permissions || {}));
                 localStorage.setItem('id_magasin', res.id_magasin == null ? '' : String(res.id_magasin));
                 localStorage.setItem('modules', JSON.stringify(res.modules || {}));
-                localStorage.setItem('est_grossiste', res.est_grossiste ? '1' : '');
             })
         );
     }
@@ -41,7 +40,6 @@ export class AuthService {
         localStorage.removeItem('permissions');
         localStorage.removeItem('id_magasin');
         localStorage.removeItem('modules');
-        localStorage.removeItem('est_grossiste');
         this.router.navigate(['/login']);
     }
 
@@ -77,15 +75,14 @@ export class AuthService {
         return this.getRole() === 'compat_editor';
     }
 
-    /** null for super_admin (no store of its own), otherwise the account's store id. */
+    isWholesaleEditor(): boolean {
+        return this.getRole() === 'wholesale_editor';
+    }
+
+    /** null for super_admin/compat_editor/wholesale_editor (no store of their own), otherwise the account's store id. */
     getMagasinId(): number | null {
         const raw = localStorage.getItem('id_magasin');
         return raw ? Number(raw) : null;
-    }
-
-    /** True only for an employee of the ONE store Super Admin has flagged as the wholesale supplier. */
-    isMagasinGrossiste(): boolean {
-        return localStorage.getItem('est_grossiste') === '1';
     }
 
     getPermissions(): PermissionMatrix {

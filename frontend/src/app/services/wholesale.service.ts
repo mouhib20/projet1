@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
     WholesaleCatalogueEntry, WholesaleOrder, WholesaleOrderLineInput, WholesaleListing,
+    WholesaleListingSave, WholesaleEditor,
 } from '../models/wholesale.model';
 import { environment } from '../../environments/environment';
 
@@ -41,7 +42,7 @@ export class WholesaleService {
         return this.http.patch<void>(`${this.apiUrl}/orders/${id}/receive`, {});
     }
 
-    // ── Wholesale store's own side ──
+    // ── Wholesale-editor side (independent role, no store) ──
 
     confirmOrder(id: number, lignes: { id_ligne: number; qte_confirmee: number }[]): Observable<void> {
         return this.http.patch<void>(`${this.apiUrl}/orders/${id}/confirm`, { lignes });
@@ -59,15 +60,29 @@ export class WholesaleService {
         return this.http.get<WholesaleListing[]>(`${this.apiUrl}/listings`);
     }
 
-    createListing(dto: { id_article: number; prix_gros: number; qte_min?: number }): Observable<{ id: number }> {
+    createListing(dto: WholesaleListingSave): Observable<{ id: number }> {
         return this.http.post<{ id: number }>(`${this.apiUrl}/listings`, dto);
     }
 
-    updateListing(id: number, dto: { prix_gros?: number; qte_min?: number; visible?: boolean }): Observable<void> {
+    updateListing(id: number, dto: Partial<WholesaleListingSave>): Observable<void> {
         return this.http.put<void>(`${this.apiUrl}/listings/${id}`, dto);
     }
 
     deleteListing(id: number): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/listings/${id}`);
+    }
+
+    // ── Wholesale-editor accounts (super_admin) ──
+
+    getEditors(): Observable<WholesaleEditor[]> {
+        return this.http.get<WholesaleEditor[]>(`${this.apiUrl}/editors`);
+    }
+
+    createEditor(dto: WholesaleEditor): Observable<WholesaleEditor> {
+        return this.http.post<WholesaleEditor>(`${this.apiUrl}/editors`, dto);
+    }
+
+    setEditorStatut(id: number, actif: boolean): Observable<void> {
+        return this.http.patch<void>(`${this.apiUrl}/editors/${id}/statut`, { actif });
     }
 }
