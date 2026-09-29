@@ -33,11 +33,6 @@ export class MagasinsController {
         return this.service.setStatut(id, !!body.actif, auth);
     }
 
-    @Patch(':id/grossiste')
-    setGrossiste(@Param('id', ParseIntPipe) id: number, @Body() body: { grossiste: boolean }, @Headers('authorization') auth?: string) {
-        return this.service.setGrossiste(id, !!body.grossiste, auth);
-    }
-
     @Get(':id/modules')
     getModules(@Param('id', ParseIntPipe) id: number, @Headers('authorization') auth?: string) {
         return this.service.getModules(id, auth);

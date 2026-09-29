@@ -99,16 +99,6 @@ export class MagasinsService {
         return this.findOne(id, authorization);
     }
 
-    /** Flags this store as THE wholesale supplier; automatically un-flags any previously-flagged store (only one at a time). */
-    async setGrossiste(id: number, grossiste: boolean, authorization?: string): Promise<Magasin> {
-        await this.findOne(id, authorization);
-        await this.dataSource.transaction(async (m) => {
-            if (grossiste) await m.update(Magasin, { est_grossiste: true }, { est_grossiste: false });
-            await m.update(Magasin, id, { est_grossiste: !!grossiste });
-        });
-        return this.findOne(id, authorization);
-    }
-
     async setLogo(id: number, url: string, authorization?: string): Promise<Magasin> {
         await this.findOne(id, authorization);
         await this.repo.update(id, { logo: url });

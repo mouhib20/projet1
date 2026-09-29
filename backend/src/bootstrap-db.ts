@@ -3,7 +3,7 @@ import { join } from 'path';
 import { Client } from 'pg';
 import * as bcrypt from 'bcrypt';
 
-const ROLES = ['super_admin', 'compat_editor', 'admin', 'vendeur', 'vendeuse', 'visiteur'];
+const ROLES = ['super_admin', 'compat_editor', 'wholesale_editor', 'admin', 'vendeur', 'vendeuse', 'visiteur'];
 const DEPARTEMENTS = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports', 'compatibilite', 'wholesale'];
 const ATTENTE_MS = 3000;
 const ESSAIS = 15;
@@ -270,21 +270,39 @@ async function migrer(): Promise<void> {
         `);
         await client.query(`ALTER TABLE "article" ADD COLUMN IF NOT EXISTS "compat_group_id" integer`);
 
-        // Wholesale portal: the wholesale store is an ordinary magasin (est_grossiste flags
-        // which one); listings/orders/lines/events are new tables, shared across stores by
-        // design for the catalogue side, store-scoped for the ordering side.
-        await client.query(`ALTER TABLE "magasin" ADD COLUMN IF NOT EXISTS "est_grossiste" boolean NOT NULL DEFAULT false`);
+        // Wholesale portal: run by an independent wholesale_editor account (no store of its
+        // own, created directly by super_admin - same shape as compat_editor). Its products are
+        // a fully standalone catalogue (wholesale_listing IS the product, not a price wrapper
+        // around a store's article); orders/lines/events are store-scoped as before.
         await client.query(`
             CREATE TABLE IF NOT EXISTS "wholesale_listing" (
                 "id" SERIAL PRIMARY KEY,
-                "id_article" integer NOT NULL,
+                "designation" character varying(255) NOT NULL DEFAULT '',
+                "marque" character varying(255),
+                "modele" character varying(255),
+                "barcode" character varying(255),
+                "image" character varying(500),
+                "type" character varying(50),
+                "sous_categorie" character varying(255),
+                "quantite" integer NOT NULL DEFAULT 0,
                 "prix_gros" numeric(10,2) NOT NULL,
                 "qte_min" integer NOT NULL DEFAULT 1,
                 "visible" boolean NOT NULL DEFAULT true
             )
         `);
-        await client.query(`DO $$ BEGIN ALTER TABLE "wholesale_listing" ADD CONSTRAINT "wholesale_listing_id_article_fkey" FOREIGN KEY (id_article) REFERENCES article(id_article) ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
-        await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "wholesale_listing_article_idx" ON "wholesale_listing" ("id_article")`);
+        // Undo the earlier store-linked design (no real data depends on it yet - never released).
+        await client.query(`DO $$ BEGIN ALTER TABLE "wholesale_listing" DROP CONSTRAINT "wholesale_listing_id_article_fkey"; EXCEPTION WHEN undefined_object THEN NULL; END $$;`);
+        await client.query(`DROP INDEX IF EXISTS "wholesale_listing_article_idx"`);
+        await client.query(`ALTER TABLE "wholesale_listing" DROP COLUMN IF EXISTS "id_article"`);
+        await client.query(`ALTER TABLE "wholesale_listing" ADD COLUMN IF NOT EXISTS "designation" character varying(255) NOT NULL DEFAULT ''`);
+        await client.query(`ALTER TABLE "wholesale_listing" ADD COLUMN IF NOT EXISTS "marque" character varying(255)`);
+        await client.query(`ALTER TABLE "wholesale_listing" ADD COLUMN IF NOT EXISTS "modele" character varying(255)`);
+        await client.query(`ALTER TABLE "wholesale_listing" ADD COLUMN IF NOT EXISTS "barcode" character varying(255)`);
+        await client.query(`ALTER TABLE "wholesale_listing" ADD COLUMN IF NOT EXISTS "image" character varying(500)`);
+        await client.query(`ALTER TABLE "wholesale_listing" ADD COLUMN IF NOT EXISTS "type" character varying(50)`);
+        await client.query(`ALTER TABLE "wholesale_listing" ADD COLUMN IF NOT EXISTS "sous_categorie" character varying(255)`);
+        await client.query(`ALTER TABLE "wholesale_listing" ADD COLUMN IF NOT EXISTS "quantite" integer NOT NULL DEFAULT 0`);
+        await client.query(`ALTER TABLE "magasin" DROP COLUMN IF EXISTS "est_grossiste"`);
         await client.query(`
             CREATE TABLE IF NOT EXISTS "wholesale_order" (
                 "id" SERIAL PRIMARY KEY,

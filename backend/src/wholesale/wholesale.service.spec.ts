@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { WholesaleService } from './wholesale.service';
+import { Utilisateur } from '../users/user.entity';
 import { CaisseService } from '../caisse/caisse.service';
 import { StoreContextService } from '../store-context/store-context.service';
 
@@ -9,16 +11,19 @@ describe('WholesaleService', () => {
     let service: WholesaleService;
     let dataSource: { query: jest.Mock; transaction: jest.Mock };
     let caisseService: { acteurRequis: jest.Mock };
-    let storeContext: { requireMagasinId: jest.Mock };
+    let storeContext: { requireMagasinId: jest.Mock; getMagasinId: jest.Mock };
+    let usersRepo: any;
 
     beforeEach(async () => {
         dataSource = { query: jest.fn(), transaction: jest.fn() };
         caisseService = { acteurRequis: jest.fn().mockResolvedValue({ id: 1, nom: 'X', role: 'admin' }) };
-        storeContext = { requireMagasinId: jest.fn().mockReturnValue(1) };
+        storeContext = { requireMagasinId: jest.fn().mockReturnValue(1), getMagasinId: jest.fn().mockReturnValue(1) };
+        usersRepo = { findOne: jest.fn(), find: jest.fn(), save: jest.fn(), create: jest.fn((v) => v), update: jest.fn() };
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 WholesaleService,
+                { provide: getRepositoryToken(Utilisateur), useValue: usersRepo },
                 { provide: DataSource, useValue: dataSource },
                 { provide: CaisseService, useValue: caisseService },
                 { provide: StoreContextService, useValue: storeContext },
@@ -28,74 +33,93 @@ describe('WholesaleService', () => {
         service = module.get<WholesaleService>(WholesaleService);
     });
 
-    describe('getCatalogue() — shared across every store, availability subtracts reserved live', () => {
-        it('returns [] without querying the listing table when no store is flagged wholesale', async () => {
-            dataSource.query.mockResolvedValueOnce([]); // grossisteId() lookup: no row
-            const result = await service.getCatalogue();
-            expect(result).toEqual([]);
-            expect(dataSource.query).toHaveBeenCalledTimes(1);
-        });
-
+    describe('getCatalogue() — shared, standalone (no store owns the products)', () => {
         it('subtracts the reserved quantity from stock to compute quantite_disponible', async () => {
-            dataSource.query
-                .mockResolvedValueOnce([{ id_magasin: 5 }]) // grossisteId()
-                .mockResolvedValueOnce([{ id_listing: 1, prix_gros: '10.00', qte_min: 1, quantite_totale: 20, reserve: 8 }]);
+            dataSource.query.mockResolvedValueOnce([{ id_listing: 1, prix_gros: '10.00', qte_min: 1, quantite_totale: 20, reserve: 8 }]);
             const result = await service.getCatalogue('ecran');
             expect(result).toEqual([expect.objectContaining({ quantite_disponible: 12 })]);
         });
 
         it('never lets availability go negative', async () => {
-            dataSource.query
-                .mockResolvedValueOnce([{ id_magasin: 5 }])
-                .mockResolvedValueOnce([{ id_listing: 1, prix_gros: '10.00', qte_min: 1, quantite_totale: 3, reserve: 9 }]);
+            dataSource.query.mockResolvedValueOnce([{ id_listing: 1, prix_gros: '10.00', qte_min: 1, quantite_totale: 3, reserve: 9 }]);
             const result = await service.getCatalogue();
             expect(result[0].quantite_disponible).toBe(0);
         });
     });
 
-    describe('listerCommandes() — isolation: only the wholesale store sees every order', () => {
+    describe('listerCommandes() — isolation: only wholesale_editor / super_admin see every order', () => {
         it('a regular store only sees its own orders (id_magasin_demandeur filter applied)', async () => {
-            storeContext.requireMagasinId.mockReturnValue(1);
-            dataSource.query
-                .mockResolvedValueOnce([{ id_magasin: 5 }]) // grossisteId() -> store 5, caller is store 1
-                .mockResolvedValueOnce([]); // orders query
+            caisseService.acteurRequis.mockResolvedValue({ id: 2, nom: 'Employe', role: 'admin' });
+            storeContext.getMagasinId.mockReturnValue(1);
+            dataSource.query.mockResolvedValueOnce([]); // orders query
             await service.listerCommandes('Bearer x');
-            const [sql, params] = dataSource.query.mock.calls[1];
+            const [sql, params] = dataSource.query.mock.calls[0];
             expect(sql).toMatch(/WHERE o\.id_magasin_demandeur = \$1/);
             expect(params).toEqual([1]);
         });
 
-        it('the wholesale store itself sees every order (no WHERE filter)', async () => {
-            storeContext.requireMagasinId.mockReturnValue(5);
-            dataSource.query
-                .mockResolvedValueOnce([{ id_magasin: 5 }]) // grossisteId() -> store 5, caller IS store 5
-                .mockResolvedValueOnce([]);
+        it('wholesale_editor sees every order (no WHERE filter), even with no store of its own', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'wholesale_editor' });
+            storeContext.getMagasinId.mockReturnValue(null);
+            dataSource.query.mockResolvedValueOnce([]);
             await service.listerCommandes('Bearer x');
-            const [sql, params] = dataSource.query.mock.calls[1];
+            const [sql, params] = dataSource.query.mock.calls[0];
             expect(sql).not.toMatch(/WHERE o\.id_magasin_demandeur/);
             expect(params).toEqual([]);
         });
+
+        it('super_admin also sees every order', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'SA', role: 'super_admin' });
+            storeContext.getMagasinId.mockReturnValue(null);
+            dataSource.query.mockResolvedValueOnce([]);
+            await service.listerCommandes('Bearer x');
+            const [sql] = dataSource.query.mock.calls[0];
+            expect(sql).not.toMatch(/WHERE o\.id_magasin_demandeur/);
+        });
     });
 
-    describe('estMagasinGrossisteRequis (via listerOffres) — store-identity check, not role/permission', () => {
-        it('rejects a store that is not the flagged wholesale store, even with wholesale permission', async () => {
-            storeContext.requireMagasinId.mockReturnValue(1);
-            dataSource.query.mockResolvedValueOnce([{ id_magasin: 5 }]); // grossisteId() -> store 5, caller is store 1
+    describe('editeurRequis (via listerOffres) — wholesale_editor / super_admin only, store permission never suffices', () => {
+        it('rejects a regular store admin even with wholesale permission', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
             await expect(service.listerOffres('Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
         });
 
-        it('rejects every store when no wholesale store is configured at all', async () => {
-            storeContext.requireMagasinId.mockReturnValue(1);
-            dataSource.query.mockResolvedValueOnce([]); // grossisteId() -> none
-            await expect(service.listerOffres('Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
-        });
-
-        it('allows the flagged wholesale store itself', async () => {
-            storeContext.requireMagasinId.mockReturnValue(5);
-            dataSource.query
-                .mockResolvedValueOnce([{ id_magasin: 5 }]) // grossisteId()
-                .mockResolvedValueOnce([]); // listerOffres query itself
+        it('allows wholesale_editor', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'wholesale_editor' });
+            dataSource.query.mockResolvedValueOnce([]);
             await expect(service.listerOffres('Bearer x')).resolves.toEqual([]);
+        });
+
+        it('allows super_admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'SA', role: 'super_admin' });
+            dataSource.query.mockResolvedValueOnce([]);
+            await expect(service.listerOffres('Bearer x')).resolves.toEqual([]);
+        });
+    });
+
+    describe('superAdminRequis (via creerEditeur) — super_admin only, not wholesale_editor itself', () => {
+        it('rejects wholesale_editor from creating another editor account', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'wholesale_editor' });
+            await expect(
+                service.creerEditeur({ nom: 'X', username: 'x', password: 'password123' }, 'Bearer x'),
+            ).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('allows super_admin to create a wholesale_editor account with no store', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'SA', role: 'super_admin' });
+            usersRepo.findOne.mockResolvedValue(null);
+            usersRepo.save.mockImplementation((v: any) => Promise.resolve({ ...v, id: 5, password: 'hashed' }));
+            const result = await service.creerEditeur({ nom: 'Nouveau', username: 'nouveau', password: 'password123' }, 'Bearer x');
+            expect(result).not.toHaveProperty('password');
+            expect(usersRepo.save).toHaveBeenCalledWith(expect.objectContaining({ role: 'wholesale_editor', id_magasin: null }));
+        });
+
+        it('rejects a duplicate username', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'SA', role: 'super_admin' });
+            usersRepo.findOne.mockResolvedValue({ id: 2, username: 'nouveau' });
+            await expect(
+                service.creerEditeur({ nom: 'Nouveau', username: 'nouveau', password: 'password123' }, 'Bearer x'),
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
     });
 

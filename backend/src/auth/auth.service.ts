@@ -26,11 +26,9 @@ export class AuthService {
         if (!valid) throw new UnauthorizedException('Mot de passe incorrect');
         if (!user.actif) throw new ForbiddenException('Compte suspendu.');
 
-        let estGrossiste = false;
         if (user.id_magasin != null) {
-            const [magasin] = await this.dataSource.query(`SELECT actif, est_grossiste FROM magasin WHERE id_magasin = $1`, [user.id_magasin]);
+            const [magasin] = await this.dataSource.query(`SELECT actif FROM magasin WHERE id_magasin = $1`, [user.id_magasin]);
             if (!magasin || !magasin.actif) throw new ForbiddenException('Ce magasin est suspendu.');
-            estGrossiste = !!magasin.est_grossiste;
         }
 
         const payload = { sub: user.id, username: user.username, role: user.role, id_magasin: user.id_magasin };
@@ -48,7 +46,6 @@ export class AuthService {
             username: user.username,
             nom: user.nom,
             id_magasin: user.id_magasin,
-            est_grossiste: estGrossiste,
             permissions: await this.permissionsService.getMatrix(user.id),
             modules,
         };

@@ -1,11 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { Utilisateur } from '../users/user.entity';
 import { CaisseService, Acteur } from '../caisse/caisse.service';
 import { StoreContextService } from '../store-context/store-context.service';
 
 @Injectable()
 export class WholesaleService {
     constructor(
+        @InjectRepository(Utilisateur)
+        private readonly usersRepo: Repository<Utilisateur>,
         private readonly dataSource: DataSource,
         private readonly caisseService: CaisseService,
         private readonly storeContext: StoreContextService,
@@ -13,25 +18,22 @@ export class WholesaleService {
 
     // ── Access checks ────────────────────────────────────────────
 
-    /** The store currently flagged as THE wholesale supplier, or null if none is set. */
-    private async grossisteId(): Promise<number | null> {
-        const [row] = await this.dataSource.query(`SELECT id_magasin FROM magasin WHERE est_grossiste = true LIMIT 1`);
-        return row ? row.id_magasin : null;
+    private async superAdminRequis(authorization?: string): Promise<Acteur> {
+        const acteur = await this.caisseService.acteurRequis(authorization);
+        if (acteur.role !== 'super_admin') throw new ForbiddenException('Action réservée à un super administrateur.');
+        return acteur;
     }
 
     /**
-     * Managing listings/all orders is restricted to employees of the ONE store currently
-     * flagged as the wholesale supplier - checked by store identity, not a separate role
-     * (mirrors CompatibilityService.editeurRequis, but compares store id instead of user role).
+     * Managing the wholesale catalogue and processing orders: wholesale_editor accounts, or
+     * super_admin - an independent role with no store of its own, same shape as compat_editor.
      */
-    private async estMagasinGrossisteRequis(authorization?: string): Promise<{ id_magasin: number; acteur: Acteur }> {
+    private async editeurRequis(authorization?: string): Promise<Acteur> {
         const acteur = await this.caisseService.acteurRequis(authorization);
-        const id_magasin = this.storeContext.requireMagasinId();
-        const grossisteId = await this.grossisteId();
-        if (!grossisteId || id_magasin !== grossisteId) {
-            throw new ForbiddenException('Action réservée aux employés du magasin de gros.');
+        if (acteur.role !== 'wholesale_editor' && acteur.role !== 'super_admin') {
+            throw new ForbiddenException('Action réservée aux gestionnaires de la vente en gros.');
         }
-        return { id_magasin, acteur };
+        return acteur;
     }
 
     /** The order, provided it belongs to the caller's own store; never leaks another store's order. */
@@ -55,29 +57,61 @@ export class WholesaleService {
         });
     }
 
+    // ── Wholesale-editor accounts (super_admin only) ────────────
+
+    async creerEditeur(dto: { nom: string; username: string; password: string }, authorization?: string): Promise<Omit<Utilisateur, 'password'>> {
+        await this.superAdminRequis(authorization);
+        const nom = String(dto.nom ?? '').trim();
+        const username = String(dto.username ?? '').trim();
+        const password = String(dto.password ?? '');
+        if (!nom) throw new BadRequestException('Le nom est obligatoire.');
+        if (!username) throw new BadRequestException("Le nom d'utilisateur est obligatoire.");
+        if (password.length < 6) throw new BadRequestException('Le mot de passe doit contenir au moins 6 caractères.');
+
+        const existant = await this.usersRepo.findOne({ where: { username } });
+        if (existant) throw new BadRequestException(`Le nom d'utilisateur "${username}" est déjà utilisé.`);
+
+        const editeur = await this.usersRepo.save(this.usersRepo.create({
+            nom, username, password: await bcrypt.hash(password, 10),
+            role: 'wholesale_editor', actif: true, id_magasin: null,
+        }));
+        const { password: _pw, ...reste } = editeur;
+        return reste;
+    }
+
+    async listerEditeurs(authorization?: string): Promise<Omit<Utilisateur, 'password'>[]> {
+        await this.superAdminRequis(authorization);
+        const editeurs = await this.usersRepo.find({ where: { role: 'wholesale_editor' }, order: { id: 'DESC' } });
+        return editeurs.map(({ password, ...reste }) => reste);
+    }
+
+    async suspendreEditeur(id: number, actif: boolean, authorization?: string): Promise<void> {
+        await this.superAdminRequis(authorization);
+        const editeur = await this.usersRepo.findOne({ where: { id, role: 'wholesale_editor' } });
+        if (!editeur) throw new NotFoundException(`Éditeur #${id} introuvable`);
+        await this.usersRepo.update(id, { actif: !!actif });
+    }
+
     // ── Catalogue (shared, read for every store) ────────────────
 
     /** Reserved = sum of confirmed quantities across orders not yet sent/cancelled/received. */
     private static readonly ETATS_RESERVES = ['confirmee', 'ajustee', 'en_preparation'];
 
     async getCatalogue(q?: string): Promise<any[]> {
-        const grossisteId = await this.grossisteId();
-        if (!grossisteId) return [];
         const like = `%${String(q ?? '').trim()}%`;
         const rows = await this.dataSource.query(
-            `SELECT wl.id AS id_listing, wl.prix_gros, wl.qte_min, a.id_article, a.designation, a.marque,
-                    a.modele, a.barcode, a.image, a.type, a.sous_categorie, a.quantite AS quantite_totale,
+            `SELECT wl.id AS id_listing, wl.designation, wl.marque, wl.modele, wl.barcode, wl.image,
+                    wl.type, wl.sous_categorie, wl.prix_gros, wl.qte_min, wl.quantite AS quantite_totale,
                     COALESCE((
                         SELECT SUM(ol.qte_confirmee) FROM wholesale_order_line ol
                           JOIN wholesale_order o ON o.id = ol.id_order
-                         WHERE ol.id_listing = wl.id AND o.statut = ANY($3)
+                         WHERE ol.id_listing = wl.id AND o.statut = ANY($2)
                     ), 0) AS reserve
                FROM wholesale_listing wl
-               JOIN article a ON a.id_article = wl.id_article
-              WHERE wl.visible = true AND a.id_magasin = $1
-                AND (a.designation ILIKE $2 OR a.marque ILIKE $2 OR a.modele ILIKE $2 OR a.barcode ILIKE $2)
-              ORDER BY a.designation`,
-            [grossisteId, like, WholesaleService.ETATS_RESERVES],
+              WHERE wl.visible = true
+                AND (wl.designation ILIKE $1 OR wl.marque ILIKE $1 OR wl.modele ILIKE $1 OR wl.barcode ILIKE $1)
+              ORDER BY wl.designation`,
+            [like, WholesaleService.ETATS_RESERVES],
         );
         return rows.map((r: any) => ({
             ...r,
@@ -95,18 +129,12 @@ export class WholesaleService {
         const acteur = await this.caisseService.acteurRequis(authorization);
         if (!dto.lignes || dto.lignes.length === 0) throw new BadRequestException('Le panier est vide.');
 
-        const grossisteId = await this.grossisteId();
-        if (!grossisteId) throw new BadRequestException("Aucun magasin de gros n'est configuré actuellement.");
-        if (id_magasin === grossisteId) throw new BadRequestException('Le magasin de gros ne peut pas commander de lui-même.');
-
         return this.dataSource.transaction(async (m) => {
             let total = 0;
             const aInserer: { id_listing: number; qte: number; prix: number }[] = [];
             for (const l of dto.lignes) {
                 const [listing] = await m.query(
-                    `SELECT wl.id, wl.prix_gros, wl.qte_min, wl.visible, a.quantite AS quantite_totale
-                       FROM wholesale_listing wl JOIN article a ON a.id_article = wl.id_article
-                      WHERE wl.id = $1`,
+                    `SELECT id, prix_gros, qte_min, visible, quantite FROM wholesale_listing WHERE id = $1`,
                     [l.id_listing],
                 );
                 if (!listing || !listing.visible) throw new NotFoundException(`Offre #${l.id_listing} introuvable`);
@@ -119,7 +147,7 @@ export class WholesaleService {
                       WHERE ol.id_listing = $1 AND o.statut = ANY($2)`,
                     [l.id_listing, WholesaleService.ETATS_RESERVES],
                 );
-                const disponible = Number(listing.quantite_totale) - Number(reserve);
+                const disponible = Number(listing.quantite) - Number(reserve);
                 if (l.qte > disponible) {
                     throw new BadRequestException(`Stock insuffisant pour cette pièce. Disponible : ${disponible}.`);
                 }
@@ -146,29 +174,27 @@ export class WholesaleService {
         });
     }
 
-    /** The wholesale store's own staff see every order; any other store sees only its own. */
+    /** wholesale_editor / super_admin see every order; any store sees only its own. */
     async listerCommandes(authorization?: string): Promise<any[]> {
-        const id_magasin = this.storeContext.requireMagasinId();
-        await this.caisseService.acteurRequis(authorization);
-        const grossisteId = await this.grossisteId();
-        const estGrossiste = grossisteId != null && id_magasin === grossisteId;
+        const id_magasin = this.storeContext.getMagasinId();
+        const acteur = await this.caisseService.acteurRequis(authorization);
+        const estEditeur = acteur.role === 'wholesale_editor' || acteur.role === 'super_admin';
 
         const rows = await this.dataSource.query(
             `SELECT o.id, o.id_magasin_demandeur, mag.nom AS magasin_nom, o.statut, o.total, o.note,
                     o.methode_reception, o.date_creation, o.date_confirmation, o.date_envoi, o.date_reception
                FROM wholesale_order o
                JOIN magasin mag ON mag.id_magasin = o.id_magasin_demandeur
-              ${estGrossiste ? '' : 'WHERE o.id_magasin_demandeur = $1'}
+              ${estEditeur ? '' : 'WHERE o.id_magasin_demandeur = $1'}
               ORDER BY o.date_creation DESC`,
-            estGrossiste ? [] : [id_magasin],
+            estEditeur ? [] : [id_magasin],
         );
         for (const o of rows) {
             o.lignes = await this.dataSource.query(
                 `SELECT ol.id, ol.id_listing, ol.qte_demandee, ol.qte_confirmee, ol.prix_unitaire,
-                        a.designation, a.marque, a.modele, a.image
+                        wl.designation, wl.marque, wl.modele, wl.image
                    FROM wholesale_order_line ol
                    JOIN wholesale_listing wl ON wl.id = ol.id_listing
-                   JOIN article a ON a.id_article = wl.id_article
                   WHERE ol.id_order = $1`,
                 [o.id],
             );
@@ -204,11 +230,10 @@ export class WholesaleService {
             if (order.statut !== 'envoyee') throw new BadRequestException("Cette commande n'a pas encore été envoyée.");
 
             const lignes = await m.query(
-                `SELECT ol.qte_confirmee, ol.prix_unitaire, a.designation, a.marque, a.modele, a.barcode,
-                        a.image, a.type, a.sous_categorie, a.qte_min
+                `SELECT ol.qte_confirmee, ol.prix_unitaire, wl.designation, wl.marque, wl.modele, wl.barcode,
+                        wl.image, wl.type, wl.sous_categorie, wl.qte_min
                    FROM wholesale_order_line ol
                    JOIN wholesale_listing wl ON wl.id = ol.id_listing
-                   JOIN article a ON a.id_article = wl.id_article
                   WHERE ol.id_order = $1`,
                 [id],
             );
@@ -241,10 +266,10 @@ export class WholesaleService {
         });
     }
 
-    // ── Orders: wholesale store's own side ──────────────────────
+    // ── Orders: wholesale-editor side ───────────────────────────
 
     async confirmerCommande(id: number, lignes: { id_ligne: number; qte_confirmee: number }[], authorization?: string): Promise<void> {
-        const { acteur } = await this.estMagasinGrossisteRequis(authorization);
+        const acteur = await this.editeurRequis(authorization);
         await this.dataSource.transaction(async (m) => {
             const [order] = await m.query(`SELECT * FROM wholesale_order WHERE id = $1 FOR UPDATE`, [id]);
             if (!order) throw new NotFoundException(`Commande #${id} introuvable`);
@@ -275,35 +300,34 @@ export class WholesaleService {
     }
 
     async demarrerPreparation(id: number, authorization?: string): Promise<void> {
-        await this.estMagasinGrossisteRequis(authorization);
+        await this.editeurRequis(authorization);
         const [order] = await this.dataSource.query(`SELECT statut FROM wholesale_order WHERE id = $1`, [id]);
         if (!order) throw new NotFoundException(`Commande #${id} introuvable`);
         if (order.statut !== 'confirmee') throw new BadRequestException('Cette commande doit être confirmée avant de démarrer la préparation.');
         await this.changerStatut(id, 'en_preparation', authorization);
     }
 
-    /** Deducts the wholesale store's own stock for real, row-locked (two sends can't both succeed on the last unit). */
+    /** Deducts the wholesale catalogue's own stock for real, row-locked. */
     async envoyerCommande(id: number, authorization?: string): Promise<void> {
-        const { acteur } = await this.estMagasinGrossisteRequis(authorization);
+        const acteur = await this.editeurRequis(authorization);
         await this.dataSource.transaction(async (m) => {
             const [order] = await m.query(`SELECT * FROM wholesale_order WHERE id = $1 FOR UPDATE`, [id]);
             if (!order) throw new NotFoundException(`Commande #${id} introuvable`);
             if (order.statut !== 'en_preparation') throw new BadRequestException("Cette commande doit être en préparation avant l'envoi.");
 
             const lignes = await m.query(
-                `SELECT ol.qte_confirmee, wl.id_article FROM wholesale_order_line ol
-                   JOIN wholesale_listing wl ON wl.id = ol.id_listing WHERE ol.id_order = $1`,
+                `SELECT qte_confirmee, id_listing FROM wholesale_order_line WHERE id_order = $1`,
                 [id],
             );
             for (const l of lignes) {
-                const [article] = await m.query(
-                    `SELECT quantite, designation FROM article WHERE id_article = $1 FOR UPDATE`,
-                    [l.id_article],
+                const [listing] = await m.query(
+                    `SELECT quantite, designation FROM wholesale_listing WHERE id = $1 FOR UPDATE`,
+                    [l.id_listing],
                 );
-                if (!article || Number(article.quantite) < Number(l.qte_confirmee)) {
-                    throw new BadRequestException(`Stock insuffisant pour "${article?.designation || l.id_article}".`);
+                if (!listing || Number(listing.quantite) < Number(l.qte_confirmee)) {
+                    throw new BadRequestException(`Stock insuffisant pour "${listing?.designation || l.id_listing}".`);
                 }
-                await m.query(`UPDATE article SET quantite = quantite - $1 WHERE id_article = $2`, [l.qte_confirmee, l.id_article]);
+                await m.query(`UPDATE wholesale_listing SET quantite = quantite - $1 WHERE id = $2`, [l.qte_confirmee, l.id_listing]);
             }
             await m.query(`UPDATE wholesale_order SET statut = 'envoyee', date_envoi = now() WHERE id = $1`, [id]);
             await m.query(
@@ -313,46 +337,58 @@ export class WholesaleService {
         });
     }
 
-    // ── Listings management (wholesale store's own side) ────────
+    // ── Product catalogue management (wholesale-editor side) ────
 
     async listerOffres(authorization?: string): Promise<any[]> {
-        await this.estMagasinGrossisteRequis(authorization);
-        return this.dataSource.query(
-            `SELECT wl.id, wl.prix_gros, wl.qte_min, wl.visible, a.id_article, a.designation, a.marque, a.modele, a.quantite, a.image
-               FROM wholesale_listing wl JOIN article a ON a.id_article = wl.id_article
-              ORDER BY a.designation`,
-        );
+        await this.editeurRequis(authorization);
+        return this.dataSource.query(`SELECT * FROM wholesale_listing ORDER BY designation`);
     }
 
-    async creerOffre(dto: { id_article: number; prix_gros: number; qte_min?: number }, authorization?: string): Promise<{ id: number }> {
-        const { id_magasin } = await this.estMagasinGrossisteRequis(authorization);
-        const [article] = await this.dataSource.query(
-            `SELECT id_article FROM article WHERE id_article = $1 AND id_magasin = $2`,
-            [dto.id_article, id_magasin],
-        );
-        if (!article) throw new NotFoundException(`Article #${dto.id_article} introuvable`);
+    async creerOffre(
+        dto: {
+            designation: string; marque?: string; modele?: string; barcode?: string; image?: string;
+            type?: string; sous_categorie?: string; quantite?: number; prix_gros: number; qte_min?: number;
+        },
+        authorization?: string,
+    ): Promise<{ id: number }> {
+        await this.editeurRequis(authorization);
+        const designation = String(dto.designation ?? '').trim();
+        if (!designation) throw new BadRequestException('La désignation est obligatoire.');
         if (!(Number(dto.prix_gros) > 0)) throw new BadRequestException('Le prix de gros doit être supérieur à 0.');
         const rows = await this.dataSource.query(
-            `INSERT INTO wholesale_listing (id_article, prix_gros, qte_min) VALUES ($1, $2, $3) RETURNING id`,
-            [dto.id_article, dto.prix_gros, dto.qte_min || 1],
+            `INSERT INTO wholesale_listing (designation, marque, modele, barcode, image, type, sous_categorie, quantite, prix_gros, qte_min)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+            [designation, dto.marque || null, dto.modele || null, dto.barcode || null, dto.image || null,
+                dto.type || null, dto.sous_categorie || null, dto.quantite || 0, dto.prix_gros, dto.qte_min || 1],
         );
         return { id: rows[0].id };
     }
 
-    async modifierOffre(id: number, dto: { prix_gros?: number; qte_min?: number; visible?: boolean }, authorization?: string): Promise<void> {
-        await this.estMagasinGrossisteRequis(authorization);
+    async modifierOffre(
+        id: number,
+        dto: {
+            designation?: string; marque?: string; modele?: string; barcode?: string; image?: string;
+            type?: string; sous_categorie?: string; quantite?: number; prix_gros?: number; qte_min?: number; visible?: boolean;
+        },
+        authorization?: string,
+    ): Promise<void> {
+        await this.editeurRequis(authorization);
         const res = await this.dataSource.query(
             `UPDATE wholesale_listing SET
-                prix_gros = COALESCE($2, prix_gros), qte_min = COALESCE($3, qte_min), visible = COALESCE($4, visible)
+                designation = COALESCE($2, designation), marque = COALESCE($3, marque), modele = COALESCE($4, modele),
+                barcode = COALESCE($5, barcode), image = COALESCE($6, image), type = COALESCE($7, type),
+                sous_categorie = COALESCE($8, sous_categorie), quantite = COALESCE($9, quantite),
+                prix_gros = COALESCE($10, prix_gros), qte_min = COALESCE($11, qte_min), visible = COALESCE($12, visible)
              WHERE id = $1`,
-            [id, dto.prix_gros ?? null, dto.qte_min ?? null, dto.visible ?? null],
+            [id, dto.designation ?? null, dto.marque ?? null, dto.modele ?? null, dto.barcode ?? null, dto.image ?? null,
+                dto.type ?? null, dto.sous_categorie ?? null, dto.quantite ?? null, dto.prix_gros ?? null, dto.qte_min ?? null, dto.visible ?? null],
         );
         const affected = Array.isArray(res) ? res[1] : 0;
         if (!affected) throw new NotFoundException(`Offre #${id} introuvable`);
     }
 
     async supprimerOffre(id: number, authorization?: string): Promise<void> {
-        await this.estMagasinGrossisteRequis(authorization);
+        await this.editeurRequis(authorization);
         const res = await this.dataSource.query(`DELETE FROM wholesale_listing WHERE id = $1`, [id]);
         const affected = Array.isArray(res) ? res[1] : 0;
         if (!affected) throw new NotFoundException(`Offre #${id} introuvable`);

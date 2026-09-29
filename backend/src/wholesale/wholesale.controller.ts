@@ -47,10 +47,12 @@ export class WholesaleController {
         return this.service.confirmerReception(id, auth);
     }
 
-    // ── Wholesale store's own side: identity checked internally (estMagasinGrossisteRequis) ──
+    // ── Wholesale-editor side: independent role, checked internally (editeurRequis) —
+    // no @RequirePermission here, same convention as CompatibilityController's editor routes
+    // (compat_editor/wholesale_editor accounts have no store, so the department-permission
+    // matrix doesn't apply to them at all).
 
     @Patch('orders/:id/confirm')
-    @RequirePermission('wholesale', 'ajouter')
     confirmerCommande(
         @Param('id', ParseIntPipe) id: number,
         @Body() body: { lignes: { id_ligne: number; qte_confirmee: number }[] },
@@ -60,45 +62,66 @@ export class WholesaleController {
     }
 
     @Patch('orders/:id/start-preparation')
-    @RequirePermission('wholesale', 'ajouter')
     demarrerPreparation(@Param('id', ParseIntPipe) id: number, @Headers('authorization') auth?: string) {
         return this.service.demarrerPreparation(id, auth);
     }
 
     @Patch('orders/:id/send')
-    @RequirePermission('wholesale', 'ajouter')
     envoyerCommande(@Param('id', ParseIntPipe) id: number, @Headers('authorization') auth?: string) {
         return this.service.envoyerCommande(id, auth);
     }
 
     @Get('listings')
-    @RequirePermission('wholesale', 'ajouter')
     listerOffres(@Headers('authorization') auth?: string) {
         return this.service.listerOffres(auth);
     }
 
     @Post('listings')
-    @RequirePermission('wholesale', 'ajouter')
     creerOffre(
-        @Body() body: { id_article: number; prix_gros: number; qte_min?: number },
+        @Body() body: {
+            designation: string; marque?: string; modele?: string; barcode?: string; image?: string;
+            type?: string; sous_categorie?: string; quantite?: number; prix_gros: number; qte_min?: number;
+        },
         @Headers('authorization') auth?: string,
     ) {
         return this.service.creerOffre(body, auth);
     }
 
     @Put('listings/:id')
-    @RequirePermission('wholesale', 'modifier')
     modifierOffre(
         @Param('id', ParseIntPipe) id: number,
-        @Body() body: { prix_gros?: number; qte_min?: number; visible?: boolean },
+        @Body() body: {
+            designation?: string; marque?: string; modele?: string; barcode?: string; image?: string;
+            type?: string; sous_categorie?: string; quantite?: number; prix_gros?: number; qte_min?: number; visible?: boolean;
+        },
         @Headers('authorization') auth?: string,
     ) {
         return this.service.modifierOffre(id, body, auth);
     }
 
     @Delete('listings/:id')
-    @RequirePermission('wholesale', 'supprimer')
     supprimerOffre(@Param('id', ParseIntPipe) id: number, @Headers('authorization') auth?: string) {
         return this.service.supprimerOffre(id, auth);
+    }
+
+    // ── Wholesale-editor accounts (super_admin only, checked internally) ────────
+
+    @Post('editors')
+    creerEditeur(@Body() body: { nom: string; username: string; password: string }, @Headers('authorization') auth?: string) {
+        return this.service.creerEditeur(body, auth);
+    }
+
+    @Get('editors')
+    listerEditeurs(@Headers('authorization') auth?: string) {
+        return this.service.listerEditeurs(auth);
+    }
+
+    @Patch('editors/:id/statut')
+    suspendreEditeur(
+        @Param('id', ParseIntPipe) id: number,
+        @Body('actif') actif: boolean,
+        @Headers('authorization') auth?: string,
+    ) {
+        return this.service.suspendreEditeur(id, actif, auth);
     }
 }
