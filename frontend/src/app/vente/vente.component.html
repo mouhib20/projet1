@@ -31,9 +31,9 @@
                 'SIDEBAR.SUPPLIERS' | translate }}</a>
             <a *ngIf="auth.hasAnyPermission('fournisseurs')" routerLink="factures" routerLinkActive="active" class="nav-link">📄 {{
                 'SIDEBAR.INVOICES' | translate }}</a>
-            <a *ngIf="auth.hasAnyPermission('wholesale')" routerLink="wholesale/catalogue" routerLinkActive="active" class="nav-link">📦 {{
+            <a *ngIf="auth.hasAnyPermission('wholesale')" routerLink="/wholesale/catalogue" class="nav-link">📦 {{
                 'SIDEBAR.WHOLESALE_CATALOG' | translate }}</a>
-            <a *ngIf="auth.hasAnyPermission('wholesale')" routerLink="wholesale/commandes" routerLinkActive="active" class="nav-link">🧾 {{
+            <a *ngIf="auth.hasAnyPermission('wholesale')" routerLink="/wholesale/commandes" class="nav-link">🧾 {{
                 'SIDEBAR.WHOLESALE_ORDERS' | translate }}</a>
             <a *ngIf="auth.isAdmin()" routerLink="employees" routerLinkActive="active" class="nav-link">👤 {{
                 'SIDEBAR.EMPLOYEES' | translate }}</a>

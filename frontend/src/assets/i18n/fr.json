@@ -895,7 +895,9 @@
         "SUBMIT_ORDER": "Envoyer la commande",
         "SUBMITTING": "Envoi en cours...",
         "ORDER_SUCCESS": "Commande envoyée avec succès",
-        "ERR_ORDER": "Erreur lors de l'envoi de la commande"
+        "ERR_ORDER": "Erreur lors de l'envoi de la commande",
+        "BACK_TO_STORE": "Retour au magasin",
+        "ORDERS_LINK": "Mes commandes"
     },
     "WHOLESALE_ORDERS": {
         "TITLE": "Mes commandes de gros",
@@ -914,7 +916,9 @@
         "ADJUSTED_HINT": "Le magasin de gros a réduit certaines quantités. Merci de vérifier avant de valider.",
         "ACCEPT_ADJUSTMENT": "Accepter l'ajustement",
         "CONFIRM_RECEIPT": "Confirmer la réception",
-        "CANCEL": "Annuler"
+        "CANCEL": "Annuler",
+        "BACK_TO_STORE": "Retour au magasin",
+        "CATALOG_LINK": "Catalogue"
     },
     "WHOLESALE_EDITORS": {
         "TITLE": "Éditeurs de la vente en gros",

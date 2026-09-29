@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { WholesaleService } from '../../../services/wholesale.service';
-import { articleImageUrl } from '../../../services/article.service';
-import { WholesaleCatalogueEntry } from '../../../models/wholesale.model';
+import { WholesaleService } from '../../services/wholesale.service';
+import { AuthService } from '../../services/auth.service';
+import { articleImageUrl } from '../../services/article.service';
+import { WholesaleCatalogueEntry } from '../../models/wholesale.model';
 
 interface CartLine {
     entry: WholesaleCatalogueEntry;
@@ -32,7 +34,7 @@ export class WholesaleCatalogueComponent implements OnInit {
     submitSuccess = false;
     lastOrderId: number | null = null;
 
-    constructor(private wholesaleService: WholesaleService) { }
+    constructor(private wholesaleService: WholesaleService, public auth: AuthService, private router: Router) { }
 
     ngOnInit(): void {
         this.load();
@@ -112,5 +114,17 @@ export class WholesaleCatalogueComponent implements OnInit {
                 this.submitError = err.error?.message || 'WHOLESALE_CATALOG.ERR_ORDER';
             }
         });
+    }
+
+    goToOrders(): void {
+        this.router.navigate(['/wholesale/commandes']);
+    }
+
+    backToStore(): void {
+        this.router.navigate(['/vente/accueil']);
+    }
+
+    logout(): void {
+        this.auth.logout();
     }
 }

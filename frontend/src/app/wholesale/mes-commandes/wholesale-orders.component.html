@@ -2,8 +2,13 @@
 
     <div class="page-header">
         <div>
+            <button class="btn btn-secondary btn-sm" (click)="backToStore()">← {{ 'WHOLESALE_ORDERS.BACK_TO_STORE' | translate }}</button>
             <div class="page-title">🧾 {{ 'WHOLESALE_ORDERS.TITLE' | translate }}</div>
             <div class="page-subtitle">{{ 'WHOLESALE_ORDERS.SUBTITLE' | translate }}</div>
+        </div>
+        <div class="header-boutons">
+            <button class="btn btn-secondary" (click)="goToCatalogue()">📦 {{ 'WHOLESALE_ORDERS.CATALOG_LINK' | translate }}</button>
+            <button class="btn btn-secondary" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
         </div>
     </div>
 

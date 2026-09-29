@@ -895,7 +895,9 @@
         "SUBMIT_ORDER": "Submit order",
         "SUBMITTING": "Submitting...",
         "ORDER_SUCCESS": "Order submitted successfully",
-        "ERR_ORDER": "Error submitting the order"
+        "ERR_ORDER": "Error submitting the order",
+        "BACK_TO_STORE": "Back to store",
+        "ORDERS_LINK": "My Orders"
     },
     "WHOLESALE_ORDERS": {
         "TITLE": "My Wholesale Orders",
@@ -914,7 +916,9 @@
         "ADJUSTED_HINT": "The wholesale store reduced some quantities. Please review before confirming.",
         "ACCEPT_ADJUSTMENT": "Accept adjustment",
         "CONFIRM_RECEIPT": "Confirm receipt",
-        "CANCEL": "Cancel"
+        "CANCEL": "Cancel",
+        "BACK_TO_STORE": "Back to store",
+        "CATALOG_LINK": "Catalog"
     },
     "WHOLESALE_EDITORS": {
         "TITLE": "Wholesale Editors",

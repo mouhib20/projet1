@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { WholesaleService } from '../../../services/wholesale.service';
-import { AuthService } from '../../../services/auth.service';
-import { articleImageUrl } from '../../../services/article.service';
-import { WholesaleOrder } from '../../../models/wholesale.model';
+import { WholesaleService } from '../../services/wholesale.service';
+import { AuthService } from '../../services/auth.service';
+import { articleImageUrl } from '../../services/article.service';
+import { WholesaleOrder } from '../../models/wholesale.model';
 
 @Component({
     selector: 'app-wholesale-orders',
@@ -20,7 +21,7 @@ export class WholesaleOrdersComponent implements OnInit {
     actionError = '';
     busyOrderId: number | null = null;
 
-    constructor(private wholesaleService: WholesaleService, private auth: AuthService) { }
+    constructor(private wholesaleService: WholesaleService, public auth: AuthService, private router: Router) { }
 
     ngOnInit(): void {
         this.load();
@@ -34,8 +35,9 @@ export class WholesaleOrdersComponent implements OnInit {
         this.loading = true;
         this.errorMsg = '';
         this.wholesaleService.getOrders().subscribe({
-            // This page is "my orders" only — the wholesale store's own all-orders dashboard is a
-            // separate admin page, so a wholesale-store employee doesn't see every store's requests here.
+            // The backend already scopes this to the caller's own store for anyone but the
+            // wholesale_editor/super_admin roles (who never reach this page); this filter is a
+            // harmless defensive extra layer, not the actual isolation boundary.
             next: (data) => {
                 const myMagasin = this.auth.getMagasinId();
                 this.orders = data.filter((o) => o.id_magasin_demandeur === myMagasin);
@@ -78,5 +80,17 @@ export class WholesaleOrdersComponent implements OnInit {
                 this.actionError = err.error?.message || 'WHOLESALE_ORDERS.ERR_ACTION';
             }
         });
+    }
+
+    goToCatalogue(): void {
+        this.router.navigate(['/wholesale/catalogue']);
+    }
+
+    backToStore(): void {
+        this.router.navigate(['/vente/accueil']);
+    }
+
+    logout(): void {
+        this.auth.logout();
     }
 }

@@ -895,7 +895,9 @@
         "SUBMIT_ORDER": "إرسال الطلب",
         "SUBMITTING": "جارٍ الإرسال...",
         "ORDER_SUCCESS": "تم إرسال الطلب بنجاح",
-        "ERR_ORDER": "خطأ أثناء إرسال الطلب"
+        "ERR_ORDER": "خطأ أثناء إرسال الطلب",
+        "BACK_TO_STORE": "العودة إلى المحل",
+        "ORDERS_LINK": "طلباتي"
     },
     "WHOLESALE_ORDERS": {
         "TITLE": "طلبات الجملة",
@@ -914,7 +916,9 @@
         "ADJUSTED_HINT": "قام محل الجملة بتقليل بعض الكميات. يرجى المراجعة قبل التأكيد.",
         "ACCEPT_ADJUSTMENT": "قبول التعديل",
         "CONFIRM_RECEIPT": "تأكيد الاستلام",
-        "CANCEL": "إلغاء"
+        "CANCEL": "إلغاء",
+        "BACK_TO_STORE": "العودة إلى المحل",
+        "CATALOG_LINK": "الكتالوج"
     },
     "WHOLESALE_EDITORS": {
         "TITLE": "محررو الجملة",
