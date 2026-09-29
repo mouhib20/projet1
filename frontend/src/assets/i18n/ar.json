@@ -10,9 +10,7 @@
         "CLIENTS": "العملاء",
         "CHANGE_LANGUAGE": "تغيير اللغة",
         "EMPLOYEES": "الموظفون",
-        "COMPATIBILITY": "التوافقية",
-        "WHOLESALE_CATALOG": "كتالوج الجملة",
-        "WHOLESALE_ORDERS": "طلبات الجملة"
+        "COMPATIBILITY": "التوافقية"
     },
     "HOME": {
         "WELCOME": "مساحتك لـ",

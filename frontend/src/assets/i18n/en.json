@@ -10,9 +10,7 @@
         "CLIENTS": "Clients",
         "CHANGE_LANGUAGE": "Change language",
         "EMPLOYEES": "Employees",
-        "COMPATIBILITY": "Compatibility",
-        "WHOLESALE_CATALOG": "Wholesale Catalog",
-        "WHOLESALE_ORDERS": "My Wholesale Orders"
+        "COMPATIBILITY": "Compatibility"
     },
     "HOME": {
         "WELCOME": "Your workspace for",
