@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export type UserRole = 'super_admin' | 'compat_editor' | 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
-export type Departement = 'ventes' | 'stock' | 'reparation' | 'fournisseurs' | 'charges' | 'clients' | 'rapports' | 'compatibilite';
+export type Departement = 'ventes' | 'stock' | 'reparation' | 'fournisseurs' | 'charges' | 'clients' | 'rapports' | 'compatibilite' | 'wholesale';
 export type PermissionAction = 'voir' | 'ajouter' | 'modifier' | 'supprimer';
 export type PermissionEntry = { voir: boolean; ajouter: boolean; modifier: boolean; supprimer: boolean };
 export type PermissionMatrix = Partial<Record<Departement, PermissionEntry>>;

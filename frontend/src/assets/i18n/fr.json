@@ -10,7 +10,9 @@
         "CLIENTS": "Clients",
         "CHANGE_LANGUAGE": "Changer la langue",
         "EMPLOYEES": "Employés",
-        "COMPATIBILITY": "Compatibilité"
+        "COMPATIBILITY": "Compatibilité",
+        "WHOLESALE_CATALOG": "Catalogue de gros",
+        "WHOLESALE_ORDERS": "Mes commandes de gros"
     },
     "HOME": {
         "WELCOME": "Votre espace de",
@@ -251,7 +253,8 @@
         "DEPT_CHARGES": "Dépenses",
         "DEPT_CLIENTS": "Clients",
         "DEPT_RAPPORTS": "Rapports",
-        "DEPT_COMPATIBILITE": "Compatibilité"
+        "DEPT_COMPATIBILITE": "Compatibilité",
+        "DEPT_WHOLESALE": "Gros"
     },
     "SUPER_ADMIN": {
         "TITLE": "Magasins",
@@ -867,5 +870,44 @@
     },
     "CANCEL": "Annuler",
     "SAVE": "Enregistrer",
-    "CURRENCY": "DT"
+    "CURRENCY": "DT",
+    "WHOLESALE_CATALOG": {
+        "TITLE": "Catalogue de gros",
+        "SUBTITLE": "Pièces proposées par le magasin de gros à prix réduit",
+        "SEARCH_PLACEHOLDER": "Rechercher une pièce...",
+        "SEARCH_BTN": "Rechercher",
+        "ERR_LOAD": "Erreur lors du chargement du catalogue",
+        "EMPTY": "Aucun article n'est proposé pour le moment",
+        "AVAILABLE": "Disponible",
+        "MIN_QTY": "Qté min",
+        "ADD_TO_CART": "Ajouter au panier",
+        "IN_CART": "Dans le panier ({{qte}})",
+        "CART_TITLE": "Panier",
+        "NOTE_PLACEHOLDER": "Note (optionnel)",
+        "RECEPTION_PLACEHOLDER": "Mode de réception (optionnel)",
+        "TOTAL": "Total",
+        "SUBMIT_ORDER": "Envoyer la commande",
+        "SUBMITTING": "Envoi en cours...",
+        "ORDER_SUCCESS": "Commande envoyée avec succès",
+        "ERR_ORDER": "Erreur lors de l'envoi de la commande"
+    },
+    "WHOLESALE_ORDERS": {
+        "TITLE": "Mes commandes de gros",
+        "SUBTITLE": "Suivi des commandes passées auprès du magasin de gros",
+        "ERR_LOAD": "Erreur lors du chargement des commandes",
+        "ERR_ACTION": "Erreur lors de l'action",
+        "EMPTY": "Vous n'avez encore passé aucune commande de gros",
+        "STATUS_EN_ATTENTE": "En attente",
+        "STATUS_AJUSTEE": "Quantité ajustée",
+        "STATUS_CONFIRMEE": "Confirmée",
+        "STATUS_EN_PREPARATION": "En préparation",
+        "STATUS_ENVOYEE": "Envoyée",
+        "STATUS_RECUE": "Reçue",
+        "STATUS_ANNULEE": "Annulée",
+        "REQUESTED": "demandé",
+        "ADJUSTED_HINT": "Le magasin de gros a réduit certaines quantités. Merci de vérifier avant de valider.",
+        "ACCEPT_ADJUSTMENT": "Accepter l'ajustement",
+        "CONFIRM_RECEIPT": "Confirmer la réception",
+        "CANCEL": "Annuler"
+    }
 }

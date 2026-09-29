@@ -10,7 +10,9 @@
         "CLIENTS": "Clients",
         "CHANGE_LANGUAGE": "Change language",
         "EMPLOYEES": "Employees",
-        "COMPATIBILITY": "Compatibility"
+        "COMPATIBILITY": "Compatibility",
+        "WHOLESALE_CATALOG": "Wholesale Catalog",
+        "WHOLESALE_ORDERS": "My Wholesale Orders"
     },
     "HOME": {
         "WELCOME": "Your workspace for",
@@ -251,7 +253,8 @@
         "DEPT_CHARGES": "Expenses",
         "DEPT_CLIENTS": "Clients",
         "DEPT_RAPPORTS": "Reports",
-        "DEPT_COMPATIBILITE": "Compatibility"
+        "DEPT_COMPATIBILITE": "Compatibility",
+        "DEPT_WHOLESALE": "Wholesale"
     },
     "SUPER_ADMIN": {
         "TITLE": "Stores",
@@ -867,5 +870,44 @@
     },
     "CANCEL": "Cancel",
     "SAVE": "Save",
-    "CURRENCY": "DT"
+    "CURRENCY": "DT",
+    "WHOLESALE_CATALOG": {
+        "TITLE": "Wholesale Catalog",
+        "SUBTITLE": "Parts offered by the wholesale store at a reduced price",
+        "SEARCH_PLACEHOLDER": "Search for a part...",
+        "SEARCH_BTN": "Search",
+        "ERR_LOAD": "Error loading the catalog",
+        "EMPTY": "No items are currently offered",
+        "AVAILABLE": "Available",
+        "MIN_QTY": "Min qty",
+        "ADD_TO_CART": "Add to cart",
+        "IN_CART": "In cart ({{qte}})",
+        "CART_TITLE": "Cart",
+        "NOTE_PLACEHOLDER": "Note (optional)",
+        "RECEPTION_PLACEHOLDER": "Reception method (optional)",
+        "TOTAL": "Total",
+        "SUBMIT_ORDER": "Submit order",
+        "SUBMITTING": "Submitting...",
+        "ORDER_SUCCESS": "Order submitted successfully",
+        "ERR_ORDER": "Error submitting the order"
+    },
+    "WHOLESALE_ORDERS": {
+        "TITLE": "My Wholesale Orders",
+        "SUBTITLE": "Track orders placed with the wholesale store",
+        "ERR_LOAD": "Error loading orders",
+        "ERR_ACTION": "Error performing the action",
+        "EMPTY": "You haven't placed any wholesale orders yet",
+        "STATUS_EN_ATTENTE": "Pending",
+        "STATUS_AJUSTEE": "Quantity adjusted",
+        "STATUS_CONFIRMEE": "Confirmed",
+        "STATUS_EN_PREPARATION": "Preparing",
+        "STATUS_ENVOYEE": "Shipped",
+        "STATUS_RECUE": "Received",
+        "STATUS_ANNULEE": "Cancelled",
+        "REQUESTED": "requested",
+        "ADJUSTED_HINT": "The wholesale store reduced some quantities. Please review before confirming.",
+        "ACCEPT_ADJUSTMENT": "Accept adjustment",
+        "CONFIRM_RECEIPT": "Confirm receipt",
+        "CANCEL": "Cancel"
+    }
 }

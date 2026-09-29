@@ -10,7 +10,9 @@
         "CLIENTS": "العملاء",
         "CHANGE_LANGUAGE": "تغيير اللغة",
         "EMPLOYEES": "الموظفون",
-        "COMPATIBILITY": "التوافقية"
+        "COMPATIBILITY": "التوافقية",
+        "WHOLESALE_CATALOG": "كتالوج الجملة",
+        "WHOLESALE_ORDERS": "طلبات الجملة"
     },
     "HOME": {
         "WELCOME": "مساحتك لـ",
@@ -251,7 +253,8 @@
         "DEPT_CHARGES": "المصاريف",
         "DEPT_CLIENTS": "الزبائن",
         "DEPT_RAPPORTS": "التقارير",
-        "DEPT_COMPATIBILITE": "التوافقية"
+        "DEPT_COMPATIBILITE": "التوافقية",
+        "DEPT_WHOLESALE": "الجملة"
     },
     "SUPER_ADMIN": {
         "TITLE": "المحلات",
@@ -867,5 +870,44 @@
     },
     "CANCEL": "إلغاء",
     "SAVE": "حفظ",
-    "CURRENCY": "د.ت"
+    "CURRENCY": "د.ت",
+    "WHOLESALE_CATALOG": {
+        "TITLE": "كتالوج الجملة",
+        "SUBTITLE": "قطع يعرضها محل الجملة بسعر مخفض",
+        "SEARCH_PLACEHOLDER": "البحث عن قطعة...",
+        "SEARCH_BTN": "بحث",
+        "ERR_LOAD": "خطأ في تحميل الكتالوج",
+        "EMPTY": "لا توجد قطع معروضة حاليًا",
+        "AVAILABLE": "المتاح",
+        "MIN_QTY": "الحد الأدنى",
+        "ADD_TO_CART": "أضف إلى السلة",
+        "IN_CART": "في السلة ({{qte}})",
+        "CART_TITLE": "السلة",
+        "NOTE_PLACEHOLDER": "ملاحظة (اختياري)",
+        "RECEPTION_PLACEHOLDER": "طريقة الاستلام (اختياري)",
+        "TOTAL": "المجموع",
+        "SUBMIT_ORDER": "إرسال الطلب",
+        "SUBMITTING": "جارٍ الإرسال...",
+        "ORDER_SUCCESS": "تم إرسال الطلب بنجاح",
+        "ERR_ORDER": "خطأ أثناء إرسال الطلب"
+    },
+    "WHOLESALE_ORDERS": {
+        "TITLE": "طلبات الجملة",
+        "SUBTITLE": "متابعة الطلبات المرسلة إلى محل الجملة",
+        "ERR_LOAD": "خطأ في تحميل الطلبات",
+        "ERR_ACTION": "خطأ أثناء تنفيذ الإجراء",
+        "EMPTY": "لم تقم بإرسال أي طلب جملة بعد",
+        "STATUS_EN_ATTENTE": "قيد الانتظار",
+        "STATUS_AJUSTEE": "تم تعديل الكمية",
+        "STATUS_CONFIRMEE": "مؤكدة",
+        "STATUS_EN_PREPARATION": "قيد التجهيز",
+        "STATUS_ENVOYEE": "تم الإرسال",
+        "STATUS_RECUE": "تم الاستلام",
+        "STATUS_ANNULEE": "ملغاة",
+        "REQUESTED": "مطلوب",
+        "ADJUSTED_HINT": "قام محل الجملة بتقليل بعض الكميات. يرجى المراجعة قبل التأكيد.",
+        "ACCEPT_ADJUSTMENT": "قبول التعديل",
+        "CONFIRM_RECEIPT": "تأكيد الاستلام",
+        "CANCEL": "إلغاء"
+    }
 }

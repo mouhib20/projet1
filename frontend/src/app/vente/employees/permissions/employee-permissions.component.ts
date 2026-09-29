@@ -6,7 +6,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { EmployeeService } from '../../../services/employee.service';
 import { PermissionEntry, Departement } from '../../../services/auth.service';
 
-const DEPARTEMENTS: Departement[] = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports', 'compatibilite'];
+const DEPARTEMENTS: Departement[] = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports', 'compatibilite', 'wholesale'];
 
 @Component({
   selector: 'app-employee-permissions',

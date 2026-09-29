@@ -1,0 +1,85 @@
+<div class="wh-page">
+
+    <div class="page-header">
+        <div>
+            <div class="page-title">📦 {{ 'WHOLESALE_CATALOG.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'WHOLESALE_CATALOG.SUBTITLE' | translate }}</div>
+        </div>
+    </div>
+
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
+    <div class="alert alert-success" *ngIf="submitSuccess">
+        ✅ {{ 'WHOLESALE_CATALOG.ORDER_SUCCESS' | translate }} (#{{ lastOrderId }})
+    </div>
+
+    <div class="search-box">
+        <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="load()"
+            [placeholder]="'WHOLESALE_CATALOG.SEARCH_PLACEHOLDER' | translate" class="search-input" />
+        <button class="btn btn-primary" (click)="load()">🔍 {{ 'WHOLESALE_CATALOG.SEARCH_BTN' | translate }}</button>
+    </div>
+
+    <div class="loading-state" *ngIf="loading">
+        <div class="loading-icon">⟳</div>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && entries.length === 0">
+        <div class="empty-icon">📭</div>
+        <strong>{{ 'WHOLESALE_CATALOG.EMPTY' | translate }}</strong>
+    </div>
+
+    <div class="catalog-grid" *ngIf="!loading && entries.length > 0">
+        <div class="item-card" *ngFor="let e of entries">
+            <div class="item-image">
+                <img *ngIf="imageUrl(e.image)" [src]="imageUrl(e.image)" [alt]="e.designation" />
+                <span *ngIf="!imageUrl(e.image)" class="item-image-placeholder">📦</span>
+            </div>
+            <div class="item-body">
+                <div class="item-name">{{ e.designation }}</div>
+                <div class="item-meta" *ngIf="e.marque || e.modele">{{ e.marque }} {{ e.modele }}</div>
+                <div class="item-price">{{ e.prix_gros | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</div>
+                <div class="item-stock" [class.item-stock-low]="e.quantite_disponible < e.qte_min">
+                    {{ 'WHOLESALE_CATALOG.AVAILABLE' | translate }}: {{ e.quantite_disponible }}
+                    · {{ 'WHOLESALE_CATALOG.MIN_QTY' | translate }}: {{ e.qte_min }}
+                </div>
+            </div>
+            <div class="item-actions">
+                <button class="btn-outline" [disabled]="e.quantite_disponible < e.qte_min" (click)="addToCart(e)">
+                    🛒 {{ (cartQte(e) > 0 ? 'WHOLESALE_CATALOG.IN_CART' : 'WHOLESALE_CATALOG.ADD_TO_CART') | translate: { qte: cartQte(e) } }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart -->
+    <div class="cart-box" *ngIf="cart.length > 0">
+        <div class="cart-title">🛒 {{ 'WHOLESALE_CATALOG.CART_TITLE' | translate }}</div>
+        <div class="cart-line" *ngFor="let line of cart">
+            <span class="cart-line-name">{{ line.entry.designation }}</span>
+            <div class="cart-line-qty">
+                <button class="qty-btn" (click)="decrementCart(line)">−</button>
+                <span class="qty-value">{{ line.qte }}</span>
+                <button class="qty-btn" [disabled]="line.qte >= line.entry.quantite_disponible" (click)="incrementCart(line)">+</button>
+            </div>
+            <span class="cart-line-price">{{ (line.qte * line.entry.prix_gros) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+            <span class="cart-line-warn" *ngIf="line.qte < line.entry.qte_min">
+                ⚠️ {{ 'WHOLESALE_CATALOG.MIN_QTY' | translate }}: {{ line.entry.qte_min }}
+            </span>
+            <button class="cart-line-remove" (click)="removeFromCart(line)">✕</button>
+        </div>
+
+        <div class="cart-fields">
+            <input type="text" [(ngModel)]="note" [placeholder]="'WHOLESALE_CATALOG.NOTE_PLACEHOLDER' | translate" />
+            <input type="text" [(ngModel)]="methodeReception" [placeholder]="'WHOLESALE_CATALOG.RECEPTION_PLACEHOLDER' | translate" />
+        </div>
+
+        <div class="alert alert-error" *ngIf="submitError">⚠️ {{ submitError | translate }}</div>
+
+        <div class="cart-footer">
+            <span class="cart-total">{{ 'WHOLESALE_CATALOG.TOTAL' | translate }}: {{ cartTotal() | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+            <button class="btn btn-primary" [disabled]="submitting || cartHasInvalidLine()" (click)="submitOrder()">
+                {{ (submitting ? 'WHOLESALE_CATALOG.SUBMITTING' : 'WHOLESALE_CATALOG.SUBMIT_ORDER') | translate }}
+            </button>
+        </div>
+    </div>
+
+</div>

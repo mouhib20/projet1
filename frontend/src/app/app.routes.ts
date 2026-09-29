@@ -14,6 +14,8 @@ import { ClientsComponent } from './vente/clients/clients.component';
 import { EmployeesComponent } from './vente/employees/employees.component';
 import { EmployeePermissionsComponent } from './vente/employees/permissions/employee-permissions.component';
 import { CompatibiliteComponent } from './vente/compatibilite/compatibilite.component';
+import { WholesaleCatalogueComponent } from './vente/wholesale/catalogue/wholesale-catalogue.component';
+import { WholesaleOrdersComponent } from './vente/wholesale/mes-commandes/wholesale-orders.component';
 import { authGuard } from './guards/auth.guard';
 import { adminGuard } from './guards/admin.guard';
 import { permissionGuard } from './guards/permission.guard';
@@ -43,6 +45,8 @@ export const routes: Routes = [
             { path: 'factures', component: FacturesComponent, canActivate: [permissionGuard('fournisseurs')], canDeactivate: [(page: FacturesComponent) => page.peutQuitter()] },
             { path: 'clients', component: ClientsComponent, canActivate: [permissionGuard('clients')] },
             { path: 'compatibilite', component: CompatibiliteComponent, canActivate: [permissionGuard('compatibilite')] },
+            { path: 'wholesale/catalogue', component: WholesaleCatalogueComponent, canActivate: [permissionGuard('wholesale')] },
+            { path: 'wholesale/commandes', component: WholesaleOrdersComponent, canActivate: [permissionGuard('wholesale')] },
             { path: 'employees', component: EmployeesComponent, canActivate: [adminGuard] },
             { path: 'employees/:id/permissions', component: EmployeePermissionsComponent, canActivate: [adminGuard] },
         ]
