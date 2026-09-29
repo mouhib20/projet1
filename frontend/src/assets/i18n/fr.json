@@ -997,5 +997,32 @@
         "WAITING_STORE_HINT": "En attente de la validation du magasin demandeur",
         "START_PREPARATION": "Démarrer la préparation",
         "SEND": "Envoyer"
+    },
+    "OPERATIONS": {
+        "PICKUP_SEARCH_PLACEHOLDER": "🔧 Chercher un appareil prêt à récupérer…",
+        "PICKUP_DEFAULT_LABEL": "Réparation",
+        "OFFLINE_SALE_QUEUED": "Vente enregistrée hors ligne (réf. {{ref}}). Elle sera synchronisée dès le retour de la connexion."
+    },
+    "OFFLINE": {
+        "ONLINE": "Connecté",
+        "OFFLINE": "Hors ligne",
+        "PENDING_SUFFIX": "en attente",
+        "PENDING_COUNT_TITLE": "Opérations en attente de synchronisation",
+        "SYNC_NOW": "Synchroniser",
+        "SYNCING": "Synchronisation…",
+        "PENDING_TITLE": "Opérations en attente",
+        "PENDING_SUBTITLE": "Ventes effectuées hors ligne, en attente de synchronisation",
+        "PENDING_EMPTY": "Aucune opération en attente",
+        "ITEMS_SUFFIX": "article(s)",
+        "STATUS_PENDING": "En attente",
+        "STATUS_SYNCING": "Synchronisation…",
+        "STATUS_SYNCED": "Synchronisée",
+        "STATUS_FAILED": "Échec",
+        "RETRY": "Réessayer",
+        "DISCARD": "Supprimer",
+        "NEW_VERSION_AVAILABLE": "Une nouvelle version est disponible.",
+        "RELOAD": "Recharger",
+        "OFFLINE_SESSION_EXPIRED": "Votre session hors ligne a expiré. Veuillez vous connecter à l'internet pour continuer.",
+        "SYNC_WARNINGS_TITLE": "Avertissements de synchronisation"
     }
 }

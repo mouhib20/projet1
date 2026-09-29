@@ -1,0 +1,11 @@
+<div class="warnings-banner" *ngIf="sync.lastWarnings().length > 0">
+    <div class="warnings-header">
+        <span>⚠️ {{ 'OFFLINE.SYNC_WARNINGS_TITLE' | translate }}</span>
+        <button class="dismiss-btn" (click)="dismiss()">✕</button>
+    </div>
+    <ul class="warnings-list">
+        <li *ngFor="let w of sync.lastWarnings()">
+            <span *ngFor="let msg of w.messages">{{ msg }}</span>
+        </li>
+    </ul>
+</div>

@@ -30,6 +30,7 @@ import { CompatGroupsComponent } from './compat-editor/compat-groups/compat-grou
 import { SuggestionsComponent } from './compat-editor/suggestions/suggestions.component';
 import { WholesaleEditorProductsComponent } from './wholesale-editor/products/wholesale-editor-products.component';
 import { WholesaleEditorOrdersComponent } from './wholesale-editor/orders/wholesale-editor-orders.component';
+import { PendingOperationsComponent } from './offline/pending-operations/pending-operations.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -42,6 +43,7 @@ export const routes: Routes = [
             { path: '', redirectTo: 'accueil', pathMatch: 'full' },
             { path: 'accueil', component: AccueilComponent },
             { path: 'operations', component: OperationsComponent, canActivate: [permissionGuard('ventes')] },
+            { path: 'operations-en-attente', component: PendingOperationsComponent, canActivate: [permissionGuard('ventes')] },
             { path: 'statistiques', component: StatistiquesComponent, canActivate: [permissionGuard('rapports')] },
             { path: 'charges', component: ChargesComponent, canActivate: [permissionGuard('charges')] },
             { path: 'stock', component: StockComponent, canActivate: [permissionGuard('stock')] },

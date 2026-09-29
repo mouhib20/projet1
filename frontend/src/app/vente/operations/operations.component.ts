@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { VenteService } from '../../services/vente.service';
 import { ClientService } from '../../services/client.service';
 import { ArticleService, ArticleForm, articleImageUrl } from '../../services/article.service';
@@ -10,6 +10,10 @@ import { PosBridgeService } from '../../services/pos-bridge.service';
 import { Vente } from '../../models/vente.model';
 import { Client } from '../../models/client.model';
 import { CaisseComponent } from '../caisse/caisse.component';
+import { OfflineDbService, OfflinePickupReparation } from '../../offline/offline-db.service';
+import { ConnectivityService } from '../../offline/connectivity.service';
+import { SyncService } from '../../offline/sync.service';
+import { OfflineSessionService } from '../../offline/offline-session.service';
 
 export interface PosCartItem {
   articleId?: number;
@@ -50,18 +54,35 @@ export class OperationsComponent implements OnInit {
   posMontantSolde = 0;
   posSaving = false;
 
+  // ── Offline mode: repair tickets ready for pickup, cached locally (works online AND offline) ──
+  pickupReparations: OfflinePickupReparation[] = [];
+  posPickupSearchTerm = '';
+
   constructor(
     private venteService: VenteService,
     private clientService: ClientService,
     private articleService: ArticleService,
     private posBridge: PosBridgeService,
-    public auth: AuthService
+    public auth: AuthService,
+    private offlineDb: OfflineDbService,
+    public connectivity: ConnectivityService,
+    private syncService: SyncService,
+    private offlineSession: OfflineSessionService,
+    private translate: TranslateService,
   ) { }
 
-  ngOnInit(): void {
-    this.loadVentes();
-    this.loadClients();
-    this.loadArticles();
+  async ngOnInit(): Promise<void> {
+    if (this.connectivity.isOnline()) {
+      this.loadVentes();
+      this.loadClients();
+      this.loadArticles();
+      await this.syncService.pullReferenceData();
+    } else {
+      // No live server round-trip possible: everything comes straight from the local cache.
+      this.articles = await this.offlineDb.articles.toArray() as any;
+      this.clients = await this.offlineDb.clients.toArray() as any;
+    }
+    this.pickupReparations = await this.offlineDb.reparationsPickup.toArray();
     this.consumePendingRepair();
   }
 
@@ -89,14 +110,14 @@ export class OperationsComponent implements OnInit {
 
   loadClients() {
     this.clientService.getClients().subscribe({
-      next: (data) => this.clients = data,
+      next: (data) => { this.clients = data; this.offlineDb.clients.bulkPut(data as any).catch(() => undefined); },
       error: (err) => console.error(err)
     });
   }
 
   loadArticles() {
     this.articleService.getArticles().subscribe({
-      next: (data) => this.articles = data,
+      next: (data) => { this.articles = data; this.offlineDb.articles.bulkPut(data as any).catch(() => undefined); },
       error: (err) => console.error(err)
     });
   }
@@ -393,6 +414,31 @@ export class OperationsComponent implements OnInit {
     return !!item.reparationId;
   }
 
+  /** Repair tickets ready for pickup, searchable directly from the POS - reads the same local
+   *  cache whether online or offline, so it works without depending on the separate Reparation
+   *  page's cross-page "sell this" handoff (PosBridgeService) having been used first. */
+  get posFilteredPickupReparations(): OfflinePickupReparation[] {
+    if (!this.posPickupSearchTerm) return [];
+    const term = this.posPickupSearchTerm.toLowerCase();
+    const dejaAuPanier = new Set(this.posCart.map(i => i.reparationId).filter(Boolean));
+    return this.pickupReparations
+      .filter(r => !dejaAuPanier.has(r.id_reparation))
+      .filter(r => (r.appareil || '').toLowerCase().includes(term) || (r.client_nom || '').toLowerCase().includes(term))
+      .slice(0, 20);
+  }
+
+  posAddPickupToCart(rep: OfflinePickupReparation): void {
+    this.posCart.push({
+      reparationId: rep.id_reparation,
+      designation: rep.appareil || this.translate.instant('OPERATIONS.PICKUP_DEFAULT_LABEL'),
+      qte: 1,
+      prix: Number(rep.prix) || 0,
+      prix_achat: 0,
+      maxStock: 1,
+    });
+    this.posPickupSearchTerm = '';
+  }
+
   posUpdateQty(item: PosCartItem, qte: number): void {
     if (item.reparationId) return; // a repair pickup is always exactly 1
     if (qte < 1) qte = 1;
@@ -501,6 +547,11 @@ export class OperationsComponent implements OnInit {
       }))
     };
 
+    if (!this.connectivity.isOnline()) {
+      this.posCheckoutHorsLigne(payload);
+      return;
+    }
+
     this.venteService.checkout(payload).subscribe({
       next: () => {
         this.posSaving = false;
@@ -514,5 +565,33 @@ export class OperationsComponent implements OnInit {
         alert(err.error?.message || 'Erreur lors de la vente.');
       }
     });
+  }
+
+  /** No network call is made here at all - the sale is queued (outbox) and replayed once online
+   *  (see SyncService). Stock/pickup-ticket removal is applied optimistically to the local cache
+   *  right away so this same device doesn't oversell/double-hand-off before syncing; the server
+   *  remains the final authority once the sale actually reaches it. */
+  private async posCheckoutHorsLigne(payload: any): Promise<void> {
+    if (!this.offlineSession.isOfflineCapable()) {
+      this.posSaving = false;
+      alert(this.translate.instant('OFFLINE.OFFLINE_SESSION_EXPIRED'));
+      return;
+    }
+    for (const item of this.posCart) {
+      if (!item.articleId) continue;
+      const article = this.articles.find(a => a.id_article === item.articleId);
+      if (article) article.quantite = (article.quantite ?? 0) - item.qte;
+      await this.offlineDb.articles.where('id_article').equals(item.articleId).modify((a: any) => { a.quantite -= item.qte; });
+    }
+    for (const item of this.posCart) {
+      if (!item.reparationId) continue;
+      this.pickupReparations = this.pickupReparations.filter(r => r.id_reparation !== item.reparationId);
+      await this.offlineDb.reparationsPickup.delete(item.reparationId);
+    }
+
+    const clientId = await this.syncService.enqueueCheckout(payload);
+    this.posSaving = false;
+    this.posResetCart();
+    alert(this.translate.instant('OPERATIONS.OFFLINE_SALE_QUEUED', { ref: clientId.slice(0, 8) }));
   }
 }

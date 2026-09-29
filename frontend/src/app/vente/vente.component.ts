@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../services/auth.service';
+import { ConnectivityBadgeComponent } from '../offline/connectivity-badge/connectivity-badge.component';
 
 @Component({
     selector: 'app-vente',
     standalone: true,
-    imports: [CommonModule, RouterModule, TranslatePipe],
+    imports: [CommonModule, RouterModule, TranslatePipe, ConnectivityBadgeComponent],
     templateUrl: './vente.component.html',
     styleUrl: './vente.component.css'
 })

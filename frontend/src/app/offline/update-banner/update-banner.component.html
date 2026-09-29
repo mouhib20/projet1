@@ -1,0 +1,4 @@
+<div class="update-banner" *ngIf="updateAvailable()">
+    <span>🆕 {{ 'OFFLINE.NEW_VERSION_AVAILABLE' | translate }}</span>
+    <button (click)="reload()">🔄 {{ 'OFFLINE.RELOAD' | translate }}</button>
+</div>

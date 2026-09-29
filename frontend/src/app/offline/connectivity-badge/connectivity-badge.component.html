@@ -1,0 +1,13 @@
+<div class="conn-badge">
+    <span class="dot" [class.online]="connectivity.isOnline()" [class.offline]="!connectivity.isOnline()"></span>
+    <span class="label">{{ (connectivity.isOnline() ? 'OFFLINE.ONLINE' : 'OFFLINE.OFFLINE') | translate }}</span>
+
+    <button class="pending-btn" *ngIf="sync.pendingCount() > 0" (click)="openPending()" [title]="'OFFLINE.PENDING_COUNT_TITLE' | translate">
+        <span class="spinner" *ngIf="sync.syncing()">⟳</span>
+        {{ sync.pendingCount() }} {{ 'OFFLINE.PENDING_SUFFIX' | translate }}
+    </button>
+
+    <button class="sync-btn" *ngIf="connectivity.isOnline() && sync.pendingCount() > 0 && !sync.syncing()" (click)="syncNow()">
+        🔄 {{ 'OFFLINE.SYNC_NOW' | translate }}
+    </button>
+</div>

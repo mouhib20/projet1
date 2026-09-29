@@ -3,10 +3,12 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Frontend</title>
+  <title>GSM Pro</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta name="theme-color" content="#0f1117">
+  <link rel="icon" type="image/png" href="icons/icon-32x32.png">
+  <link rel="apple-touch-icon" href="icons/icon-180x180.png">
   <script>
     window.onerror = function (msg, src, lineno, colno, err) {
       const errorDiv = document.createElement('div');
@@ -21,10 +23,12 @@
       document.body.appendChild(errorDiv);
     });
   </script>
+  <link rel="manifest" href="manifest.webmanifest">
 </head>
 
 <body>
   <app-root></app-root>
+  <noscript>Please enable JavaScript to continue using this application.</noscript>
 </body>
 
 </html>

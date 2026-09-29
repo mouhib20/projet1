@@ -997,5 +997,32 @@
         "WAITING_STORE_HINT": "بانتظار موافقة المحل الطالب",
         "START_PREPARATION": "بدء التجهيز",
         "SEND": "إرسال"
+    },
+    "OPERATIONS": {
+        "PICKUP_SEARCH_PLACEHOLDER": "🔧 البحث عن جهاز جاهز للاستلام...",
+        "PICKUP_DEFAULT_LABEL": "إصلاح",
+        "OFFLINE_SALE_QUEUED": "تم تسجيل البيع دون اتصال (المرجع {{ref}}). ستتم مزامنته فور عودة الاتصال."
+    },
+    "OFFLINE": {
+        "ONLINE": "متصل",
+        "OFFLINE": "غير متصل",
+        "PENDING_SUFFIX": "بانتظار المزامنة",
+        "PENDING_COUNT_TITLE": "عمليات بانتظار المزامنة",
+        "SYNC_NOW": "مزامنة الآن",
+        "SYNCING": "جارٍ المزامنة...",
+        "PENDING_TITLE": "العمليات المعلّقة",
+        "PENDING_SUBTITLE": "مبيعات تمت دون اتصال، بانتظار المزامنة",
+        "PENDING_EMPTY": "لا توجد عمليات معلّقة",
+        "ITEMS_SUFFIX": "منتج/منتجات",
+        "STATUS_PENDING": "قيد الانتظار",
+        "STATUS_SYNCING": "جارٍ المزامنة...",
+        "STATUS_SYNCED": "تمت المزامنة",
+        "STATUS_FAILED": "فشلت",
+        "RETRY": "إعادة المحاولة",
+        "DISCARD": "حذف",
+        "NEW_VERSION_AVAILABLE": "يتوفر إصدار جديد.",
+        "RELOAD": "إعادة التحميل",
+        "OFFLINE_SESSION_EXPIRED": "انتهت صلاحية جلسة العمل دون اتصال. يرجى الاتصال بالإنترنت للمتابعة.",
+        "SYNC_WARNINGS_TITLE": "تحذيرات المزامنة"
     }
 }

@@ -329,6 +329,23 @@
                     </div>
                 </div>
 
+                <!-- Repair pickup lines: works from the local cache online AND offline (no need to
+                     have visited the Reparation page first, unlike the older cross-page handoff). -->
+                <div class="pos-search-wrapper" style="margin-top: 10px;">
+                    <input type="text" [(ngModel)]="posPickupSearchTerm" class="pos-search-input"
+                        [placeholder]="'OPERATIONS.PICKUP_SEARCH_PLACEHOLDER' | translate" />
+                    <div class="pos-search-results" *ngIf="posFilteredPickupReparations.length > 0">
+                        <div class="pos-search-item" *ngFor="let rep of posFilteredPickupReparations"
+                            (click)="posAddPickupToCart(rep)">
+                            <div class="pos-search-item-info">
+                                <span>{{ rep.appareil || ('OPERATIONS.PICKUP_DEFAULT_LABEL' | translate) }}</span>
+                                <small *ngIf="rep.client_nom">{{ rep.client_nom }}</small>
+                            </div>
+                            <span class="pos-search-item-price">{{ rep.prix | number:'1.3-3' }}</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="pos-bestsellers" *ngIf="posBestSellers.length > 0">
                     <div class="pos-bestsellers-title">⚡ Produits les plus vendus</div>
                     <div class="pos-bestsellers-grid">

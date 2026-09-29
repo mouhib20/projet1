@@ -997,5 +997,32 @@
         "WAITING_STORE_HINT": "Waiting for the requesting store's approval",
         "START_PREPARATION": "Start preparation",
         "SEND": "Send"
+    },
+    "OPERATIONS": {
+        "PICKUP_SEARCH_PLACEHOLDER": "🔧 Search a device ready for pickup…",
+        "PICKUP_DEFAULT_LABEL": "Repair",
+        "OFFLINE_SALE_QUEUED": "Sale recorded offline (ref. {{ref}}). It will sync as soon as the connection is back."
+    },
+    "OFFLINE": {
+        "ONLINE": "Online",
+        "OFFLINE": "Offline",
+        "PENDING_SUFFIX": "pending",
+        "PENDING_COUNT_TITLE": "Operations waiting to sync",
+        "SYNC_NOW": "Sync now",
+        "SYNCING": "Syncing…",
+        "PENDING_TITLE": "Pending Operations",
+        "PENDING_SUBTITLE": "Sales made offline, waiting to sync",
+        "PENDING_EMPTY": "No pending operations",
+        "ITEMS_SUFFIX": "item(s)",
+        "STATUS_PENDING": "Pending",
+        "STATUS_SYNCING": "Syncing…",
+        "STATUS_SYNCED": "Synced",
+        "STATUS_FAILED": "Failed",
+        "RETRY": "Retry",
+        "DISCARD": "Discard",
+        "NEW_VERSION_AVAILABLE": "A new version is available.",
+        "RELOAD": "Reload",
+        "OFFLINE_SESSION_EXPIRED": "Your offline session has expired. Please connect to the internet to continue.",
+        "SYNC_WARNINGS_TITLE": "Sync warnings"
     }
 }

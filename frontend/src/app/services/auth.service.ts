@@ -4,6 +4,8 @@ import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { OfflineDbService } from '../offline/offline-db.service';
+import { OfflineSessionService } from '../offline/offline-session.service';
 
 export type UserRole = 'super_admin' | 'compat_editor' | 'wholesale_editor' | 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
 export type Departement = 'ventes' | 'stock' | 'reparation' | 'fournisseurs' | 'charges' | 'clients' | 'rapports' | 'compatibilite' | 'wholesale';
@@ -16,7 +18,12 @@ export type ModulesMatrix = Partial<Record<Departement, boolean>>;
 export class AuthService {
     private apiUrl = `${environment.apiUrl}/auth`;
 
-    constructor(private http: HttpClient, private router: Router) { }
+    constructor(
+        private http: HttpClient,
+        private router: Router,
+        private offlineDb: OfflineDbService,
+        private offlineSession: OfflineSessionService,
+    ) { }
 
     login(username: string, password: string): Observable<any> {
         return this.http.post<any>(`${this.apiUrl}/login`, { username, password }).pipe(
@@ -28,6 +35,8 @@ export class AuthService {
                 localStorage.setItem('permissions', JSON.stringify(res.permissions || {}));
                 localStorage.setItem('id_magasin', res.id_magasin == null ? '' : String(res.id_magasin));
                 localStorage.setItem('modules', JSON.stringify(res.modules || {}));
+                // Offline mode: a fresh online login resets the 7-day offline-capability window.
+                this.offlineSession.markOnlineLogin();
             })
         );
     }
@@ -40,6 +49,8 @@ export class AuthService {
         localStorage.removeItem('permissions');
         localStorage.removeItem('id_magasin');
         localStorage.removeItem('modules');
+        this.offlineSession.clear();
+        this.offlineDb.clearAll().catch(() => undefined); // never block logout on this
         this.router.navigate(['/login']);
     }
 
