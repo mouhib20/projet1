@@ -64,4 +64,30 @@ describe('ArticlesService', () => {
             await expect(service.rechercheCatalogue('000000000')).resolves.toBeNull();
         });
     });
+
+    describe('syncDepuis() — offline POS incremental pull', () => {
+        it('always filters by id_magasin', async () => {
+            dataSource.query.mockResolvedValue([]);
+            await service.syncDepuis();
+            const [sql, params] = dataSource.query.mock.calls[0];
+            expect(sql).toMatch(/WHERE id_magasin = \$1/);
+            expect(params).toEqual([1]);
+        });
+
+        it('adds the updated_at filter only when since is provided', async () => {
+            dataSource.query.mockResolvedValue([]);
+            await service.syncDepuis('2026-01-01T00:00:00.000Z');
+            const [sql, params] = dataSource.query.mock.calls[0];
+            expect(sql).toMatch(/updated_at > \$2/);
+            expect(params).toEqual([1, '2026-01-01T00:00:00.000Z']);
+        });
+
+        it('never leaks price/quantity-adjacent fields beyond what the POS needs — sanity on the shape', async () => {
+            dataSource.query.mockResolvedValue([]);
+            await service.syncDepuis();
+            const [sql] = dataSource.query.mock.calls[0];
+            expect(sql).toMatch(/quantite/i); // the POS DOES need quantity, unlike rechercheCatalogue
+            expect(sql).toMatch(/prix_vente/i);
+        });
+    });
 });

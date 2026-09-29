@@ -20,6 +20,10 @@ export class Client {
     @Column({ nullable: true })
     id_magasin: number;
 
+    /** Kept fresh by a DB trigger (set_updated_at) - drives the offline mode's incremental sync. */
+    @Column({ type: 'timestamp' })
+    updated_at: Date;
+
     @OneToMany(() => Vente, vente => vente.client)
     ventes: Vente[];
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe, Headers } from '@nestjs/common';
 import { ClientsService } from './clients.service';
 import { RequirePermission } from '../permissions/require-permission.decorator';
 import { ScopedByStore } from '../store-context/scoped-by-store.decorator';
@@ -17,6 +17,13 @@ export class ClientsController {
     @RequirePermission('clients', 'voir')
     getDepotsSummary() {
         return this.service.getDepotsSummary();
+    }
+
+    /** Offline mode: incremental pull for the POS's local cache. */
+    @Get('sync')
+    @RequirePermission('clients', 'voir')
+    sync(@Query('since') since?: string) {
+        return this.service.syncDepuis(since);
     }
 
     @Get(':id')

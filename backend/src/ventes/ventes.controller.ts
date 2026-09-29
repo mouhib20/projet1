@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, Query, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, Query, Headers, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { VentesService } from './ventes.service';
 import { RequirePermission } from '../permissions/require-permission.decorator';
 import { ScopedByStore } from '../store-context/scoped-by-store.decorator';
@@ -44,8 +45,19 @@ export class VentesController {
 
     @Post('checkout')
     @RequirePermission('ventes', 'ajouter')
-    checkout(@Body() body: any, @Headers('authorization') auth?: string) {
-        return this.service.checkout(body, auth);
+    async checkout(
+        @Body() body: any,
+        @Headers('authorization') auth: string | undefined,
+        @Res({ passthrough: true }) res: Response,
+    ) {
+        const ventes = await this.service.checkout(body, auth);
+        // Array own-properties don't survive JSON serialization, so any offline-sync warning
+        // (only ever set when body.client_id is present) rides along as a response header instead -
+        // the response body itself stays the plain Vente[] every existing caller already expects.
+        if (ventes.avertissements?.length) {
+            res.set('X-Vente-Avertissements', JSON.stringify(ventes.avertissements));
+        }
+        return ventes;
     }
 
     @Delete(':id')

@@ -17,6 +17,21 @@ export class ArticlesService {
         return this.repo.find({ where: { id_magasin: this.storeContext.requireMagasinId() }, order: { id_article: 'DESC' } });
     }
 
+    /** Incremental pull for the offline POS cache: only rows touched since `since` (all of them if
+     *  omitted, for the device's very first sync). Row deletions are not reconciled here (phase 1
+     *  limitation - no deletion log yet), so a device also does an occasional full re-pull. */
+    async syncDepuis(since?: string): Promise<Article[]> {
+        const id_magasin = this.storeContext.requireMagasinId();
+        return this.dataSource.query(
+            `SELECT id_article, designation, prix_achat, prix_vente, barcode, marque, modele, type,
+                    sous_categorie, quantite, qte_min, image, updated_at
+               FROM article
+              WHERE id_magasin = $1 ${since ? 'AND updated_at > $2' : ''}
+              ORDER BY updated_at ASC`,
+            since ? [id_magasin, since] : [id_magasin],
+        );
+    }
+
     async findOne(id: number): Promise<Article> {
         const article = await this.repo.findOneBy({ id_article: id, id_magasin: this.storeContext.requireMagasinId() });
         if (!article) throw new NotFoundException(`Article #${id} introuvable`);

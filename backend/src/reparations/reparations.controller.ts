@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Patch, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Put, Delete, Patch, Headers } from '@nestjs/common';
 import { ReparationsService } from './reparations.service';
 import { CreateReparationDto } from './dtos/create-reparation.dto';
 import { RequirePermission } from '../permissions/require-permission.decorator';
@@ -18,6 +18,13 @@ export class ReparationsController {
     @RequirePermission('reparation', 'voir')
     findRetours() {
         return this.reparationsService.findRetours();
+    }
+
+    /** Offline mode: incremental pull of tickets ready for pickup, for the POS's local cache. */
+    @Get('pickup-ready')
+    @RequirePermission('reparation', 'voir')
+    pickupReady(@Query('since') since?: string) {
+        return this.reparationsService.pickupReady(since);
     }
 
     @Get(':id')

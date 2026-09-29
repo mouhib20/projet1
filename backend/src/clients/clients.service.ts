@@ -22,6 +22,18 @@ export class ClientsService {
         return this.repo.find({ where: { id_magasin: this.storeContext.requireMagasinId() }, order: { id_client: 'DESC' } });
     }
 
+    /** Incremental pull for the offline POS cache - see ArticlesService.syncDepuis for the pattern. */
+    async syncDepuis(since?: string): Promise<Client[]> {
+        const id_magasin = this.storeContext.requireMagasinId();
+        return this.dataSource.query(
+            `SELECT id_client, nom, telephone, solde, updated_at
+               FROM client
+              WHERE id_magasin = $1 ${since ? 'AND updated_at > $2' : ''}
+              ORDER BY updated_at ASC`,
+            since ? [id_magasin, since] : [id_magasin],
+        );
+    }
+
     async findOne(id: number): Promise<Client> {
         const client = await this.repo.findOne({
             where: { id_client: id, id_magasin: this.storeContext.requireMagasinId() },

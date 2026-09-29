@@ -50,6 +50,11 @@ export class Article {
     @Column({ nullable: true })
     compat_group_id: number | null;
 
+    /** Kept fresh by a DB trigger (set_updated_at) regardless of ORM or raw-SQL updates - drives the
+     *  offline mode's incremental sync (ArticlesService.syncDepuis). */
+    @Column({ type: 'timestamp' })
+    updated_at: Date;
+
     @OneToMany(() => MouvementAchat, mouvement => mouvement.article)
     mouvements_achat: MouvementAchat[];
 }

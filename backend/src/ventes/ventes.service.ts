@@ -111,7 +111,12 @@ export class VentesService {
         montantPaye?: number;
         date?: string;
         items: { articleId?: number | null; reparationId?: number | null; designation?: string; qte: number; prix: number }[];
-    }, authorization?: string): Promise<Vente[]> {
+        /** Present only when this checkout is being replayed from an offline device's outbox: makes
+         *  the call idempotent (a retried sync of the same sale returns the original result instead
+         *  of recording it twice) and allows stock to go negative instead of being rejected - the
+         *  sale already physically happened in the store, so the server must honour it and just warn. */
+        client_id?: string;
+    }, authorization?: string): Promise<Vente[] & { avertissements?: string[] }> {
         if (!data.items || data.items.length === 0) {
             throw new BadRequestException('Le panier est vide.');
         }
@@ -126,11 +131,27 @@ export class VentesService {
         }
 
         const id_magasin = this.storeContext.requireMagasinId();
+        const acteur = await this.caisseService.acteurOuSysteme(authorization);
+
+        if (data.client_id) {
+            const [existant] = await this.dataSource.query(
+                `SELECT resultat FROM sync_operation_log WHERE client_id = $1 AND id_magasin = $2`,
+                [data.client_id, id_magasin],
+            );
+            if (existant) {
+                const venteIds: number[] = existant.resultat?.venteIds || [];
+                const ventes = await Promise.all(venteIds.map((id) => this.findOne(id))) as Vente[] & { avertissements?: string[] };
+                ventes.avertissements = existant.resultat?.avertissements || [];
+                return ventes;
+            }
+        }
+
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
 
         try {
+            const avertissements: string[] = [];
             const totalHt = data.items.reduce((sum, i) => sum + (i.qte || 0) * (i.prix || 0), 0);
             const remise = data.remise || 0;
             const ratio = totalHt > 0 ? Math.min(1, remise / totalHt) : 0;
@@ -185,8 +206,15 @@ export class VentesService {
 
                 const qte = item.qte || 1;
                 if (article.quantite < qte) {
-                    throw new BadRequestException(
-                        `Stock insuffisant pour "${article.designation}". Disponible: ${article.quantite}, demandé: ${qte}`
+                    if (!data.client_id) {
+                        throw new BadRequestException(
+                            `Stock insuffisant pour "${article.designation}". Disponible: ${article.quantite}, demandé: ${qte}`
+                        );
+                    }
+                    // Offline sale being replayed: it already physically happened in the store -
+                    // honour it and let the stock go negative, but flag it for the store owner.
+                    avertissements.push(
+                        `Stock devenu négatif pour "${article.designation}" après synchronisation (disponible : ${article.quantite}, vendu : ${qte}).`
                     );
                 }
 
@@ -246,13 +274,21 @@ export class VentesService {
                 }
             }
 
+            if (data.client_id) {
+                await queryRunner.query(
+                    `INSERT INTO sync_operation_log (client_id, id_magasin, id_utilisateur, type, resultat, avertissement)
+                     VALUES ($1, $2, $3, 'vente_checkout', $4, $5)`,
+                    [data.client_id, id_magasin, acteur.id, JSON.stringify({ venteIds: savedIds, avertissements }), avertissements.join(' ') || null],
+                );
+            }
+
             await queryRunner.commitTransaction();
-            const ventes = await Promise.all(savedIds.map(id => this.findOne(id)));
+            const ventes = await Promise.all(savedIds.map(id => this.findOne(id))) as Vente[] & { avertissements?: string[] };
+            ventes.avertissements = avertissements;
 
             // Cash that actually entered the drawer: the sale total minus the part paid from a client
             // balance minus whatever was left as a credit (not paid now)
             const total = ventes.reduce((s, v) => s + (v.qte || 1) * Number(v.prix || 0), 0);
-            const acteur = await this.caisseService.acteurOuSysteme(authorization);
             await this.caisseService.enregistrerAuto(acteur, {
                 type: 'entree',
                 source: 'vente',
@@ -263,6 +299,12 @@ export class VentesService {
             return ventes;
         } catch (err) {
             await queryRunner.rollbackTransaction();
+            // Two near-simultaneous sync retries of the same offline sale raced each other; the
+            // other one won and already recorded it (unique client_id) - return its result instead
+            // of surfacing a spurious error for what is, from the client's point of view, a success.
+            if (data.client_id && (err as any)?.code === '23505') {
+                return this.checkout(data, authorization);
+            }
             throw err;
         } finally {
             await queryRunner.release();

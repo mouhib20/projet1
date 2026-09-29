@@ -28,6 +28,23 @@ export class ReparationsService {
         });
     }
 
+    /** Tickets ready to be picked up (awaiting the checkout/"Vente avec reçu" step) - the minimal
+     *  slice of repair data the offline POS needs for its repair-pickup cart lines. Incremental
+     *  pull, same pattern as ArticlesService.syncDepuis / ClientsService.syncDepuis. */
+    async pickupReady(since?: string): Promise<any[]> {
+        const id_magasin = this.storeContext.requireMagasinId();
+        return this.dataSource.query(
+            `SELECT r.id_reparation, r.appareil, r.prix, r.statut, r.updated_at,
+                    r.id_client, c.nom AS client_nom
+               FROM reparation r LEFT JOIN client c ON c.id_client = r.id_client
+              WHERE r.id_magasin = $1
+                AND r.statut IN ('Livraison et réception', 'Terminé')
+                ${since ? 'AND r.updated_at > $2' : ''}
+              ORDER BY r.updated_at ASC`,
+            since ? [id_magasin, since] : [id_magasin],
+        );
+    }
+
     private static readonly TYPE_TO_CATEGORIE: Record<string, string> = {
         'Écran': 'afficheur',
         'Batterie': 'batterie',

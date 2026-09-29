@@ -45,6 +45,13 @@ export class ArticlesController {
         return this.articlesService.findAll();
     }
 
+    /** Offline mode: incremental pull for the POS's local cache. */
+    @Get('sync')
+    @RequirePermission('stock', 'voir')
+    sync(@Query('since') since?: string) {
+        return this.articlesService.syncDepuis(since);
+    }
+
     @Get('retours-fournisseur')
     @RequirePermission('stock', 'voir')
     findRetoursFournisseur() {

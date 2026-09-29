@@ -35,6 +35,9 @@ async function bootstrap() {
     const origines = (process.env.CORS_ORIGIN || '').split(',').map((s) => s.trim()).filter(Boolean);
     app.enableCors({
         origin: origines.length > 0 ? origines : process.env.NODE_ENV === 'production' ? false : true,
+        // Lets the frontend's offline-sync code read the negative-stock warning set on a replayed
+        // checkout (see VentesController.checkout) - not exposed by default cross-origin.
+        exposedHeaders: ['X-Vente-Avertissements'],
     });
 
     app.setGlobalPrefix('api');  // All routes become /api/...

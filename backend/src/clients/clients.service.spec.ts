@@ -12,6 +12,7 @@ describe('ClientsService — cross-store isolation (the pivotal test)', () => {
     let service: ClientsService;
     let clientRepo: Partial<Record<keyof Repository<Client>, jest.Mock>>;
     let storeContext: StoreContextService;
+    let dataSource: { transaction: jest.Mock; query: jest.Mock };
 
     // Two clients living in two different stores, as if both already existed in the DB.
     const clientMagasinA = { id_client: 1, nom: 'Client A', telephone: '111', solde: 0, id_magasin: 1 };
@@ -44,6 +45,7 @@ describe('ClientsService — cross-store isolation (the pivotal test)', () => {
 
         service = module.get<ClientsService>(ClientsService);
         storeContext = module.get<StoreContextService>(StoreContextService);
+        dataSource = module.get(DataSource) as any;
     });
 
     function makeFakeStoreContext(id_magasin: number | null): StoreContextService {
@@ -92,5 +94,21 @@ describe('ClientsService — cross-store isolation (the pivotal test)', () => {
 
     it('ajouterDette on a client from another store throws, no debt is recorded', async () => {
         await expect(service.ajouterDette(2, 10)).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    describe('syncDepuis() — offline POS incremental pull', () => {
+        it('always filters by id_magasin, and adds the updated_at filter only when since is given', async () => {
+            dataSource.query.mockResolvedValue([]);
+            await service.syncDepuis();
+            let [sql, params] = dataSource.query.mock.calls[0];
+            expect(sql).toMatch(/WHERE id_magasin = \$1/);
+            expect(sql).not.toMatch(/updated_at >/);
+            expect(params).toEqual([1]);
+
+            await service.syncDepuis('2026-01-01T00:00:00.000Z');
+            [sql, params] = dataSource.query.mock.calls[1];
+            expect(sql).toMatch(/updated_at > \$2/);
+            expect(params).toEqual([1, '2026-01-01T00:00:00.000Z']);
+        });
     });
 });

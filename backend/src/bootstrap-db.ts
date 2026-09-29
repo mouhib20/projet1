@@ -343,6 +343,38 @@ async function migrer(): Promise<void> {
         `);
         await client.query(`DO $$ BEGIN ALTER TABLE "wholesale_order_event" ADD CONSTRAINT "wholesale_order_event_id_order_fkey" FOREIGN KEY (id_order) REFERENCES wholesale_order(id) ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
 
+        // Offline mode (phase 1: sales) - updated_at on the tables the POS caches locally, kept
+        // fresh automatically regardless of whether a row is touched via the ORM or raw SQL
+        // (several UPDATE statements in this codebase bypass the ORM entirely).
+        await client.query(`
+            CREATE OR REPLACE FUNCTION set_updated_at() RETURNS trigger AS $$
+            BEGIN NEW.updated_at = now(); RETURN NEW; END;
+            $$ LANGUAGE plpgsql;
+        `);
+        for (const table of ['article', 'client', 'reparation']) {
+            await client.query(`ALTER TABLE "${table}" ADD COLUMN IF NOT EXISTS "updated_at" timestamp NOT NULL DEFAULT now()`);
+            await client.query(`DROP TRIGGER IF EXISTS "trg_${table}_updated_at" ON "${table}"`);
+            await client.query(`CREATE TRIGGER "trg_${table}_updated_at" BEFORE UPDATE ON "${table}" FOR EACH ROW EXECUTE FUNCTION set_updated_at()`);
+        }
+        // Idempotency log for replayed offline operations (unique client_id - a retried sync of the
+        // same queued sale returns the original result instead of recording it twice).
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "sync_operation_log" (
+                "id" SERIAL PRIMARY KEY,
+                "client_id" character varying(64) NOT NULL,
+                "id_magasin" integer NOT NULL,
+                "id_utilisateur" integer,
+                "type" character varying(50) NOT NULL,
+                "resultat" jsonb,
+                "avertissement" text,
+                "date_creation" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+        // Was briefly typed "uuid" during development (never released) - varchar matches the rest
+        // of this schema and doesn't force devices to generate strict RFC-4122 UUIDs.
+        await client.query(`ALTER TABLE "sync_operation_log" ALTER COLUMN "client_id" TYPE character varying(64)`);
+        await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "sync_operation_log_client_id_idx" ON "sync_operation_log" ("client_id")`);
+
         // Seed a super_admin account if requested and none exists yet (idempotent, every boot)
         const superAdminPwd = process.env.SEED_SUPER_ADMIN_PASSWORD || '';
         if (superAdminPwd.length >= 10) {
