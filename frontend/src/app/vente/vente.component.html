@@ -31,8 +31,6 @@
                 'SIDEBAR.SUPPLIERS' | translate }}</a>
             <a *ngIf="auth.hasAnyPermission('fournisseurs')" routerLink="factures" routerLinkActive="active" class="nav-link">📄 {{
                 'SIDEBAR.INVOICES' | translate }}</a>
-            <a *ngIf="auth.hasAnyPermission('compatibilite')" routerLink="compatibilite" routerLinkActive="active" class="nav-link">🧩 {{
-                'SIDEBAR.COMPATIBILITY' | translate }}</a>
             <a *ngIf="auth.isAdmin()" routerLink="employees" routerLinkActive="active" class="nav-link">👤 {{
                 'SIDEBAR.EMPLOYEES' | translate }}</a>
         </nav>
