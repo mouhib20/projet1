@@ -31,7 +31,10 @@
         "FEAT_SEARCH": "بحث",
         "FEAT_PARTS": "قطع",
         "FEAT_DEVICES": "أجهزة",
-        "FOOTER": "© 2026 GSMPro — جميع الحقوق محفوظة"
+        "FOOTER": "© 2026 GSMPro — جميع الحقوق محفوظة",
+        "FEAT_CATALOG": "الكتالوج",
+        "FEAT_BULK_ORDERS": "طلبات بالجملة",
+        "FEAT_WHOLESALE_PRICE": "سعر الجملة"
     },
     "SPACE": {
         "VENTE_TITLE": "مساحة المبيعات",
@@ -39,7 +42,9 @@
         "REPARATION_TITLE": "تصليح الهاتف",
         "REPARATION_DESC": "تتبع بطاقات الإصلاح وحالة الأجهزة",
         "COMPATIBILITE_TITLE": "التوافقية",
-        "COMPATIBILITE_DESC": "ابحث عن القطع المتوافقة مع أي جهاز"
+        "COMPATIBILITE_DESC": "ابحث عن القطع المتوافقة مع أي جهاز",
+        "WHOLESALE_TITLE": "بوابة البيع بالجملة",
+        "WHOLESALE_DESC": "اطلب قطع الغيار بسعر الجملة من محل الجملة"
     },
     "BTN": {
         "ACCESS": "دخول",

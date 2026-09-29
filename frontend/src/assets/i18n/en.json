@@ -31,7 +31,10 @@
         "FEAT_SEARCH": "Search",
         "FEAT_PARTS": "Parts",
         "FEAT_DEVICES": "Devices",
-        "FOOTER": "© 2026 GSMPro — All rights reserved"
+        "FOOTER": "© 2026 GSMPro — All rights reserved",
+        "FEAT_CATALOG": "Catalog",
+        "FEAT_BULK_ORDERS": "Bulk orders",
+        "FEAT_WHOLESALE_PRICE": "Wholesale price"
     },
     "SPACE": {
         "VENTE_TITLE": "Sales Space",
@@ -39,7 +42,9 @@
         "REPARATION_TITLE": "Phone Repair",
         "REPARATION_DESC": "Track repair tickets and device status",
         "COMPATIBILITE_TITLE": "Compatibility",
-        "COMPATIBILITE_DESC": "Find parts compatible with any device"
+        "COMPATIBILITE_DESC": "Find parts compatible with any device",
+        "WHOLESALE_TITLE": "Wholesale",
+        "WHOLESALE_DESC": "Order parts at wholesale price from the wholesale store"
     },
     "BTN": {
         "ACCESS": "Access",

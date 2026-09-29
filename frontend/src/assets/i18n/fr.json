@@ -31,7 +31,10 @@
         "FEAT_SEARCH": "Recherche",
         "FEAT_PARTS": "Pièces",
         "FEAT_DEVICES": "Appareils",
-        "FOOTER": "© 2026 GSMPro — Tous droits réservés"
+        "FOOTER": "© 2026 GSMPro — Tous droits réservés",
+        "FEAT_CATALOG": "Catalogue",
+        "FEAT_BULK_ORDERS": "Commandes groupées",
+        "FEAT_WHOLESALE_PRICE": "Prix de gros"
     },
     "SPACE": {
         "VENTE_TITLE": "Espace Vente",
@@ -39,7 +42,9 @@
         "REPARATION_TITLE": "Réparation de téléphone",
         "REPARATION_DESC": "Suivez les fiches de réparation et l'état des appareils",
         "COMPATIBILITE_TITLE": "Compatibilité",
-        "COMPATIBILITE_DESC": "Trouvez les pièces compatibles avec n'importe quel appareil"
+        "COMPATIBILITE_DESC": "Trouvez les pièces compatibles avec n'importe quel appareil",
+        "WHOLESALE_TITLE": "Vente en gros",
+        "WHOLESALE_DESC": "Commandez des pièces au prix de gros auprès du magasin de gros"
     },
     "BTN": {
         "ACCESS": "Accéder",
