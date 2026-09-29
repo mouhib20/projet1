@@ -97,7 +97,97 @@ export class CompatibilityService {
         );
     }
 
+    // ── Reference data (brands, models, part types): editor-only, for building groups ──
+
+    async listerMarques(authorization?: string): Promise<any[]> {
+        await this.editeurRequis(authorization);
+        return this.dataSource.query(`SELECT id, nom, logo FROM brand ORDER BY nom`);
+    }
+
+    async creerMarque(dto: { nom: string; logo?: string }, authorization?: string): Promise<{ id: number }> {
+        await this.editeurRequis(authorization);
+        const nom = String(dto.nom ?? '').trim();
+        if (!nom) throw new BadRequestException('Le nom de la marque est obligatoire.');
+        const rows = await this.dataSource.query(
+            `INSERT INTO brand (nom, logo) VALUES ($1, $2) RETURNING id`,
+            [nom, dto.logo || null],
+        );
+        return { id: rows[0].id };
+    }
+
+    async listerModeles(authorization?: string): Promise<any[]> {
+        await this.editeurRequis(authorization);
+        return this.dataSource.query(
+            `SELECT dm.id, dm.nom, dm.nom_commercial, dm.code, b.id AS id_brand, b.nom AS marque
+               FROM device_model dm JOIN brand b ON b.id = dm.id_brand
+              ORDER BY b.nom, dm.nom`,
+        );
+    }
+
+    async creerModele(dto: { id_brand: number; nom: string; nom_commercial?: string; code?: string }, authorization?: string): Promise<{ id: number }> {
+        await this.editeurRequis(authorization);
+        const nom = String(dto.nom ?? '').trim();
+        if (!dto.id_brand) throw new BadRequestException('La marque est obligatoire.');
+        if (!nom) throw new BadRequestException('Le nom du modèle est obligatoire.');
+        const rows = await this.dataSource.query(
+            `INSERT INTO device_model (id_brand, nom, nom_commercial, code) VALUES ($1, $2, $3, $4) RETURNING id`,
+            [dto.id_brand, nom, dto.nom_commercial?.trim() || null, dto.code?.trim() || null],
+        );
+        return { id: rows[0].id };
+    }
+
+    async listerTypesPieces(authorization?: string): Promise<any[]> {
+        await this.editeurRequis(authorization);
+        return this.dataSource.query(`SELECT id, nom_fr, nom_en, nom_ar, categorie FROM part_type ORDER BY nom_fr`);
+    }
+
+    async creerTypePiece(dto: { nom_fr: string; nom_en: string; nom_ar: string; categorie?: 'part' | 'accessory' }, authorization?: string): Promise<{ id: number }> {
+        await this.editeurRequis(authorization);
+        const nomFr = String(dto.nom_fr ?? '').trim();
+        const nomEn = String(dto.nom_en ?? '').trim();
+        const nomAr = String(dto.nom_ar ?? '').trim();
+        if (!nomFr || !nomEn || !nomAr) throw new BadRequestException('Le nom du type de pièce est obligatoire dans les trois langues.');
+        const rows = await this.dataSource.query(
+            `INSERT INTO part_type (nom_fr, nom_en, nom_ar, categorie) VALUES ($1, $2, $3, $4) RETURNING id`,
+            [nomFr, nomEn, nomAr, dto.categorie === 'accessory' ? 'accessory' : 'part'],
+        );
+        return { id: rows[0].id };
+    }
+
     // ── Groups (write: compat_editor/super_admin; delete: super_admin only) ────
+
+    /** All groups, for the editor's management table. */
+    async listerGroupes(authorization?: string): Promise<any[]> {
+        await this.editeurRequis(authorization);
+        return this.dataSource.query(
+            `SELECT cg.id, cg.note, cg.image, cg.date_creation,
+                    pt.id AS id_part_type, pt.nom_fr, pt.nom_en, pt.nom_ar,
+                    COALESCE(array_agg(dm.nom ORDER BY dm.nom) FILTER (WHERE dm.nom IS NOT NULL), '{}') AS modeles
+               FROM compat_group cg
+               JOIN part_type pt ON pt.id = cg.id_part_type
+               LEFT JOIN compat_group_model cgm ON cgm.id_group = cg.id
+               LEFT JOIN device_model dm ON dm.id = cgm.id_model
+              GROUP BY cg.id, pt.id
+              ORDER BY cg.date_creation DESC`,
+        );
+    }
+
+    /** One group with its linked model ids, for the edit form. */
+    async obtenirGroupe(id: number, authorization?: string): Promise<any> {
+        await this.editeurRequis(authorization);
+        const [groupe] = await this.dataSource.query(
+            `SELECT cg.id, cg.note, cg.image, cg.id_part_type FROM compat_group cg WHERE cg.id = $1`,
+            [id],
+        );
+        if (!groupe) throw new NotFoundException(`Groupe de compatibilité #${id} introuvable`);
+        const modeles = await this.dataSource.query(
+            `SELECT id_model FROM compat_group_model WHERE id_group = $1`,
+            [id],
+        );
+        return { ...groupe, modeleIds: modeles.map((m: any) => m.id_model) };
+    }
+
+
 
     async creerGroupe(
         dto: { id_part_type: number; modeleIds: number[]; note?: string; image?: string },

@@ -17,8 +17,11 @@ import { authGuard } from './guards/auth.guard';
 import { adminGuard } from './guards/admin.guard';
 import { permissionGuard } from './guards/permission.guard';
 import { superAdminGuard } from './guards/super-admin.guard';
+import { compatEditorGuard } from './guards/compat-editor.guard';
 import { StoresListComponent } from './super-admin/stores-list/stores-list.component';
 import { StoreModulesComponent } from './super-admin/store-modules/store-modules.component';
+import { CompatEditorsComponent } from './super-admin/compat-editors/compat-editors.component';
+import { CompatGroupsComponent } from './compat-editor/compat-groups/compat-groups.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -47,6 +50,12 @@ export const routes: Routes = [
     },
     {
         path: 'super-admin/stores/:id/modules', component: StoreModulesComponent, canActivate: [superAdminGuard],
+    },
+    {
+        path: 'super-admin/compat-editors', component: CompatEditorsComponent, canActivate: [superAdminGuard],
+    },
+    {
+        path: 'compat-editor/groups', component: CompatGroupsComponent, canActivate: [compatEditorGuard],
     },
     { path: '**', redirectTo: '' }
 ];

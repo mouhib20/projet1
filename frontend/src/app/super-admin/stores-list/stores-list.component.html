@@ -7,6 +7,7 @@
             <div class="page-subtitle">{{ 'SUPER_ADMIN.SUBTITLE' | translate }}</div>
         </div>
         <div class="header-boutons">
+            <button class="btn btn-secondary" (click)="goToCompatEditors()">🧑‍🔧 {{ 'SUPER_ADMIN.COMPAT_EDITORS_LINK' | translate }}</button>
             <button class="btn btn-primary" *ngIf="!showForm" (click)="openAddForm()">＋ {{ 'SUPER_ADMIN.ADD_STORE' | translate }}</button>
             <button class="btn btn-secondary" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
         </div>

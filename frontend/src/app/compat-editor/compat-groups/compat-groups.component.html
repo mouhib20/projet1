@@ -1,0 +1,122 @@
+<div class="groups-page">
+
+    <div class="page-header">
+        <div>
+            <div class="page-title">🧩 {{ 'COMPAT_GROUPS.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'COMPAT_GROUPS.SUBTITLE' | translate }}</div>
+        </div>
+        <div class="header-boutons">
+            <button class="btn btn-primary" *ngIf="!showForm" (click)="openAddForm()">＋ {{ 'COMPAT_GROUPS.ADD_GROUP' | translate }}</button>
+            <button class="btn btn-secondary" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
+        </div>
+    </div>
+
+    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg | translate }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
+
+    <!-- Add/edit group form -->
+    <div class="form-card" *ngIf="showForm">
+        <div class="form-card-header">
+            <ng-container *ngIf="editingId">✏️ {{ 'COMPAT_GROUPS.EDIT_GROUP' | translate }}</ng-container>
+            <ng-container *ngIf="!editingId">➕ {{ 'COMPAT_GROUPS.NEW_GROUP' | translate }}</ng-container>
+        </div>
+
+        <!-- Part type -->
+        <div class="form-group">
+            <label>{{ 'COMPAT_GROUPS.PART_TYPE_LABEL' | translate }}</label>
+            <div class="inline-row">
+                <select [(ngModel)]="form.id_part_type">
+                    <option [ngValue]="null">{{ 'COMPAT_GROUPS.SELECT_PLACEHOLDER' | translate }}</option>
+                    <option *ngFor="let pt of partTypes" [ngValue]="pt.id">{{ partTypeName(pt) }}</option>
+                </select>
+                <button class="btn-outline btn-sm" (click)="showNewPartType = !showNewPartType">＋ {{ 'COMPAT_GROUPS.NEW_PART_TYPE' | translate }}</button>
+            </div>
+            <div class="inline-form" *ngIf="showNewPartType">
+                <input type="text" [(ngModel)]="newPartType.nom_fr" [placeholder]="'COMPAT_GROUPS.PART_TYPE_FR_PLACEHOLDER' | translate" />
+                <input type="text" [(ngModel)]="newPartType.nom_en" [placeholder]="'COMPAT_GROUPS.PART_TYPE_EN_PLACEHOLDER' | translate" />
+                <input type="text" [(ngModel)]="newPartType.nom_ar" [placeholder]="'COMPAT_GROUPS.PART_TYPE_AR_PLACEHOLDER' | translate" />
+                <button class="btn btn-success btn-sm" (click)="addPartType()">{{ 'COMPAT_GROUPS.ADD' | translate }}</button>
+            </div>
+        </div>
+
+        <!-- Note -->
+        <div class="form-group">
+            <label>{{ 'COMPAT_GROUPS.NOTE_LABEL' | translate }}</label>
+            <input type="text" [(ngModel)]="form.note" [placeholder]="'COMPAT_GROUPS.NOTE_PLACEHOLDER' | translate" />
+        </div>
+
+        <!-- Compatible models -->
+        <div class="form-group full">
+            <label>{{ 'COMPAT_GROUPS.MODELS_LABEL' | translate }}</label>
+            <input type="text" class="search-input-full" [(ngModel)]="modelSearchTerm" [placeholder]="'COMPAT_GROUPS.SEARCH_MODELS_PLACEHOLDER' | translate" />
+            <div class="models-list">
+                <label class="model-checkbox" *ngFor="let m of filteredModels">
+                    <input type="checkbox" [checked]="isModelSelected(m.id)" (change)="toggleModel(m.id)" />
+                    <span>{{ m.marque }} {{ m.nom }}<span class="model-code" *ngIf="m.code"> · {{ m.code }}</span></span>
+                </label>
+                <div class="empty-hint" *ngIf="filteredModels.length === 0">{{ 'COMPAT_GROUPS.NO_MODELS' | translate }}</div>
+            </div>
+            <div class="selected-count">{{ form.modeleIds.length }} {{ 'COMPAT_GROUPS.SELECTED_SUFFIX' | translate }}</div>
+
+            <div class="inline-row">
+                <button class="btn-outline btn-sm" (click)="showNewBrand = !showNewBrand">＋ {{ 'COMPAT_GROUPS.NEW_BRAND' | translate }}</button>
+                <button class="btn-outline btn-sm" (click)="showNewModel = !showNewModel">＋ {{ 'COMPAT_GROUPS.NEW_MODEL' | translate }}</button>
+            </div>
+            <div class="inline-form" *ngIf="showNewBrand">
+                <input type="text" [(ngModel)]="newBrand.nom" [placeholder]="'COMPAT_GROUPS.BRAND_NAME_PLACEHOLDER' | translate" />
+                <button class="btn btn-success btn-sm" (click)="addBrand()">{{ 'COMPAT_GROUPS.ADD' | translate }}</button>
+            </div>
+            <div class="inline-form" *ngIf="showNewModel">
+                <select [(ngModel)]="newModel.id_brand">
+                    <option [ngValue]="null">{{ 'COMPAT_GROUPS.SELECT_BRAND_PLACEHOLDER' | translate }}</option>
+                    <option *ngFor="let b of brands" [ngValue]="b.id">{{ b.nom }}</option>
+                </select>
+                <input type="text" [(ngModel)]="newModel.nom" [placeholder]="'COMPAT_GROUPS.MODEL_NAME_PLACEHOLDER' | translate" />
+                <input type="text" [(ngModel)]="newModel.nom_commercial" [placeholder]="'COMPAT_GROUPS.MODEL_COMMERCIAL_PLACEHOLDER' | translate" />
+                <input type="text" [(ngModel)]="newModel.code" [placeholder]="'COMPAT_GROUPS.MODEL_CODE_PLACEHOLDER' | translate" />
+                <button class="btn btn-success btn-sm" (click)="addModel()">{{ 'COMPAT_GROUPS.ADD' | translate }}</button>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-secondary" (click)="cancelForm()">{{ 'CANCEL' | translate }}</button>
+            <button class="btn btn-success" [disabled]="saving" (click)="save()">
+                {{ (saving ? 'COMPAT_GROUPS.SAVING' : (editingId ? 'COMPAT_GROUPS.SAVE' : 'COMPAT_GROUPS.CREATE')) | translate }}
+            </button>
+        </div>
+    </div>
+
+    <div class="loading-state" *ngIf="loading">
+        <div class="loading-icon">⟳</div>
+        <strong>{{ 'COMPAT_GROUPS.LOADING' | translate }}</strong>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && groups.length === 0">
+        <div class="empty-icon">🧩</div>
+        <strong>{{ 'COMPAT_GROUPS.EMPTY' | translate }}</strong>
+    </div>
+
+    <div class="table-container" *ngIf="!loading && groups.length > 0">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>{{ 'COMPAT_GROUPS.COL_PART_TYPE' | translate }}</th>
+                    <th>{{ 'COMPAT_GROUPS.COL_MODELS' | translate }}</th>
+                    <th>{{ 'COMPAT_GROUPS.COL_NOTE' | translate }}</th>
+                    <th class="text-center">{{ 'COMPAT_GROUPS.COL_ACTIONS' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let g of groups">
+                    <td class="fw-bold">{{ partTypeName(g) }}</td>
+                    <td>{{ g.modeles.join(', ') || '—' }}</td>
+                    <td>{{ g.note || '—' }}</td>
+                    <td class="text-center">
+                        <button class="btn-outline btn-sm" (click)="openEditForm(g)">✏️ {{ 'COMPAT_GROUPS.BTN_EDIT' | translate }}</button>
+                        <button class="btn-outline btn-sm" *ngIf="auth.isSuperAdmin()" (click)="deleteGroup(g)">🗑️ {{ 'COMPAT_GROUPS.BTN_DELETE' | translate }}</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -25,9 +25,11 @@ export class LoginComponent {
         }
     }
 
-    /** Super Admin has no store of its own and never sees the regular POS/stock/etc. pages. */
+    /** Super Admin and compat_editor have no store of their own and never see the regular POS/stock/etc. pages. */
     private landingRoute(): string {
-        return this.authService.isSuperAdmin() ? '/super-admin/stores' : '/vente/accueil';
+        if (this.authService.isSuperAdmin()) return '/super-admin/stores';
+        if (this.authService.isCompatEditor()) return '/compat-editor/groups';
+        return '/vente/accueil';
     }
 
     togglePassword() {

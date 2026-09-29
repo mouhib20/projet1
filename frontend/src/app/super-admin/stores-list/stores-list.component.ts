@@ -139,6 +139,10 @@ export class StoresListComponent implements OnInit {
         this.router.navigate(['/super-admin/stores', store.id_magasin, 'modules']);
     }
 
+    goToCompatEditors(): void {
+        this.router.navigate(['/super-admin/compat-editors']);
+    }
+
     logout(): void {
         this.auth.logout();
     }

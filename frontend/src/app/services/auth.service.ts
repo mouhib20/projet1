@@ -5,8 +5,8 @@ import { tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-export type UserRole = 'super_admin' | 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
-export type Departement = 'ventes' | 'stock' | 'reparation' | 'fournisseurs' | 'charges' | 'clients' | 'rapports';
+export type UserRole = 'super_admin' | 'compat_editor' | 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
+export type Departement = 'ventes' | 'stock' | 'reparation' | 'fournisseurs' | 'charges' | 'clients' | 'rapports' | 'compatibilite';
 export type PermissionAction = 'voir' | 'ajouter' | 'modifier' | 'supprimer';
 export type PermissionEntry = { voir: boolean; ajouter: boolean; modifier: boolean; supprimer: boolean };
 export type PermissionMatrix = Partial<Record<Departement, PermissionEntry>>;
@@ -69,6 +69,10 @@ export class AuthService {
 
     isSuperAdmin(): boolean {
         return this.getRole() === 'super_admin';
+    }
+
+    isCompatEditor(): boolean {
+        return this.getRole() === 'compat_editor';
     }
 
     /** null for super_admin (no store of its own), otherwise the account's store id. */

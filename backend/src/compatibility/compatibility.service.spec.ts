@@ -129,6 +129,56 @@ describe('CompatibilityService', () => {
         });
     });
 
+    describe('reference-data endpoints (brands/models/part-types) — editor-only reads and writes', () => {
+        it('listerMarques rejects a regular store admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
+            await expect(service.listerMarques('Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('listerMarques allows compat_editor and returns the query result', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValue([{ id: 1, nom: 'Samsung', logo: null }]);
+            await expect(service.listerMarques('Bearer x')).resolves.toEqual([{ id: 1, nom: 'Samsung', logo: null }]);
+        });
+
+        it('creerModele rejects a store admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
+            await expect(
+                service.creerModele({ id_brand: 1, nom: 'A03s' }, 'Bearer x'),
+            ).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('creerTypePiece requires all three language names', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            await expect(
+                service.creerTypePiece({ nom_fr: 'Écran', nom_en: '', nom_ar: 'شاشة' }, 'Bearer x'),
+            ).rejects.toThrow();
+        });
+    });
+
+    describe('obtenirGroupe() — editor-only, 404 when missing', () => {
+        it('rejects a store admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
+            await expect(service.obtenirGroupe(1, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('throws NotFoundException when the group does not exist', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValue([]);
+            await expect(service.obtenirGroupe(999, 'Bearer x')).rejects.toBeInstanceOf(NotFoundException);
+        });
+
+        it('returns the group with its linked model ids', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 1, note: null, image: null, id_part_type: 2 }])
+                .mockResolvedValueOnce([{ id_model: 10 }, { id_model: 11 }]);
+            await expect(service.obtenirGroupe(1, 'Bearer x')).resolves.toEqual({
+                id: 1, note: null, image: null, id_part_type: 2, modeleIds: [10, 11],
+            });
+        });
+    });
+
     describe('traiterSuggestion() — 404 when the suggestion does not exist', () => {
         it('throws NotFoundException when nothing was updated', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });

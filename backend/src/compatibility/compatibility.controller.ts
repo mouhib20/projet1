@@ -29,7 +29,55 @@ export class CompatibilityController {
         return this.service.creerSuggestion(body, auth);
     }
 
+    // ── Reference data: compat_editor / super_admin (checked inside the service) ──
+
+    @Get('brands')
+    listerMarques(@Headers('authorization') auth?: string) {
+        return this.service.listerMarques(auth);
+    }
+
+    @Post('brands')
+    creerMarque(@Body() body: { nom: string; logo?: string }, @Headers('authorization') auth?: string) {
+        return this.service.creerMarque(body, auth);
+    }
+
+    @Get('models')
+    listerModeles(@Headers('authorization') auth?: string) {
+        return this.service.listerModeles(auth);
+    }
+
+    @Post('models')
+    creerModele(
+        @Body() body: { id_brand: number; nom: string; nom_commercial?: string; code?: string },
+        @Headers('authorization') auth?: string,
+    ) {
+        return this.service.creerModele(body, auth);
+    }
+
+    @Get('part-types')
+    listerTypesPieces(@Headers('authorization') auth?: string) {
+        return this.service.listerTypesPieces(auth);
+    }
+
+    @Post('part-types')
+    creerTypePiece(
+        @Body() body: { nom_fr: string; nom_en: string; nom_ar: string; categorie?: 'part' | 'accessory' },
+        @Headers('authorization') auth?: string,
+    ) {
+        return this.service.creerTypePiece(body, auth);
+    }
+
     // ── Groups: compat_editor / super_admin (checked inside the service) ──
+
+    @Get('groups')
+    listerGroupes(@Headers('authorization') auth?: string) {
+        return this.service.listerGroupes(auth);
+    }
+
+    @Get('groups/:id')
+    obtenirGroupe(@Param('id', ParseIntPipe) id: number, @Headers('authorization') auth?: string) {
+        return this.service.obtenirGroupe(id, auth);
+    }
 
     @Post('groups')
     creerGroupe(
