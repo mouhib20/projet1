@@ -15,6 +15,9 @@ export class ClientDepot {
     @Column({ type: 'varchar', length: 255, nullable: true })
     note: string;
 
+    @Column({ nullable: true })
+    id_magasin: number;
+
     @ManyToOne(() => Client, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'id_client' })
     client: Client;

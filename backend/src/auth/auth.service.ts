@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { DataSource } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { PermissionsService } from '../permissions/permissions.service';
 import * as bcrypt from 'bcrypt';
@@ -10,6 +11,7 @@ export class AuthService {
         private usersService: UsersService,
         private jwtService: JwtService,
         private permissionsService: PermissionsService,
+        private dataSource: DataSource,
     ) { }
 
     async login(username: string, password: string) {
@@ -20,6 +22,11 @@ export class AuthService {
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) throw new UnauthorizedException('Mot de passe incorrect');
         if (!user.actif) throw new ForbiddenException('Compte suspendu.');
+
+        if (user.id_magasin != null) {
+            const [magasin] = await this.dataSource.query(`SELECT actif FROM magasin WHERE id_magasin = $1`, [user.id_magasin]);
+            if (!magasin || !magasin.actif) throw new ForbiddenException('Ce magasin est suspendu.');
+        }
 
         const payload = { sub: user.id, username: user.username, role: user.role, id_magasin: user.id_magasin };
         return {

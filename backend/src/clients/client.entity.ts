@@ -17,6 +17,9 @@ export class Client {
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
     solde: number;
 
+    @Column({ nullable: true })
+    id_magasin: number;
+
     @OneToMany(() => Vente, vente => vente.client)
     ventes: Vente[];
 

@@ -9,6 +9,7 @@ import { initialiserBase } from './bootstrap-db';
 
 async function bootstrap() {
     mkdirSync(join(process.cwd(), 'uploads', 'articles'), { recursive: true });
+    mkdirSync(join(process.cwd(), 'uploads', 'magasins'), { recursive: true });
 
     // Empty database on first start: create the tables and the login accounts (AUTO_INIT_DB=true)
     await initialiserBase();

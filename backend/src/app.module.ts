@@ -40,6 +40,7 @@ import { Permission } from './permissions/permission.entity';
 import { EmployeesModule } from './employees/employees.module';
 import { Magasin } from './magasins/magasin.entity';
 import { MagasinModule as MagasinModuleEntity } from './magasins/magasin-module.entity';
+import { MagasinsModule } from './magasins/magasins.module';
 
 @Module({
     imports: [
@@ -94,6 +95,7 @@ import { MagasinModule as MagasinModuleEntity } from './magasins/magasin-module.
         PaiementsFournisseurModule,
         PermissionsModule,
         EmployeesModule,
+        MagasinsModule,
     ],
     controllers: [AppController],
     providers: [
