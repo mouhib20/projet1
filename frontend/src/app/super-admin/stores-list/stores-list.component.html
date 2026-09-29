@@ -1,0 +1,130 @@
+<div class="stores-page">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <div class="page-title">🏬 {{ 'SUPER_ADMIN.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'SUPER_ADMIN.SUBTITLE' | translate }}</div>
+        </div>
+        <div class="header-boutons">
+            <button class="btn btn-primary" *ngIf="!showForm" (click)="openAddForm()">＋ {{ 'SUPER_ADMIN.ADD_STORE' | translate }}</button>
+            <button class="btn btn-secondary" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg | translate }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
+
+    <!-- Create form -->
+    <div class="form-card" *ngIf="showForm">
+        <div class="form-card-header">➕ {{ 'SUPER_ADMIN.NEW_STORE' | translate }}</div>
+
+        <div class="form-subheader">{{ 'SUPER_ADMIN.STORE_SECTION' | translate }}</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>{{ 'SUPER_ADMIN.STORE_NAME_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.nom" [placeholder]="'SUPER_ADMIN.STORE_NAME_PLACEHOLDER' | translate" />
+            </div>
+            <div class="form-group">
+                <label>{{ 'SUPER_ADMIN.STORE_PHONE_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.telephone" [placeholder]="'SUPER_ADMIN.STORE_PHONE_PLACEHOLDER' | translate" />
+            </div>
+            <div class="form-group full">
+                <label>{{ 'SUPER_ADMIN.STORE_ADDRESS_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.adresse" [placeholder]="'SUPER_ADMIN.STORE_ADDRESS_PLACEHOLDER' | translate" />
+            </div>
+            <div class="form-group full">
+                <label>{{ 'SUPER_ADMIN.STORE_LOGO_LABEL' | translate }}</label>
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onLogoSelected($event)" />
+                <span class="hint" *ngIf="logoFile">{{ logoFile.name }}</span>
+                <span class="field-error" *ngIf="logoError">⚠️ {{ logoError | translate }}</span>
+            </div>
+        </div>
+
+        <div class="form-subheader">{{ 'SUPER_ADMIN.OWNER_SECTION' | translate }}</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>{{ 'SUPER_ADMIN.OWNER_NAME_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.ownerNom" [placeholder]="'SUPER_ADMIN.OWNER_NAME_PLACEHOLDER' | translate" />
+            </div>
+            <div class="form-group">
+                <label>{{ 'SUPER_ADMIN.OWNER_PHONE_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.ownerTelephone" [placeholder]="'SUPER_ADMIN.OWNER_PHONE_PLACEHOLDER' | translate" />
+            </div>
+            <div class="form-group">
+                <label>{{ 'SUPER_ADMIN.OWNER_USERNAME_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.ownerUsername" [placeholder]="'SUPER_ADMIN.OWNER_USERNAME_PLACEHOLDER' | translate" />
+            </div>
+            <div class="form-group">
+                <label>{{ 'SUPER_ADMIN.OWNER_PASSWORD_LABEL' | translate }}</label>
+                <input type="password" [(ngModel)]="form.ownerPassword" [placeholder]="'SUPER_ADMIN.OWNER_PASSWORD_PLACEHOLDER' | translate" />
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-secondary" (click)="cancelForm()">{{ 'CANCEL' | translate }}</button>
+            <button class="btn btn-success" [disabled]="savingStore || logoUploading" (click)="saveStore()">
+                <ng-container *ngIf="savingStore || logoUploading">{{ 'SUPER_ADMIN.SAVING' | translate }}</ng-container>
+                <ng-container *ngIf="!savingStore && !logoUploading">{{ 'SUPER_ADMIN.CREATE' | translate }}</ng-container>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="table-toolbar">
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" type="text" [placeholder]="'SUPER_ADMIN.SEARCH_PLACEHOLDER' | translate"
+                [(ngModel)]="searchTerm" />
+        </div>
+        <div class="table-count">{{ filteredStores.length }} {{ 'SUPER_ADMIN.COUNT_SUFFIX' | translate }}</div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="loading">
+        <div class="loading-icon">⟳</div>
+        <strong>{{ 'SUPER_ADMIN.LOADING' | translate }}</strong>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty-state" *ngIf="!loading && filteredStores.length === 0">
+        <div class="empty-icon">🏬</div>
+        <strong>{{ 'SUPER_ADMIN.EMPTY' | translate }}</strong>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container" *ngIf="!loading && filteredStores.length > 0">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>{{ 'SUPER_ADMIN.COL_NAME' | translate }}</th>
+                    <th>{{ 'SUPER_ADMIN.COL_PHONE' | translate }}</th>
+                    <th class="text-center">{{ 'SUPER_ADMIN.COL_STATUS' | translate }}</th>
+                    <th class="text-center">{{ 'SUPER_ADMIN.COL_ACTIONS' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let s of filteredStores">
+                    <td>
+                        <img *ngIf="logoUrl(s) as url" [src]="url" class="store-logo" [alt]="s.nom" />
+                        <span *ngIf="!s.logo" class="store-logo-placeholder">🏬</span>
+                    </td>
+                    <td class="fw-bold">{{ s.nom }}</td>
+                    <td>{{ s.telephone || '—' }}</td>
+                    <td class="text-center">
+                        <span class="badge-dette" *ngIf="!s.actif">{{ 'SUPER_ADMIN.STATUS_SUSPENDED' | translate }}</span>
+                        <span class="text-success" *ngIf="s.actif">{{ 'SUPER_ADMIN.STATUS_ACTIVE' | translate }}</span>
+                    </td>
+                    <td class="text-center">
+                        <button class="btn-outline btn-sm" (click)="openModules(s)">🧩 {{ 'SUPER_ADMIN.BTN_MODULES' | translate }}</button>
+                        <button class="btn-outline btn-sm" (click)="toggleStatut(s)">
+                            {{ (s.actif ? 'SUPER_ADMIN.BTN_SUSPEND' : 'SUPER_ADMIN.BTN_REACTIVATE') | translate }}
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

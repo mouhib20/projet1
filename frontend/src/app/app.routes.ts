@@ -16,6 +16,9 @@ import { EmployeePermissionsComponent } from './vente/employees/permissions/empl
 import { authGuard } from './guards/auth.guard';
 import { adminGuard } from './guards/admin.guard';
 import { permissionGuard } from './guards/permission.guard';
+import { superAdminGuard } from './guards/super-admin.guard';
+import { StoresListComponent } from './super-admin/stores-list/stores-list.component';
+import { StoreModulesComponent } from './super-admin/store-modules/store-modules.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -39,5 +42,11 @@ export const routes: Routes = [
         ]
     },
     { path: 'reparation', component: ReparationComponent, canActivate: [permissionGuard('reparation')] },
+    {
+        path: 'super-admin/stores', component: StoresListComponent, canActivate: [superAdminGuard],
+    },
+    {
+        path: 'super-admin/stores/:id/modules', component: StoreModulesComponent, canActivate: [superAdminGuard],
+    },
     { path: '**', redirectTo: '' }
 ];
