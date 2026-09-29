@@ -10,6 +10,7 @@ import { PermissionsModule } from '../permissions/permissions.module';
 import { PermissionsGuard } from '../permissions/permissions.guard';
 import { StoreContextModule } from '../store-context/store-context.module';
 import { StoreOwnershipGuard } from '../store-context/store-ownership.guard';
+import { MagasinModulesModule } from '../magasin-modules/magasin-modules.module';
 import { JWT_SECRET } from './jwt.constants';
 
 @Module({
@@ -17,6 +18,7 @@ import { JWT_SECRET } from './jwt.constants';
         UsersModule,
         PermissionsModule,
         StoreContextModule,
+        MagasinModulesModule,
         JwtModule.register({
             secret: JWT_SECRET,
             signOptions: { expiresIn: '8h' },
