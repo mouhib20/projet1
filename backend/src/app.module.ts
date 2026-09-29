@@ -19,8 +19,6 @@ import { ClientDepot } from './clients/client-depot.entity';
 import { Vente } from './ventes/vente.entity';
 import { Reparation } from './reparations/reparation.entity';
 import { ReparationItem } from './reparations/reparation-item.entity';
-import { ProductsModule } from './products/products.module';
-import { ProductEntity } from './products/product.entity';
 import { ArticlesModule } from './articles/articles.module';
 import { FournisseursModule } from './fournisseurs/fournisseurs.module';
 import { MouvementsAchatModule } from './mouvements-achat/mouvements-achat.module';
@@ -72,13 +70,12 @@ import { MagasinsModule } from './magasins/magasins.module';
                 return {
                     type: 'postgres' as const,
                     ...connexion,
-                    entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, ProductEntity, FactureAchat, Charge, Utilisateur, Permission, Magasin, MagasinModuleEntity],
+                    entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, FactureAchat, Charge, Utilisateur, Permission, Magasin, MagasinModuleEntity],
                     synchronize: configService.get<string>('DB_SYNC', 'false') === 'true',
                     ssl: configService.get<string>('DB_SSL', 'true') === 'true' ? { rejectUnauthorized: false } : false,
                 };
             },
         }),
-        ProductsModule,
         ArticlesModule,
         FournisseursModule,
         MouvementsAchatModule,
