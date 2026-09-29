@@ -131,6 +131,7 @@
         "MODEL_EX": "مثال: Galaxy A51",
         "QTY_RECEIVED": "الكمية المستلمة",
         "BARCODE": "الباركود (اختياري)",
+        "CATALOGUE_LOOKUP": "جارٍ البحث في الكتالوج المشترك…",
         "PRICE_BUY": "سعر الشراء للقطعة",
         "PRICE_SELL": "سعر البيع المقترح",
         "ADD_TO_INVOICE": "إضافة للفاتورة",

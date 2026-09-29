@@ -258,6 +258,13 @@
     flex-direction: column;
 }
 
+.catalogue-hint {
+    font-size: 11.5px;
+    color: #a5b4fc;
+    margin-top: 4px;
+    display: block;
+}
+
 .modern-form label {
     font-size: 13px;
     font-weight: 600;

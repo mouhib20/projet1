@@ -45,6 +45,30 @@ export class ArticlesService {
         await this.repo.delete(id);
     }
 
+    /**
+     * Cross-store barcode lookup — the one deliberate exception to store scoping in this
+     * service. Used only to pre-fill a NEW article's descriptive fields when another store has
+     * already registered the same barcode, so entering a purchase invoice is faster. Returns
+     * only reference/descriptive fields (designation, marque, modele, type, sous_categorie,
+     * image, barcode) — NEVER prix_achat, prix_vente, quantite, qte_min, id_magasin or
+     * id_article, and never anything identifying which store registered it first. The article
+     * actually created afterward is, as always, scoped to the caller's own store only.
+     */
+    async rechercheCatalogue(barcode: string): Promise<{
+        designation: string; marque: string | null; modele: string | null;
+        type: string | null; sous_categorie: string | null; image: string | null; barcode: string;
+    } | null> {
+        const trimmed = String(barcode ?? '').trim();
+        if (!trimmed) return null;
+        const rows = await this.dataSource.query(
+            `SELECT designation, marque, modele, type, sous_categorie, image, barcode
+               FROM article WHERE barcode = $1
+              ORDER BY id_article DESC LIMIT 1`,
+            [trimmed],
+        );
+        return rows[0] ?? null;
+    }
+
     /** Parts sent back to a supplier, most recent first, with the problem that was reported. */
     findRetoursFournisseur(): Promise<any[]> {
         return this.dataSource.query(

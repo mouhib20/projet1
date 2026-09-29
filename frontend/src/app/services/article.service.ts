@@ -24,6 +24,17 @@ export function articleImageUrl(image?: string | null): string | null {
     return `${environment.filesUrl}${image}`;
 }
 
+/** Cross-store catalogue lookup result: reference/descriptive fields only, never price/quantity. */
+export interface CatalogueEntry {
+    designation: string;
+    marque: string | null;
+    modele: string | null;
+    type: string | null;
+    sous_categorie: string | null;
+    image: string | null;
+    barcode: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -80,5 +91,14 @@ export class ArticleService {
 
     renvoyerAuFournisseur(articleId: number, data: { probleme: string; qte?: number }): Observable<{ fournisseur: string | null }> {
         return this.http.post<{ fournisseur: string | null }>(`${this.apiUrl}/${articleId}/retour-fournisseur`, data);
+    }
+
+    /**
+     * Cross-store barcode lookup: when no article in your own store matches, another store may
+     * already have registered this same barcode. Returns only its reference fields (brand,
+     * model, photo...) to pre-fill a new article's form — never its price, quantity or store.
+     */
+    rechercheCatalogue(barcode: string): Observable<CatalogueEntry | null> {
+        return this.http.get<CatalogueEntry | null>(`${this.apiUrl}/catalogue`, { params: { barcode } });
     }
 }

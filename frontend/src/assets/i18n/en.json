@@ -131,6 +131,7 @@
         "MODEL_EX": "Ex: Galaxy A51",
         "QTY_RECEIVED": "Qty Received",
         "BARCODE": "Barcode (optional)",
+        "CATALOGUE_LOOKUP": "Searching the shared catalogue…",
         "PRICE_BUY": "Purchase Price",
         "PRICE_SELL": "Sale Price (suggested)",
         "ADD_TO_INVOICE": "Add to invoice",

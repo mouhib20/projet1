@@ -234,6 +234,8 @@
                                             }}</label>
                                         <input type="text" [(ngModel)]="currentItem.barcode"
                                             class="form-control dark-input text-center" placeholder="|||||||">
+                                        <span class="catalogue-hint" *ngIf="catalogueLookupPending">🔎 {{
+                                            'FACTURES.CATALOGUE_LOOKUP' | translate }}</span>
                                     </div>
                                 </div>
 

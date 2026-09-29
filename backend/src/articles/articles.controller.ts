@@ -1,6 +1,6 @@
 import {
     Controller, Get, Post, Put, Delete,
-    Param, Body, ParseIntPipe, HttpCode, HttpStatus,
+    Param, Body, Query, ParseIntPipe, HttpCode, HttpStatus,
     UseInterceptors, UploadedFile, BadRequestException
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -55,6 +55,13 @@ export class ArticlesController {
     @RequirePermission('stock', 'voir')
     findSav() {
         return this.articlesService.findSav();
+    }
+
+    /** Cross-store barcode lookup (reference fields only) - see ArticlesService.rechercheCatalogue. */
+    @Get('catalogue')
+    @RequirePermission('stock', 'ajouter')
+    rechercheCatalogue(@Query('barcode') barcode: string) {
+        return this.articlesService.rechercheCatalogue(barcode);
     }
 
     @Post('sav')

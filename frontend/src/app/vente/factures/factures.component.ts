@@ -54,6 +54,7 @@ export class FacturesComponent implements OnInit, OnDestroy {
   showSmartSearchResults: boolean = false;
   imageUploading = false;
   imageError = '';
+  catalogueLookupPending = false;
   @ViewChild('searchInput') searchInput!: ElementRef;
 
   imageUrl(image?: string | null): string | null {
@@ -489,16 +490,40 @@ export class FacturesComponent implements OnInit, OnDestroy {
       this.showSmartSearchResults = true;
     } else if (this.searchTerm) {
       // 0 matches -> new article from scan/type
-      const isBarcode = /^\d{3,}$/.test(this.searchTerm.trim());
+      const trimmed = this.searchTerm.trim();
+      const isBarcode = /^\d{3,}$/.test(trimmed);
       // If no matching article is found, treat the input as a barcode if it looks like one (3+ digits)
       // and pre‑fill the barcode field of the new‑article buffer.
       // This will automatically display the "new article" form with the barcode populated.
       if (isBarcode) {
-        this.currentItem.barcode = this.searchTerm.trim();
+        this.currentItem.barcode = trimmed;
+        this.lookupCatalogue(trimmed);
       } else {
-        this.currentItem.designation = this.searchTerm.trim();
+        this.currentItem.designation = trimmed;
       }
     }
+  }
+
+  /**
+   * Not found in this store: maybe another store already registered this exact barcode.
+   * Pre-fills only the descriptive fields (designation, brand, model, photo) to save typing -
+   * quantity and prices are never touched, and the article created afterward stays scoped to
+   * this store alone, like any other.
+   */
+  private lookupCatalogue(barcode: string): void {
+    this.catalogueLookupPending = true;
+    this.articleService.rechercheCatalogue(barcode).subscribe({
+      next: (entry) => {
+        this.catalogueLookupPending = false;
+        // Ignore a stale response if the user already moved on to a different search
+        if (!entry || this.currentItem.barcode !== barcode) return;
+        this.currentItem.designation = entry.designation || this.currentItem.designation;
+        this.currentItem.marque = entry.marque || this.currentItem.marque;
+        this.currentItem.modele = entry.modele || this.currentItem.modele;
+        this.currentItem.image = entry.image || this.currentItem.image;
+      },
+      error: () => { this.catalogueLookupPending = false; },
+    });
   }
 
   hideSmartSearch() {
