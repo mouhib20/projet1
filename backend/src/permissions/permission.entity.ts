@@ -1,9 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
 
-/** The seven departments an employee's access can be granted on. */
-export type Departement = 'ventes' | 'stock' | 'reparation' | 'fournisseurs' | 'charges' | 'clients' | 'rapports';
+/** The departments an employee's access can be granted on. */
+export type Departement = 'ventes' | 'stock' | 'reparation' | 'fournisseurs' | 'charges' | 'clients' | 'rapports' | 'compatibilite';
 
-export const DEPARTEMENTS: Departement[] = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports'];
+export const DEPARTEMENTS: Departement[] = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports', 'compatibilite'];
 
 @Entity('permission')
 @Index(['id_utilisateur', 'departement'], { unique: true })

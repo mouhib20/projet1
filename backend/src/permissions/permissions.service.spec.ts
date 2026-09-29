@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PermissionsService } from './permissions.service';
-import { Permission } from './permission.entity';
+import { Permission, DEPARTEMENTS } from './permission.entity';
 
 type MockRepo = Partial<Record<keyof Repository<Permission>, jest.Mock>>;
 
@@ -92,7 +92,7 @@ describe('PermissionsService', () => {
             const matrix = await service.getMatrix(2);
             expect(matrix.clients).toEqual({ voir: true, ajouter: false, modifier: false, supprimer: false });
             expect(matrix.stock).toEqual({ voir: false, ajouter: false, modifier: false, supprimer: false });
-            expect(Object.keys(matrix)).toHaveLength(7);
+            expect(Object.keys(matrix)).toHaveLength(DEPARTEMENTS.length);
         });
 
         it('setMatrix updates an existing row instead of duplicating it', async () => {

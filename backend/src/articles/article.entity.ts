@@ -46,6 +46,10 @@ export class Article {
     @Column({ nullable: true })
     id_magasin: number;
 
+    /** Optional link to the shared compatibility catalogue (compat_group.id) - see CompatibilityService. */
+    @Column({ nullable: true })
+    compat_group_id: number | null;
+
     @OneToMany(() => MouvementAchat, mouvement => mouvement.article)
     mouvements_achat: MouvementAchat[];
 }

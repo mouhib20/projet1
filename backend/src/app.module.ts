@@ -39,6 +39,12 @@ import { EmployeesModule } from './employees/employees.module';
 import { Magasin } from './magasins/magasin.entity';
 import { MagasinModule as MagasinModuleEntity } from './magasins/magasin-module.entity';
 import { MagasinsModule } from './magasins/magasins.module';
+import { Brand } from './compatibility/brand.entity';
+import { DeviceModel } from './compatibility/device-model.entity';
+import { PartType } from './compatibility/part-type.entity';
+import { CompatGroup } from './compatibility/compat-group.entity';
+import { CompatSuggestion } from './compatibility/compat-suggestion.entity';
+import { CompatibilityModule } from './compatibility/compatibility.module';
 
 @Module({
     imports: [
@@ -70,7 +76,7 @@ import { MagasinsModule } from './magasins/magasins.module';
                 return {
                     type: 'postgres' as const,
                     ...connexion,
-                    entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, FactureAchat, Charge, Utilisateur, Permission, Magasin, MagasinModuleEntity],
+                    entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, FactureAchat, Charge, Utilisateur, Permission, Magasin, MagasinModuleEntity, Brand, DeviceModel, PartType, CompatGroup, CompatSuggestion],
                     synchronize: configService.get<string>('DB_SYNC', 'false') === 'true',
                     ssl: configService.get<string>('DB_SSL', 'true') === 'true' ? { rejectUnauthorized: false } : false,
                 };
@@ -93,6 +99,7 @@ import { MagasinsModule } from './magasins/magasins.module';
         PermissionsModule,
         EmployeesModule,
         MagasinsModule,
+        CompatibilityModule,
     ],
     controllers: [AppController],
     providers: [

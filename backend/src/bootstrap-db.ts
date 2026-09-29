@@ -3,8 +3,8 @@ import { join } from 'path';
 import { Client } from 'pg';
 import * as bcrypt from 'bcrypt';
 
-const ROLES = ['super_admin', 'admin', 'vendeur', 'vendeuse', 'visiteur'];
-const DEPARTEMENTS = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports'];
+const ROLES = ['super_admin', 'compat_editor', 'admin', 'vendeur', 'vendeuse', 'visiteur'];
+const DEPARTEMENTS = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports', 'compatibilite'];
 const ATTENTE_MS = 3000;
 const ESSAIS = 15;
 
@@ -203,6 +203,72 @@ async function migrer(): Promise<void> {
                 await client.query(`UPDATE "${table}" SET id_magasin = $1 WHERE id_magasin IS NULL`, [idUnique]);
             }
         }
+
+        // Compatibility catalogue: shared across every store by design (no id_magasin on its own
+        // tables), except compat_suggestion (records which store suggested what) and article's
+        // new optional link into it.
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "brand" (
+                "id" SERIAL PRIMARY KEY,
+                "nom" character varying(150) NOT NULL,
+                "logo" character varying(255)
+            )
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "device_model" (
+                "id" SERIAL PRIMARY KEY,
+                "id_brand" integer NOT NULL,
+                "nom" character varying(150) NOT NULL,
+                "nom_commercial" character varying(150),
+                "code" character varying(100)
+            )
+        `);
+        await client.query(`DO $$ BEGIN ALTER TABLE "device_model" ADD CONSTRAINT "device_model_id_brand_fkey" FOREIGN KEY (id_brand) REFERENCES brand(id); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "device_model_brand_nom_idx" ON "device_model" ("id_brand", "nom")`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "device_model_nom_idx" ON "device_model" ("nom")`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "device_model_code_idx" ON "device_model" ("code")`);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "part_type" (
+                "id" SERIAL PRIMARY KEY,
+                "nom_fr" character varying(100) NOT NULL,
+                "nom_en" character varying(100) NOT NULL,
+                "nom_ar" character varying(100) NOT NULL,
+                "categorie" character varying(20) NOT NULL DEFAULT 'part'
+            )
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "compat_group" (
+                "id" SERIAL PRIMARY KEY,
+                "id_part_type" integer NOT NULL,
+                "note" text,
+                "image" character varying(255),
+                "cree_par" integer,
+                "date_creation" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+        await client.query(`DO $$ BEGIN ALTER TABLE "compat_group" ADD CONSTRAINT "compat_group_id_part_type_fkey" FOREIGN KEY (id_part_type) REFERENCES part_type(id); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "compat_group_model" (
+                "id_group" integer NOT NULL,
+                "id_model" integer NOT NULL,
+                PRIMARY KEY ("id_group", "id_model")
+            )
+        `);
+        await client.query(`DO $$ BEGIN ALTER TABLE "compat_group_model" ADD CONSTRAINT "compat_group_model_id_group_fkey" FOREIGN KEY (id_group) REFERENCES compat_group(id) ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        await client.query(`DO $$ BEGIN ALTER TABLE "compat_group_model" ADD CONSTRAINT "compat_group_model_id_model_fkey" FOREIGN KEY (id_model) REFERENCES device_model(id) ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "compat_suggestion" (
+                "id" SERIAL PRIMARY KEY,
+                "id_magasin" integer NOT NULL,
+                "id_model" integer,
+                "texte_libre" character varying(255),
+                "id_part_type" integer,
+                "statut" character varying(20) NOT NULL DEFAULT 'en_attente',
+                "cree_par" integer,
+                "date_creation" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+        await client.query(`ALTER TABLE "article" ADD COLUMN IF NOT EXISTS "compat_group_id" integer`);
 
         // Seed a super_admin account if requested and none exists yet (idempotent, every boot)
         const superAdminPwd = process.env.SEED_SUPER_ADMIN_PASSWORD || '';

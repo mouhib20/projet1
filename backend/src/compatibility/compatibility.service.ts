@@ -1,0 +1,241 @@
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { Utilisateur } from '../users/user.entity';
+import { CaisseService, Acteur } from '../caisse/caisse.service';
+import { StoreContextService } from '../store-context/store-context.service';
+
+@Injectable()
+export class CompatibilityService {
+    constructor(
+        @InjectRepository(Utilisateur)
+        private readonly usersRepo: Repository<Utilisateur>,
+        private readonly dataSource: DataSource,
+        private readonly caisseService: CaisseService,
+        private readonly storeContext: StoreContextService,
+    ) { }
+
+    // ── Access checks ────────────────────────────────────────────
+
+    private async superAdminRequis(authorization?: string): Promise<Acteur> {
+        const acteur = await this.caisseService.acteurRequis(authorization);
+        if (acteur.role !== 'super_admin') throw new ForbiddenException('Action réservée à un super administrateur.');
+        return acteur;
+    }
+
+    /** Writing/editing the shared catalogue: compat_editor accounts, or super_admin. */
+    private async editeurRequis(authorization?: string): Promise<Acteur> {
+        const acteur = await this.caisseService.acteurRequis(authorization);
+        if (acteur.role !== 'compat_editor' && acteur.role !== 'super_admin') {
+            throw new ForbiddenException("Action réservée aux éditeurs de compatibilité.");
+        }
+        return acteur;
+    }
+
+    // ── Search (shared, read-only for every store) ─────────────────
+
+    /**
+     * Search device models by name/commercial name/code/brand. Deliberately NOT scoped by
+     * id_magasin - the catalogue itself (brand/device_model/compat_group) is shared by design.
+     */
+    async rechercheModeles(q: string): Promise<any[]> {
+        const terme = String(q ?? '').trim();
+        if (terme.length < 2) return [];
+        const like = `%${terme}%`;
+        const rows = await this.dataSource.query(
+            `SELECT dm.id AS id_model, dm.nom AS modele, dm.nom_commercial, dm.code,
+                    b.id AS id_brand, b.nom AS marque,
+                    cg.id AS id_group, pt.id AS id_part_type, pt.nom_fr, pt.nom_en, pt.nom_ar
+               FROM device_model dm
+               JOIN brand b ON b.id = dm.id_brand
+               LEFT JOIN compat_group_model cgm ON cgm.id_model = dm.id
+               LEFT JOIN compat_group cg ON cg.id = cgm.id_group
+               LEFT JOIN part_type pt ON pt.id = cg.id_part_type
+              WHERE dm.nom ILIKE $1 OR dm.code ILIKE $1 OR dm.nom_commercial ILIKE $1 OR b.nom ILIKE $1
+              ORDER BY b.nom, dm.nom
+              LIMIT 200`,
+            [like],
+        );
+
+        const parModele = new Map<number, any>();
+        for (const r of rows) {
+            if (!parModele.has(r.id_model)) {
+                parModele.set(r.id_model, {
+                    id_model: r.id_model, modele: r.modele, nom_commercial: r.nom_commercial,
+                    code: r.code, id_brand: r.id_brand, marque: r.marque, groupes: [],
+                });
+            }
+            if (r.id_group) {
+                parModele.get(r.id_model).groupes.push({
+                    id_group: r.id_group, id_part_type: r.id_part_type,
+                    nom_fr: r.nom_fr, nom_en: r.nom_en, nom_ar: r.nom_ar,
+                });
+            }
+        }
+        return [...parModele.values()].slice(0, 20);
+    }
+
+    /**
+     * Parts (compat groups) for a device model, with THIS store's own stock/price if it has
+     * stocked one - never another store's. The store filter sits inside the LEFT JOIN's ON
+     * clause (not a WHERE), so a group the caller's store never stocked still appears, just
+     * without article fields.
+     */
+    async piecesPourModele(idModele: number): Promise<any[]> {
+        const id_magasin = this.storeContext.requireMagasinId();
+        return this.dataSource.query(
+            `SELECT cg.id AS id_group, pt.id AS id_part_type, pt.nom_fr, pt.nom_en, pt.nom_ar,
+                    cg.note, cg.image,
+                    a.id_article, a.designation, a.quantite, a.prix_vente
+               FROM compat_group_model cgm
+               JOIN compat_group cg ON cg.id = cgm.id_group
+               JOIN part_type pt ON pt.id = cg.id_part_type
+               LEFT JOIN article a ON a.compat_group_id = cg.id AND a.id_magasin = $2
+              WHERE cgm.id_model = $1`,
+            [idModele, id_magasin],
+        );
+    }
+
+    // ── Groups (write: compat_editor/super_admin; delete: super_admin only) ────
+
+    async creerGroupe(
+        dto: { id_part_type: number; modeleIds: number[]; note?: string; image?: string },
+        authorization?: string,
+    ): Promise<{ id: number }> {
+        const acteur = await this.editeurRequis(authorization);
+        if (!dto.id_part_type) throw new BadRequestException('Le type de pièce est obligatoire.');
+        if (!dto.modeleIds || dto.modeleIds.length === 0) {
+            throw new BadRequestException('Au moins un modèle compatible est obligatoire.');
+        }
+        return this.dataSource.transaction(async (m) => {
+            const [row] = await m.query(
+                `INSERT INTO compat_group (id_part_type, note, image, cree_par) VALUES ($1, $2, $3, $4) RETURNING id`,
+                [dto.id_part_type, dto.note?.trim() || null, dto.image || null, acteur.id],
+            );
+            for (const idModel of dto.modeleIds) {
+                await m.query(
+                    `INSERT INTO compat_group_model (id_group, id_model) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+                    [row.id, idModel],
+                );
+            }
+            return { id: row.id };
+        });
+    }
+
+    async modifierGroupe(
+        id: number,
+        dto: { id_part_type?: number; modeleIds?: number[]; note?: string; image?: string },
+        authorization?: string,
+    ): Promise<void> {
+        await this.editeurRequis(authorization);
+        const [existant] = await this.dataSource.query(`SELECT id FROM compat_group WHERE id = $1`, [id]);
+        if (!existant) throw new NotFoundException(`Groupe de compatibilité #${id} introuvable`);
+
+        await this.dataSource.transaction(async (m) => {
+            if (dto.id_part_type !== undefined || dto.note !== undefined || dto.image !== undefined) {
+                await m.query(
+                    `UPDATE compat_group SET
+                        id_part_type = COALESCE($2, id_part_type),
+                        note = COALESCE($3, note),
+                        image = COALESCE($4, image)
+                     WHERE id = $1`,
+                    [id, dto.id_part_type ?? null, dto.note?.trim() ?? null, dto.image ?? null],
+                );
+            }
+            if (dto.modeleIds) {
+                await m.query(`DELETE FROM compat_group_model WHERE id_group = $1`, [id]);
+                for (const idModel of dto.modeleIds) {
+                    await m.query(
+                        `INSERT INTO compat_group_model (id_group, id_model) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+                        [id, idModel],
+                    );
+                }
+            }
+        });
+    }
+
+    async supprimerGroupe(id: number, authorization?: string): Promise<void> {
+        await this.superAdminRequis(authorization);
+        const res = await this.dataSource.query(`DELETE FROM compat_group WHERE id = $1`, [id]);
+        const affected = Array.isArray(res) ? res[1] : 0;
+        if (!affected) throw new NotFoundException(`Groupe de compatibilité #${id} introuvable`);
+    }
+
+    // ── Suggestions ──────────────────────────────────────────────
+
+    async creerSuggestion(
+        dto: { id_model?: number; texte_libre?: string; id_part_type?: number },
+        authorization?: string,
+    ): Promise<{ id: number }> {
+        const id_magasin = this.storeContext.requireMagasinId();
+        const acteur = await this.caisseService.acteurRequis(authorization);
+        if (!dto.id_model && !String(dto.texte_libre ?? '').trim()) {
+            throw new BadRequestException('Précisez le modèle ou décrivez votre suggestion.');
+        }
+        const rows = await this.dataSource.query(
+            `INSERT INTO compat_suggestion (id_magasin, id_model, texte_libre, id_part_type, cree_par)
+             VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+            [id_magasin, dto.id_model ?? null, dto.texte_libre?.trim() || null, dto.id_part_type ?? null, acteur.id],
+        );
+        return { id: rows[0].id };
+    }
+
+    async listerSuggestions(authorization?: string): Promise<any[]> {
+        await this.editeurRequis(authorization);
+        return this.dataSource.query(
+            `SELECT s.id, s.id_magasin, mag.nom AS magasin_nom, s.id_model, dm.nom AS modele_nom,
+                    s.texte_libre, s.id_part_type, pt.nom_fr AS part_type_nom, s.statut,
+                    s.cree_par, u.nom AS cree_par_nom, s.date_creation
+               FROM compat_suggestion s
+               LEFT JOIN magasin mag ON mag.id_magasin = s.id_magasin
+               LEFT JOIN device_model dm ON dm.id = s.id_model
+               LEFT JOIN part_type pt ON pt.id = s.id_part_type
+               LEFT JOIN utilisateurs u ON u.id = s.cree_par
+              ORDER BY s.date_creation DESC`,
+        );
+    }
+
+    async traiterSuggestion(id: number, statut: 'acceptee' | 'refusee', authorization?: string): Promise<void> {
+        await this.editeurRequis(authorization);
+        if (statut !== 'acceptee' && statut !== 'refusee') throw new BadRequestException('Statut invalide.');
+        const res = await this.dataSource.query(`UPDATE compat_suggestion SET statut = $2 WHERE id = $1`, [id, statut]);
+        const affected = Array.isArray(res) ? res[1] : 0;
+        if (!affected) throw new NotFoundException(`Suggestion #${id} introuvable`);
+    }
+
+    // ── Compat-editor accounts (super_admin only) ────────────────
+
+    async creerEditeur(dto: { nom: string; username: string; password: string }, authorization?: string): Promise<Omit<Utilisateur, 'password'>> {
+        await this.superAdminRequis(authorization);
+        const nom = String(dto.nom ?? '').trim();
+        const username = String(dto.username ?? '').trim();
+        const password = String(dto.password ?? '');
+        if (!nom) throw new BadRequestException('Le nom est obligatoire.');
+        if (!username) throw new BadRequestException("Le nom d'utilisateur est obligatoire.");
+        if (password.length < 6) throw new BadRequestException('Le mot de passe doit contenir au moins 6 caractères.');
+
+        const existant = await this.usersRepo.findOne({ where: { username } });
+        if (existant) throw new BadRequestException(`Le nom d'utilisateur "${username}" est déjà utilisé.`);
+
+        const editeur = await this.usersRepo.save(this.usersRepo.create({
+            nom, username, password: await bcrypt.hash(password, 10),
+            role: 'compat_editor', actif: true, id_magasin: null,
+        }));
+        const { password: _pw, ...reste } = editeur;
+        return reste;
+    }
+
+    async listerEditeurs(authorization?: string): Promise<Omit<Utilisateur, 'password'>[]> {
+        await this.superAdminRequis(authorization);
+        const editeurs = await this.usersRepo.find({ where: { role: 'compat_editor' }, order: { id: 'DESC' } });
+        return editeurs.map(({ password, ...reste }) => reste);
+    }
+
+    async suspendreEditeur(id: number, actif: boolean, authorization?: string): Promise<void> {
+        await this.superAdminRequis(authorization);
+        const editeur = await this.usersRepo.findOne({ where: { id, role: 'compat_editor' } });
+        if (!editeur) throw new NotFoundException(`Éditeur #${id} introuvable`);
+        await this.usersRepo.update(id, { actif: !!actif });
+    }
+}
