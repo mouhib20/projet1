@@ -1,0 +1,72 @@
+<div class="compat-page">
+
+    <div class="page-header">
+        <div>
+            <div class="page-title">🧩 {{ 'COMPATIBILITE.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'COMPATIBILITE.SUBTITLE' | translate }}</div>
+        </div>
+    </div>
+
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
+
+    <div class="search-box">
+        <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="search()"
+            [placeholder]="'COMPATIBILITE.SEARCH_PLACEHOLDER' | translate" class="search-input" />
+        <button class="btn btn-primary" (click)="search()">🔍 {{ 'COMPATIBILITE.SEARCH_BTN' | translate }}</button>
+    </div>
+
+    <div class="loading-state" *ngIf="searching">
+        <div class="loading-icon">⟳</div>
+        <strong>{{ 'COMPATIBILITE.SEARCHING' | translate }}</strong>
+    </div>
+
+    <div class="empty-state" *ngIf="searched && !searching && results.length === 0">
+        <div class="empty-icon">🔍</div>
+        <strong>{{ 'COMPATIBILITE.NO_RESULTS' | translate }}</strong>
+    </div>
+
+    <div class="results-list" *ngIf="!searching && results.length > 0">
+        <div class="model-card" *ngFor="let r of results">
+            <div class="model-row" (click)="toggleModel(r)">
+                <div class="model-info">
+                    <span class="model-name">{{ r.marque }} {{ r.modele }}</span>
+                    <span class="model-code" *ngIf="r.code">· {{ r.code }}</span>
+                </div>
+                <div class="model-groups-count">{{ r.groupes.length }} {{ 'COMPATIBILITE.PARTS_SUFFIX' | translate }}</div>
+                <span class="chevron">{{ expandedModelId === r.id_model ? '▲' : '▼' }}</span>
+            </div>
+
+            <div class="model-detail" *ngIf="expandedModelId === r.id_model">
+                <div class="loading-state small" *ngIf="partsLoading">
+                    <div class="loading-icon">⟳</div>
+                </div>
+
+                <div class="empty-hint" *ngIf="!partsLoading && parts.length === 0">
+                    {{ 'COMPATIBILITE.NO_PARTS_YET' | translate }}
+                </div>
+
+                <table class="parts-table" *ngIf="!partsLoading && parts.length > 0">
+                    <thead>
+                        <tr>
+                            <th>{{ 'COMPATIBILITE.COL_PART_TYPE' | translate }}</th>
+                            <th>{{ 'COMPATIBILITE.COL_STATUS' | translate }}</th>
+                            <th class="text-center">{{ 'COMPATIBILITE.COL_QTY' | translate }}</th>
+                            <th class="text-center">{{ 'COMPATIBILITE.COL_PRICE' | translate }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let p of parts">
+                            <td class="fw-bold">{{ partTypeName(p) }}</td>
+                            <td>
+                                <span class="badge-ok" *ngIf="p.id_article">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }}</span>
+                                <span class="badge-out" *ngIf="!p.id_article">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>
+                            </td>
+                            <td class="text-center">{{ p.id_article ? p.quantite : '—' }}</td>
+                            <td class="text-center">{{ p.id_article ? ((p.prix_vente | number:'1.3-3') + ' ' + ('CURRENCY' | translate)) : '—' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

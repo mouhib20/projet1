@@ -9,7 +9,8 @@
         "INVOICES": "Factures",
         "CLIENTS": "Clients",
         "CHANGE_LANGUAGE": "Changer la langue",
-        "EMPLOYEES": "Employés"
+        "EMPLOYEES": "Employés",
+        "COMPATIBILITY": "Compatibilité"
     },
     "HOME": {
         "WELCOME": "Votre espace de",
@@ -244,7 +245,8 @@
         "DEPT_FOURNISSEURS": "Fournisseurs",
         "DEPT_CHARGES": "Dépenses",
         "DEPT_CLIENTS": "Clients",
-        "DEPT_RAPPORTS": "Rapports"
+        "DEPT_RAPPORTS": "Rapports",
+        "DEPT_COMPATIBILITE": "Compatibilité"
     },
     "SUPER_ADMIN": {
         "TITLE": "Magasins",
@@ -389,6 +391,24 @@
         "SUCCESS_DELETE": "Groupe supprimé avec succès.",
         "ERR_SAVE": "Erreur lors de l'enregistrement.",
         "ERR_DELETE": "Erreur lors de la suppression."
+    },
+    "COMPATIBILITE": {
+        "TITLE": "Compatibilité",
+        "SUBTITLE": "Cherchez un appareil pour voir les pièces compatibles disponibles dans votre stock",
+        "SEARCH_PLACEHOLDER": "Nom, marque ou référence de l'appareil…",
+        "SEARCH_BTN": "Rechercher",
+        "SEARCHING": "Recherche…",
+        "NO_RESULTS": "Aucun appareil trouvé.",
+        "PARTS_SUFFIX": "pièce(s)",
+        "NO_PARTS_YET": "Aucune pièce enregistrée pour cet appareil.",
+        "COL_PART_TYPE": "Type de pièce",
+        "COL_STATUS": "Statut",
+        "COL_QTY": "Qté",
+        "COL_PRICE": "Prix",
+        "STATUS_IN_STOCK": "En stock",
+        "STATUS_NOT_STOCKED": "Non stocké",
+        "ERR_SEARCH": "Erreur lors de la recherche.",
+        "ERR_LOAD_PARTS": "Impossible de charger les pièces."
     },
     "CHARGES": {
         "SUBTITLE": "Gérez vos dépenses et charges (loyer, salaires, électricité...)",

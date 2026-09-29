@@ -9,7 +9,8 @@
         "INVOICES": "Invoices",
         "CLIENTS": "Clients",
         "CHANGE_LANGUAGE": "Change language",
-        "EMPLOYEES": "Employees"
+        "EMPLOYEES": "Employees",
+        "COMPATIBILITY": "Compatibility"
     },
     "HOME": {
         "WELCOME": "Your workspace for",
@@ -244,7 +245,8 @@
         "DEPT_FOURNISSEURS": "Suppliers",
         "DEPT_CHARGES": "Expenses",
         "DEPT_CLIENTS": "Clients",
-        "DEPT_RAPPORTS": "Reports"
+        "DEPT_RAPPORTS": "Reports",
+        "DEPT_COMPATIBILITE": "Compatibility"
     },
     "SUPER_ADMIN": {
         "TITLE": "Stores",
@@ -389,6 +391,24 @@
         "SUCCESS_DELETE": "Group deleted successfully.",
         "ERR_SAVE": "Error saving.",
         "ERR_DELETE": "Error deleting."
+    },
+    "COMPATIBILITE": {
+        "TITLE": "Compatibility",
+        "SUBTITLE": "Search a device to see compatible parts available in your stock",
+        "SEARCH_PLACEHOLDER": "Device name, brand or reference…",
+        "SEARCH_BTN": "Search",
+        "SEARCHING": "Searching…",
+        "NO_RESULTS": "No device found.",
+        "PARTS_SUFFIX": "part(s)",
+        "NO_PARTS_YET": "No part registered for this device.",
+        "COL_PART_TYPE": "Part type",
+        "COL_STATUS": "Status",
+        "COL_QTY": "Qty",
+        "COL_PRICE": "Price",
+        "STATUS_IN_STOCK": "In stock",
+        "STATUS_NOT_STOCKED": "Not stocked",
+        "ERR_SEARCH": "Error searching.",
+        "ERR_LOAD_PARTS": "Could not load the parts."
     },
     "CHARGES": {
         "SUBTITLE": "Manage your expenses and charges (rent, salaries, electricity...)",

@@ -9,7 +9,8 @@
         "INVOICES": "فواتير",
         "CLIENTS": "العملاء",
         "CHANGE_LANGUAGE": "تغيير اللغة",
-        "EMPLOYEES": "الموظفون"
+        "EMPLOYEES": "الموظفون",
+        "COMPATIBILITY": "التوافقية"
     },
     "HOME": {
         "WELCOME": "مساحتك لـ",
@@ -244,7 +245,8 @@
         "DEPT_FOURNISSEURS": "الموردون",
         "DEPT_CHARGES": "المصاريف",
         "DEPT_CLIENTS": "الزبائن",
-        "DEPT_RAPPORTS": "التقارير"
+        "DEPT_RAPPORTS": "التقارير",
+        "DEPT_COMPATIBILITE": "التوافقية"
     },
     "SUPER_ADMIN": {
         "TITLE": "المحلات",
@@ -389,6 +391,24 @@
         "SUCCESS_DELETE": "تم حذف المجموعة بنجاح.",
         "ERR_SAVE": "خطأ أثناء الحفظ.",
         "ERR_DELETE": "خطأ أثناء الحذف."
+    },
+    "COMPATIBILITE": {
+        "TITLE": "التوافقية",
+        "SUBTITLE": "ابحث عن جهاز لترى القطع المتوافقة المتوفرة في مخزونك",
+        "SEARCH_PLACEHOLDER": "اسم الجهاز، الماركة أو الرمز…",
+        "SEARCH_BTN": "بحث",
+        "SEARCHING": "جارٍ البحث…",
+        "NO_RESULTS": "لا يوجد أي جهاز مطابق.",
+        "PARTS_SUFFIX": "قطعة (قطع)",
+        "NO_PARTS_YET": "لا توجد أي قطعة مسجّلة لهذا الجهاز.",
+        "COL_PART_TYPE": "نوع القطعة",
+        "COL_STATUS": "الحالة",
+        "COL_QTY": "الكمية",
+        "COL_PRICE": "السعر",
+        "STATUS_IN_STOCK": "متوفرة",
+        "STATUS_NOT_STOCKED": "غير مخزّنة",
+        "ERR_SEARCH": "خطأ أثناء البحث.",
+        "ERR_LOAD_PARTS": "تعذّر تحميل القطع."
     },
     "CHARGES": {
         "SUBTITLE": "إدارة نفقاتك ومصاريفك (الإيجار، الرواتب، الكهرباء...)",

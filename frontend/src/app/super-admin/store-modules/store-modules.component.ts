@@ -7,7 +7,7 @@ import { MagasinService } from '../../services/magasin.service';
 import { Magasin, MagasinModulesMatrix } from '../../models/magasin.model';
 import { Departement } from '../../services/auth.service';
 
-const DEPARTEMENTS: Departement[] = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports'];
+const DEPARTEMENTS: Departement[] = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports', 'compatibilite'];
 
 @Component({
     selector: 'app-store-modules',
