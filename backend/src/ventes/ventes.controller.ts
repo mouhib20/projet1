@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, Query, Headers } from '@nestjs/common';
 import { VentesService } from './ventes.service';
 import { RequirePermission } from '../permissions/require-permission.decorator';
+import { ScopedByStore } from '../store-context/scoped-by-store.decorator';
 
 @Controller('ventes')
 export class VentesController {
@@ -30,6 +31,7 @@ export class VentesController {
 
     @Get(':id')
     @RequirePermission('ventes', 'voir')
+    @ScopedByStore('vente', 'id_vente')
     findOne(@Param('id', ParseIntPipe) id: number) {
         return this.service.findOne(id);
     }
@@ -48,6 +50,7 @@ export class VentesController {
 
     @Delete(':id')
     @RequirePermission('ventes', 'supprimer')
+    @ScopedByStore('vente', 'id_vente')
     remove(@Param('id', ParseIntPipe) id: number, @Headers('authorization') auth?: string) {
         return this.service.remove(id, auth);
     }

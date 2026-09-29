@@ -31,6 +31,9 @@ export class Vente {
     @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     credit: number | null;
 
+    @Column({ nullable: true })
+    id_magasin: number;
+
     @ManyToOne(() => Client, client => client.ventes, { onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'id_client' })
     client: Client;

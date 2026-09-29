@@ -5,6 +5,7 @@ import {
 import { FournisseursService } from './fournisseurs.service';
 import { Fournisseur } from './fournisseur.entity';
 import { RequirePermission } from '../permissions/require-permission.decorator';
+import { ScopedByStore } from '../store-context/scoped-by-store.decorator';
 
 @Controller('fournisseurs')
 export class FournisseursController {
@@ -18,6 +19,7 @@ export class FournisseursController {
 
     @Get(':id')
     @RequirePermission('fournisseurs', 'voir')
+    @ScopedByStore('fournisseur', 'id_fournisseur')
     findOne(@Param('id', ParseIntPipe) id: number): Promise<Fournisseur> {
         return this.fournisseursService.findOne(id);
     }
@@ -30,6 +32,7 @@ export class FournisseursController {
 
     @Put(':id')
     @RequirePermission('fournisseurs', 'modifier')
+    @ScopedByStore('fournisseur', 'id_fournisseur')
     update(
         @Param('id', ParseIntPipe) id: number,
         @Body() body: Partial<Fournisseur>,
@@ -40,6 +43,7 @@ export class FournisseursController {
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
     @RequirePermission('fournisseurs', 'supprimer')
+    @ScopedByStore('fournisseur', 'id_fournisseur')
     remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
         return this.fournisseursService.remove(id);
     }

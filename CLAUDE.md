@@ -17,18 +17,30 @@ Frontend: Angular standalone components). عند التعارض بين هذه ا
   حصرًا عبر service مخصص في `frontend/src/app/services/` — **لا `HttpClient` مباشر
   داخل component، ولا منطق عمل ثقيل داخل template**.
 
-## 3. فصل بيانات المحل (Store scoping)
-**الوضع الحالي (كما بُني فعليًا):** التطبيق لمحل واحد. لا يوجد `store_id` مُضمَّن في
-الـ JWT ولا عمود `store_id` على أي جدول. الاستثناء الوحيد هو جدول الموظفين
-(`utilisateurs`) الذي يحمل `id_proprietaire` (معرّف حساب الأدمن المالك)، يُحلّ من
-الـ JWT عبر `CaisseService.acteurRequis()`، ويُستخدم فقط لفلترة موظفي كل أدمن. بقية
-البيانات (زبائن، مبيعات، مخزون، فواتير...) **مشتركة بلا فصل** بين أي حسابات.
+## 3. فصل بيانات المحل (Store scoping) — نظام Multi-Magasin
+**الوضع الحالي (قيد التنفيذ على مراحل، Phase 1-3 مكتملة):** التطبيق أصبح متعدد
+المحلات فعليًا. `id_magasin` موجود في الـ JWT (`StoreContextService`، مبني على
+`nestjs-cls`، يُملأ مرة واحدة في `JwtAuthGuard` بعد التحقق من التوكن) ومُستخرج منه
+حصرًا — **أبدًا من جسم الطلب القادم من الواجهة** (كل `create`/`update` يُسقط
+`id_magasin` من الـ DTO الوارد قبل استخدامه). كل جدول بيانات محل (`client`, `article`,
+`vente`, `charge`, `reparation`, `reparation_item`, `fournisseur`, `facture_achat`,
+`mouvement_achat`, `stock`, `caisse_session`, `caisse_mouvement`,
+`paiement_fournisseur`, `client_solde_usage`, `retour_fournisseur`, `sav_accessoire`)
+يحمل عمود `id_magasin` ومفلتَر به في كل service (ORM أو SQL خام). دفاع ثانٍ مستقل:
+`StoreOwnershipGuard` (عبر decorator `@ScopedByStore(table, pkColumn)`) يتحقق من
+`id_magasin` الصف مباشرة من القاعدة على أي route فيه `:id`، بمعزل عمّا يفعله الـ
+service. `role: 'super_admin'` يتجاوز كل هذا (`id_magasin` له `null`)، ويُدار عبر
+`MagasinsModule` (`backend/src/magasins/`) المحمي بفحص الدور داخل الـ service (نفس
+نمط `proprietaireRequis` في قسم الموظفين). المرجع الكامل للبنية والقرارات المعمارية:
+`StoreContextService`, `store-ownership.guard.ts`, `scoped-by-store.decorator.ts`.
 
-**الهدف المستقبلي (مُتَّفق عليه، لم يُنفَّذ بعد):** الانتقال لنظام محلات متعددة حقيقي —
-`store_id` فعلي على كل جدول بيانات (زبائن، مبيعات، مخزون، فواتير، مصاريف...)، مُستخرج
-من الـ JWT حصرًا (أبدًا من الواجهة)، وكل استعلام يُفلتر به. **هذا تغيير معماري كبير
-يمسّ كل قسم تقريبًا، ولا يبدأ تنفيذه إلا بطلب صريح وخطة منفصلة تُعرض للموافقة أولاً**
-(حسب القاعدة رقم 1) — لا تفترض أنه مطلوب ضمن ميزة أخرى ولا تُدخله جزئيًا أو بصمت.
+**المتبقي (لم يُنفَّذ بعد):** Phase 4 — `MagasinModulesService` (تفعيل/تعطيل قسم لكل
+محل) لم تُدمَج بعد في `PermissionsGuard`، فتعطيل قسم من لوحة Super Admin لا يمنعه
+فعليًا في الـ Backend بعد. Phase 5-6 — الواجهة (Frontend) لا تزال بمنطق المحل الواحد:
+`AuthService` لا يخزّن `id_magasin`/`modules`، ولا يوجد توجيه بعد الدخول حسب الدور، ولا
+لوحة Super Admin (`/super-admin/*`). Phase 7 — لا نطاق `SUPER_ADMIN` في ملفات الترجمة
+بعد. **أي عمل على هذه النقاط المتبقية يُعامَل كميزة جديدة عادية (خطة + موافقة حسب
+القاعدة رقم 1)، لا كأمر واقع.**
 
 ## 4. الصلاحيات
 التحقق من الصلاحية يكون **دائمًا** في الـ Backend (عبر `@RequirePermission()` +

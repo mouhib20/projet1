@@ -35,6 +35,9 @@ export class Fournisseur {
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
     solde: number;
 
+    @Column({ nullable: true })
+    id_magasin: number;
+
     @OneToMany(() => MouvementAchat, mouvement => mouvement.fournisseur)
     mouvements_achat: MouvementAchat[];
 

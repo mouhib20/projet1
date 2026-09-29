@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Charge } from './charge.entity';
 import { CaisseService } from '../caisse/caisse.service';
+import { StoreContextService } from '../store-context/store-context.service';
 
 @Injectable()
 export class ChargesService {
@@ -10,14 +11,18 @@ export class ChargesService {
         @InjectRepository(Charge)
         private readonly repo: Repository<Charge>,
         private readonly caisseService: CaisseService,
+        private readonly storeContext: StoreContextService,
     ) { }
 
     findAll(): Promise<Charge[]> {
-        return this.repo.find({ order: { date_charge: 'DESC', id_charge: 'DESC' } });
+        return this.repo.find({
+            where: { id_magasin: this.storeContext.requireMagasinId() },
+            order: { date_charge: 'DESC', id_charge: 'DESC' },
+        });
     }
 
     async findOne(id: number): Promise<Charge> {
-        const charge = await this.repo.findOneBy({ id_charge: id });
+        const charge = await this.repo.findOneBy({ id_charge: id, id_magasin: this.storeContext.requireMagasinId() });
         if (!charge) throw new NotFoundException(`Charge #${id} introuvable`);
         return charge;
     }
@@ -41,7 +46,9 @@ export class ChargesService {
         if (!String(dto.description ?? '').trim()) throw new BadRequestException('La description de la dépense est obligatoire.');
         if (!(Number(dto.montant) > 0)) throw new BadRequestException('Le montant doit être supérieur à 0.');
         if ((dto.type_depense ?? 'mensuelle') === 'mensuelle') dto.paye_caisse = false;
-        const charge = await this.repo.save(this.repo.create(dto));
+        const { id_magasin: _ignore, ...safeDto } = dto as any;
+        const data: Partial<Charge> = { ...safeDto, id_magasin: this.storeContext.requireMagasinId() };
+        const charge = await this.repo.save(this.repo.create(data));
         const montant = this.montantCaisse(charge);
         if (montant > 0) {
             const acteur = await this.caisseService.acteurOuSysteme(authorization);
@@ -60,7 +67,8 @@ export class ChargesService {
         this.verifierType(dto);
         const avant = await this.findOne(id);
         if ((dto.type_depense ?? avant.type_depense) === 'mensuelle') dto.paye_caisse = false;
-        await this.repo.update(id, dto);
+        const { id_magasin: _ignore, ...safeDto } = dto as any;
+        await this.repo.update(id, safeDto);
         const apres = await this.findOne(id);
 
         // Only the difference moves in the drawer: a raise is a new payment, a cut is money returned

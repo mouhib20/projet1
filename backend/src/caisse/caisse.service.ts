@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, ForbiddenException, NotFoundException, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { DataSource } from 'typeorm';
+import { StoreContextService } from '../store-context/store-context.service';
 
 export interface Acteur {
     id: number | null;
@@ -21,6 +22,9 @@ const arrondi = (v: number): number => Math.round(v * 1000) / 1000;
  * Cash drawer, built around sessions: it is opened with a counted float, every cash movement
  * (sales, deposits, expenses, refunds, manual in/out with a reason) is a row of one ledger,
  * and closing compares the counted amount with the expected one.
+ *
+ * Every session and movement carries id_magasin: two stores never see or affect the same
+ * drawer, even a session-less ("orphan") movement can only ever be picked up by its own store.
  */
 @Injectable()
 export class CaisseService {
@@ -29,6 +33,7 @@ export class CaisseService {
     constructor(
         private readonly dataSource: DataSource,
         private readonly jwt: JwtService,
+        private readonly storeContext: StoreContextService,
     ) { }
 
     // ── Who is calling ───────────────────────────────────────────
@@ -64,44 +69,50 @@ export class CaisseService {
 
     // ── Sessions ─────────────────────────────────────────────────
 
-    private async sessionOuverte(): Promise<any | null> {
-        const [s] = await this.dataSource.query(`SELECT * FROM caisse_session WHERE statut = 'ouverte'`);
+    private async sessionOuverte(id_magasin: number): Promise<any | null> {
+        const [s] = await this.dataSource.query(
+            `SELECT * FROM caisse_session WHERE statut = 'ouverte' AND id_magasin = $1`,
+            [id_magasin],
+        );
         return s || null;
     }
 
-    private async totaux(idSession: number): Promise<{ entrees: number; sorties: number }> {
+    private async totaux(idSession: number, id_magasin: number): Promise<{ entrees: number; sorties: number }> {
         const [t] = await this.dataSource.query(
             `SELECT COALESCE(SUM(montant) FILTER (WHERE type = 'entree'), 0) AS entrees,
                     COALESCE(SUM(montant) FILTER (WHERE type = 'sortie'), 0) AS sorties
-             FROM caisse_mouvement WHERE id_session = $1 AND avant_ouverture = false`,
-            [idSession],
+             FROM caisse_mouvement WHERE id_session = $1 AND avant_ouverture = false AND id_magasin = $2`,
+            [idSession, id_magasin],
         );
         return { entrees: num(t.entrees), sorties: num(t.sorties) };
     }
 
     /** What should be in the drawer right now for an open session. */
-    private async attendu(session: any): Promise<number> {
-        const t = await this.totaux(session.id);
+    private async attendu(session: any, id_magasin: number): Promise<number> {
+        const t = await this.totaux(session.id, id_magasin);
         return arrondi(num(session.fond_ouverture) + t.entrees - t.sorties);
     }
 
     /** Expected float when opening: what was left at the last close, plus cash moved while closed. */
-    private async fondAttenduOuverture(): Promise<{ fondLaisse: number; horsSession: number }> {
+    private async fondAttenduOuverture(id_magasin: number): Promise<{ fondLaisse: number; horsSession: number }> {
         const [prev] = await this.dataSource.query(
-            `SELECT fond_laisse FROM caisse_session WHERE statut = 'fermee' ORDER BY ferme_le DESC, id DESC LIMIT 1`,
+            `SELECT fond_laisse FROM caisse_session WHERE statut = 'fermee' AND id_magasin = $1 ORDER BY ferme_le DESC, id DESC LIMIT 1`,
+            [id_magasin],
         );
         const [orph] = await this.dataSource.query(
             `SELECT COALESCE(SUM(CASE WHEN type = 'entree' THEN montant ELSE -montant END), 0) AS net
-             FROM caisse_mouvement WHERE id_session IS NULL`,
+             FROM caisse_mouvement WHERE id_session IS NULL AND id_magasin = $1`,
+            [id_magasin],
         );
         return { fondLaisse: num(prev?.fond_laisse), horsSession: num(orph.net) };
     }
 
     async getStatus(acteur: Acteur) {
         this.exigerRole(acteur);
-        const session = await this.sessionOuverte();
+        const id_magasin = this.storeContext.requireMagasinId();
+        const session = await this.sessionOuverte(id_magasin);
         if (!session) {
-            const f = await this.fondAttenduOuverture();
+            const f = await this.fondAttenduOuverture(id_magasin);
             return {
                 ouverte: false,
                 session: null,
@@ -109,11 +120,11 @@ export class CaisseService {
                 horsSession: f.horsSession,
             };
         }
-        const t = await this.totaux(session.id);
+        const t = await this.totaux(session.id, id_magasin);
         const mouvements = await this.dataSource.query(
             `SELECT id, type, source, montant, motif, reference, avant_ouverture, par_nom, cree_le
-             FROM caisse_mouvement WHERE id_session = $1 ORDER BY id DESC`,
-            [session.id],
+             FROM caisse_mouvement WHERE id_session = $1 AND id_magasin = $2 ORDER BY id DESC`,
+            [session.id, id_magasin],
         );
         return {
             ouverte: true,
@@ -127,23 +138,25 @@ export class CaisseService {
 
     async ouvrir(acteur: Acteur, fondCompte: number) {
         this.exigerRole(acteur);
+        const id_magasin = this.storeContext.requireMagasinId();
         if (typeof fondCompte !== 'number' || !isFinite(fondCompte) || fondCompte < 0) {
             throw new BadRequestException("Le fond de caisse compté est invalide.");
         }
-        if (await this.sessionOuverte()) {
+        if (await this.sessionOuverte(id_magasin)) {
             throw new BadRequestException('La caisse est déjà ouverte.');
         }
-        const f = await this.fondAttenduOuverture();
+        const f = await this.fondAttenduOuverture(id_magasin);
         return this.dataSource.transaction(async (m) => {
             const [s] = await m.query(
-                `INSERT INTO caisse_session (ouvert_par_id, ouvert_par_nom, fond_attendu_ouverture, fond_ouverture)
-                 VALUES ($1, $2, $3, $4) RETURNING *`,
-                [acteur.id, acteur.nom, arrondi(f.fondLaisse + f.horsSession), fondCompte],
+                `INSERT INTO caisse_session (ouvert_par_id, ouvert_par_nom, fond_attendu_ouverture, fond_ouverture, id_magasin)
+                 VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+                [acteur.id, acteur.nom, arrondi(f.fondLaisse + f.horsSession), fondCompte, id_magasin],
             );
             // Cash moved while the drawer was closed is part of the float that was just counted
+            // (restricted to this store's own orphan movements only)
             await m.query(
-                `UPDATE caisse_mouvement SET id_session = $1, avant_ouverture = true WHERE id_session IS NULL`,
-                [s.id],
+                `UPDATE caisse_mouvement SET id_session = $1, avant_ouverture = true WHERE id_session IS NULL AND id_magasin = $2`,
+                [s.id, id_magasin],
             );
             return s;
         });
@@ -151,7 +164,8 @@ export class CaisseService {
 
     async fermer(acteur: Acteur, data: { montant_compte: number; fond_laisse: number; note?: string }) {
         this.exigerRole(acteur);
-        const session = await this.sessionOuverte();
+        const id_magasin = this.storeContext.requireMagasinId();
+        const session = await this.sessionOuverte(id_magasin);
         if (!session) throw new BadRequestException("La caisse n'est pas ouverte.");
         if (acteur.role !== 'admin' && session.ouvert_par_id !== acteur.id) {
             throw new ForbiddenException(`Seul ${session.ouvert_par_nom} (ou un administrateur) peut fermer cette caisse.`);
@@ -166,15 +180,15 @@ export class CaisseService {
         if (fond_laisse > montant_compte) {
             throw new BadRequestException('Le fond remis en caisse ne peut pas dépasser le montant compté.');
         }
-        const attendu = await this.attendu(session);
+        const attendu = await this.attendu(session, id_magasin);
         const ecart = arrondi(montant_compte - attendu);
         // TypeORM returns [rows, affectedCount] for UPDATE ... RETURNING on Postgres
         const res = await this.dataSource.query(
             `UPDATE caisse_session
              SET statut = 'fermee', ferme_par_id = $1, ferme_par_nom = $2, ferme_le = now(),
                  montant_attendu = $3, montant_compte = $4, ecart = $5, fond_laisse = $6, note = $7
-             WHERE id = $8 AND statut = 'ouverte' RETURNING *`,
-            [acteur.id, acteur.nom, attendu, montant_compte, ecart, fond_laisse, (data.note || '').trim() || null, session.id],
+             WHERE id = $8 AND statut = 'ouverte' AND id_magasin = $9 RETURNING *`,
+            [acteur.id, acteur.nom, attendu, montant_compte, ecart, fond_laisse, (data.note || '').trim() || null, session.id, id_magasin],
         );
         const closed = (Array.isArray(res[0]) ? res[0] : res)[0];
         if (!closed) throw new BadRequestException('La caisse a déjà été fermée.');
@@ -186,24 +200,25 @@ export class CaisseService {
     /** Manual cash in/out. A reason is mandatory, and the drawer must be open. */
     async mouvementManuel(acteur: Acteur, data: { type: TypeMouvement; montant: number; motif: string }) {
         this.exigerRole(acteur);
+        const id_magasin = this.storeContext.requireMagasinId();
         if (data.type !== 'entree' && data.type !== 'sortie') throw new BadRequestException('Type de mouvement invalide.');
         if (typeof data.montant !== 'number' || !isFinite(data.montant) || data.montant <= 0) {
             throw new BadRequestException('Le montant doit être supérieur à 0.');
         }
         const motif = (data.motif || '').trim();
         if (!motif) throw new BadRequestException('Indiquez le motif (ex: paiement fournisseur, dépense imprévue).');
-        const session = await this.sessionOuverte();
+        const session = await this.sessionOuverte(id_magasin);
         if (!session) throw new BadRequestException("Ouvrez la caisse avant d'enregistrer un mouvement.");
         if (data.type === 'sortie') {
-            const attendu = await this.attendu(session);
+            const attendu = await this.attendu(session, id_magasin);
             if (data.montant > attendu) {
                 throw new BadRequestException(`Sortie impossible : il n'y a que ${attendu} en caisse.`);
             }
         }
         const [row] = await this.dataSource.query(
-            `INSERT INTO caisse_mouvement (id_session, type, source, montant, motif, par_id, par_nom)
-             VALUES ($1, $2, 'manuel', $3, $4, $5, $6) RETURNING *`,
-            [session.id, data.type, data.montant, motif, acteur.id, acteur.nom],
+            `INSERT INTO caisse_mouvement (id_session, type, source, montant, motif, par_id, par_nom, id_magasin)
+             VALUES ($1, $2, 'manuel', $3, $4, $5, $6, $7) RETURNING *`,
+            [session.id, data.type, data.montant, motif, acteur.id, acteur.nom, id_magasin],
         );
         return row;
     }
@@ -220,11 +235,13 @@ export class CaisseService {
         const montant = arrondi(num(m.montant));
         if (montant <= 0) return;
         try {
-            const session = await this.sessionOuverte();
+            const id_magasin = this.storeContext.getMagasinId();
+            if (id_magasin == null) return; // no store context (e.g. called outside a store-scoped request) — nothing safe to attribute this to
+            const session = await this.sessionOuverte(id_magasin);
             await this.dataSource.query(
-                `INSERT INTO caisse_mouvement (id_session, type, source, montant, motif, reference, par_id, par_nom)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-                [session?.id ?? null, m.type, m.source, montant, m.motif.slice(0, 255), m.reference ?? null, acteur.id, acteur.nom],
+                `INSERT INTO caisse_mouvement (id_session, type, source, montant, motif, reference, par_id, par_nom, id_magasin)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                [session?.id ?? null, m.type, m.source, montant, m.motif.slice(0, 255), m.reference ?? null, acteur.id, acteur.nom, id_magasin],
             );
         } catch (err) {
             this.logger.error(`Mouvement de caisse non enregistré (${m.source}: ${m.motif})`, err as Error);
@@ -235,24 +252,27 @@ export class CaisseService {
 
     async historique(acteur: Acteur) {
         this.exigerRole(acteur);
-        const seulement = acteur.role === 'admin' ? '' : 'WHERE ouvert_par_id = $1';
+        const id_magasin = this.storeContext.requireMagasinId();
+        const seulement = acteur.role === 'admin' ? '' : 'AND ouvert_par_id = $2';
+        const params = acteur.role === 'admin' ? [id_magasin] : [id_magasin, acteur.id];
         return this.dataSource.query(
-            `SELECT * FROM caisse_session ${seulement} ORDER BY id DESC LIMIT 60`,
-            acteur.role === 'admin' ? [] : [acteur.id],
+            `SELECT * FROM caisse_session WHERE id_magasin = $1 ${seulement} ORDER BY id DESC LIMIT 60`,
+            params,
         );
     }
 
     async mouvementsDeSession(acteur: Acteur, idSession: number) {
         this.exigerRole(acteur);
-        const [s] = await this.dataSource.query(`SELECT * FROM caisse_session WHERE id = $1`, [idSession]);
+        const id_magasin = this.storeContext.requireMagasinId();
+        const [s] = await this.dataSource.query(`SELECT * FROM caisse_session WHERE id = $1 AND id_magasin = $2`, [idSession, id_magasin]);
         if (!s) throw new NotFoundException(`Session #${idSession} introuvable`);
         if (acteur.role !== 'admin' && s.ouvert_par_id !== acteur.id) {
             throw new ForbiddenException('Vous ne pouvez voir que vos propres sessions.');
         }
         const mouvements = await this.dataSource.query(
             `SELECT id, type, source, montant, motif, reference, avant_ouverture, par_nom, cree_le
-             FROM caisse_mouvement WHERE id_session = $1 ORDER BY id`,
-            [idSession],
+             FROM caisse_mouvement WHERE id_session = $1 AND id_magasin = $2 ORDER BY id`,
+            [idSession, id_magasin],
         );
         return { session: s, mouvements };
     }
@@ -260,14 +280,15 @@ export class CaisseService {
     /** Daily report per employee: what each one took in and paid out, and the sessions of that day. */
     async rapport(acteur: Acteur, date: string, tz?: string) {
         this.exigerRole(acteur);
+        const id_magasin = this.storeContext.requireMagasinId();
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) throw new BadRequestException('Date invalide (AAAA-MM-JJ).');
         let zone = 'UTC';
         if (tz) {
             const [ok] = await this.dataSource.query(`SELECT 1 AS ok FROM pg_timezone_names WHERE name = $1`, [tz]);
             if (ok) zone = tz;
         }
-        const seulement = acteur.role === 'admin' ? '' : 'AND par_id = $3';
-        const params: any[] = [date, zone];
+        const seulement = acteur.role === 'admin' ? '' : 'AND par_id = $4';
+        const params: any[] = [date, zone, id_magasin];
         if (acteur.role !== 'admin') params.push(acteur.id);
 
         const employes = await this.dataSource.query(
@@ -281,7 +302,7 @@ export class CaisseService {
                 COALESCE(SUM(CASE WHEN type = 'entree' THEN montant ELSE -montant END), 0) AS net,
                 COUNT(*) AS nb_mouvements
              FROM caisse_mouvement
-             WHERE (cree_le AT TIME ZONE $2)::date = $1::date ${seulement}
+             WHERE (cree_le AT TIME ZONE $2)::date = $1::date AND id_magasin = $3 ${seulement}
              GROUP BY par_nom ORDER BY par_nom`,
             params,
         );
@@ -289,7 +310,7 @@ export class CaisseService {
             `SELECT id, statut, ouvert_par_nom, ouvert_le, ferme_par_nom, ferme_le, fond_ouverture, fond_attendu_ouverture,
                     montant_attendu, montant_compte, ecart, fond_laisse
              FROM caisse_session
-             WHERE (ouvert_le AT TIME ZONE $2)::date = $1::date ${acteur.role === 'admin' ? '' : 'AND ouvert_par_id = $3'}
+             WHERE (ouvert_le AT TIME ZONE $2)::date = $1::date AND id_magasin = $3 ${acteur.role === 'admin' ? '' : 'AND ouvert_par_id = $4'}
              ORDER BY id`,
             params,
         );

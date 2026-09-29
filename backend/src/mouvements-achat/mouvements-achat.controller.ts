@@ -5,6 +5,7 @@ import {
 import { MouvementsAchatService } from './mouvements-achat.service';
 import { MouvementAchat } from './mouvement-achat.entity';
 import { RequirePermission } from '../permissions/require-permission.decorator';
+import { ScopedByStore } from '../store-context/scoped-by-store.decorator';
 
 @Controller('mouvements-achat')
 export class MouvementsAchatController {
@@ -18,6 +19,7 @@ export class MouvementsAchatController {
 
     @Get(':id')
     @RequirePermission('fournisseurs', 'voir')
+    @ScopedByStore('mouvement_achat', 'id_mouvement')
     findOne(@Param('id', ParseIntPipe) id: number): Promise<MouvementAchat> {
         return this.mouvementsService.findOne(id);
     }
@@ -30,6 +32,7 @@ export class MouvementsAchatController {
 
     @Put(':id')
     @RequirePermission('fournisseurs', 'modifier')
+    @ScopedByStore('mouvement_achat', 'id_mouvement')
     update(
         @Param('id', ParseIntPipe) id: number,
         @Body() body: Partial<MouvementAchat>,
@@ -40,6 +43,7 @@ export class MouvementsAchatController {
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
     @RequirePermission('fournisseurs', 'supprimer')
+    @ScopedByStore('mouvement_achat', 'id_mouvement')
     remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
         return this.mouvementsService.remove(id);
     }

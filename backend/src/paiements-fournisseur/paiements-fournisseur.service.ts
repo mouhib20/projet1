@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CaisseService } from '../caisse/caisse.service';
+import { StoreContextService } from '../store-context/store-context.service';
 
 /**
  * Payments made to suppliers. The amount owed to a supplier is fournisseur.solde (it grows with
@@ -11,26 +12,33 @@ export class PaiementsFournisseurService {
     constructor(
         private readonly dataSource: DataSource,
         private readonly caisseService: CaisseService,
+        private readonly storeContext: StoreContextService,
     ) { }
 
     /** Every supplier with what is still owed to them and what was paid so far. */
     dus(): Promise<any[]> {
+        const id_magasin = this.storeContext.requireMagasinId();
         return this.dataSource.query(
             `SELECT f.id_fournisseur, f.nom, f.prenom, f.entreprise, f.type_articles, f.solde,
                     COALESCE((SELECT SUM(p.montant) FROM paiement_fournisseur p WHERE p.id_fournisseur = f.id_fournisseur), 0) AS total_paye
              FROM fournisseur f
+             WHERE f.id_magasin = $1
              ORDER BY f.solde DESC, f.id_fournisseur`,
+            [id_magasin],
         );
     }
 
     historique(): Promise<any[]> {
+        const id_magasin = this.storeContext.requireMagasinId();
         return this.dataSource.query(
             `SELECT p.id, p.id_fournisseur, p.montant, p.date::text AS date, p.note, p.paye_caisse, p.par_nom, p.cree_le,
                     f.nom, f.prenom, f.entreprise, f.type_articles
              FROM paiement_fournisseur p
              JOIN fournisseur f ON f.id_fournisseur = p.id_fournisseur
+             WHERE p.id_magasin = $1
              ORDER BY p.id DESC
              LIMIT 200`,
+            [id_magasin],
         );
     }
 
@@ -42,6 +50,7 @@ export class PaiementsFournisseurService {
         data: { id_fournisseur: number; montant: number; date?: string; note?: string; paye_caisse?: boolean },
         authorization?: string,
     ) {
+        const id_magasin = this.storeContext.requireMagasinId();
         const montant = Number(data.montant);
         if (!data.id_fournisseur) throw new BadRequestException('Choisissez le fournisseur.');
         if (!isFinite(montant) || montant <= 0) throw new BadRequestException('Le montant doit être supérieur à 0.');
@@ -53,8 +62,8 @@ export class PaiementsFournisseurService {
         const result = await this.dataSource.transaction(async (m) => {
             // Lock the supplier row so two payments cannot both pass the "amount owed" check
             const [f] = await m.query(
-                `SELECT id_fournisseur, nom, prenom, entreprise, solde FROM fournisseur WHERE id_fournisseur = $1 FOR UPDATE`,
-                [data.id_fournisseur],
+                `SELECT id_fournisseur, nom, prenom, entreprise, solde FROM fournisseur WHERE id_fournisseur = $1 AND id_magasin = $2 FOR UPDATE`,
+                [data.id_fournisseur, id_magasin],
             );
             if (!f) throw new NotFoundException(`Fournisseur #${data.id_fournisseur} introuvable`);
             const du = Number(f.solde) || 0;
@@ -62,9 +71,9 @@ export class PaiementsFournisseurService {
                 throw new BadRequestException(`Le montant (${montant}) dépasse ce qui est dû à ${this.nomFournisseur(f)} (${du}).`);
             }
             const rows = await m.query(
-                `INSERT INTO paiement_fournisseur (id_fournisseur, montant, date, note, paye_caisse, par_nom)
-                 VALUES ($1, $2, COALESCE($3::date, CURRENT_DATE), $4, $5, $6) RETURNING id, montant, date::text AS date, note, paye_caisse`,
-                [f.id_fournisseur, montant, data.date || null, note, payeCaisse, acteur.nom],
+                `INSERT INTO paiement_fournisseur (id_fournisseur, montant, date, note, paye_caisse, par_nom, id_magasin)
+                 VALUES ($1, $2, COALESCE($3::date, CURRENT_DATE), $4, $5, $6, $7) RETURNING id, montant, date::text AS date, note, paye_caisse`,
+                [f.id_fournisseur, montant, data.date || null, note, payeCaisse, acteur.nom, id_magasin],
             );
             await m.query(`UPDATE fournisseur SET solde = solde - $1 WHERE id_fournisseur = $2`, [montant, f.id_fournisseur]);
             return { paiement: rows[0], fournisseur: this.nomFournisseur(f), reste_du: Math.round((du - montant) * 1000) / 1000 };
@@ -84,12 +93,14 @@ export class PaiementsFournisseurService {
 
     /** Cancels a payment entered by mistake: the amount is owed again, and cash goes back to the caisse. */
     async annuler(id: number, authorization?: string): Promise<void> {
+        const id_magasin = this.storeContext.requireMagasinId();
         const acteur = await this.caisseService.acteurOuSysteme(authorization);
         const p = await this.dataSource.transaction(async (m) => {
             const [row] = await m.query(
                 `SELECT p.id, p.id_fournisseur, p.montant, p.paye_caisse, f.nom, f.prenom, f.entreprise
-                 FROM paiement_fournisseur p JOIN fournisseur f ON f.id_fournisseur = p.id_fournisseur WHERE p.id = $1 FOR UPDATE OF p`,
-                [id],
+                 FROM paiement_fournisseur p JOIN fournisseur f ON f.id_fournisseur = p.id_fournisseur
+                 WHERE p.id = $1 AND p.id_magasin = $2 FOR UPDATE OF p`,
+                [id, id_magasin],
             );
             if (!row) throw new NotFoundException(`Paiement #${id} introuvable`);
             await m.query(`DELETE FROM paiement_fournisseur WHERE id = $1`, [id]);

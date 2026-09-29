@@ -31,6 +31,9 @@ export class FactureAchat {
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
     reste_a_payer: number;
 
+    @Column({ nullable: true })
+    id_magasin: number;
+
     @ManyToOne(() => Fournisseur, fournisseur => fournisseur.factures_achat, { onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'id_fournisseur' })
     fournisseur: Fournisseur;

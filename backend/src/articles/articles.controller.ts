@@ -9,6 +9,7 @@ import { extname } from 'path';
 import { ArticlesService } from './articles.service';
 import { Article } from './article.entity';
 import { RequirePermission } from '../permissions/require-permission.decorator';
+import { ScopedByStore } from '../store-context/scoped-by-store.decorator';
 
 @Controller('articles')
 export class ArticlesController {
@@ -64,6 +65,7 @@ export class ArticlesController {
 
     @Post('sav/:id/remplacer')
     @RequirePermission('stock', 'modifier')
+    @ScopedByStore('sav_accessoire', 'id')
     remplacerSav(
         @Param('id', ParseIntPipe) id: number,
         @Body('id_article_remplacement') idArticleRemplacement: number,
@@ -73,6 +75,7 @@ export class ArticlesController {
 
     @Get(':id')
     @RequirePermission('stock', 'voir')
+    @ScopedByStore('article', 'id_article')
     findOne(@Param('id', ParseIntPipe) id: number): Promise<Article> {
         return this.articlesService.findOne(id);
     }
@@ -85,6 +88,7 @@ export class ArticlesController {
 
     @Put(':id')
     @RequirePermission('stock', 'modifier')
+    @ScopedByStore('article', 'id_article')
     update(
         @Param('id', ParseIntPipe) id: number,
         @Body() body: Partial<Article>,
@@ -94,6 +98,7 @@ export class ArticlesController {
 
     @Post(':id/fournisseur')
     @RequirePermission('stock', 'modifier')
+    @ScopedByStore('article', 'id_article')
     linkFournisseur(
         @Param('id', ParseIntPipe) id: number,
         @Body('fournisseurId') fournisseurId: number,
@@ -103,6 +108,7 @@ export class ArticlesController {
 
     @Post(':id/retour-fournisseur')
     @RequirePermission('stock', 'modifier')
+    @ScopedByStore('article', 'id_article')
     renvoyerAuFournisseur(
         @Param('id', ParseIntPipe) id: number,
         @Body() body: { probleme: string; qte?: number },
@@ -113,6 +119,7 @@ export class ArticlesController {
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
     @RequirePermission('stock', 'supprimer')
+    @ScopedByStore('article', 'id_article')
     remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
         return this.articlesService.remove(id);
     }

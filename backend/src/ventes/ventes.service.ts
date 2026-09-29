@@ -7,6 +7,7 @@ import { Reparation } from '../reparations/reparation.entity';
 import { StocksService } from '../stocks/stocks.service';
 import { ClientsService } from '../clients/clients.service';
 import { CaisseService } from '../caisse/caisse.service';
+import { StoreContextService } from '../store-context/store-context.service';
 
 @Injectable()
 export class VentesService {
@@ -17,10 +18,12 @@ export class VentesService {
         private readonly stocksService: StocksService,
         private readonly clientsService: ClientsService,
         private readonly caisseService: CaisseService,
+        private readonly storeContext: StoreContextService,
     ) { }
 
     findAll(): Promise<Vente[]> {
         return this.venteRepo.find({
+            where: { id_magasin: this.storeContext.requireMagasinId() },
             relations: ['client', 'article'],
             order: { id_vente: 'DESC' },
         });
@@ -28,7 +31,7 @@ export class VentesService {
 
     async findOne(id: number): Promise<Vente> {
         const vente = await this.venteRepo.findOne({
-            where: { id_vente: id },
+            where: { id_vente: id, id_magasin: this.storeContext.requireMagasinId() },
             relations: ['client', 'article'],
         });
         if (!vente) throw new NotFoundException(`Vente #${id} introuvable`);
@@ -36,6 +39,7 @@ export class VentesService {
     }
 
     async create(data: any, authorization?: string): Promise<Vente> {
+        const id_magasin = this.storeContext.requireMagasinId();
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -44,7 +48,7 @@ export class VentesService {
             // 1. Load the article and check stock (row-locked: two concurrent sales of the
             // last unit must serialize, not both read the same quantity and both succeed)
             const article = await queryRunner.manager.findOne(Article, {
-                where: { id_article: data.articleId },
+                where: { id_article: data.articleId, id_magasin },
                 lock: { mode: 'pessimistic_write' },
             });
             if (!article) throw new NotFoundException(`Article ${data.articleId} introuvable`);
@@ -68,6 +72,7 @@ export class VentesService {
                 date: data.date || new Date().toISOString().split('T')[0],
                 client: data.clientId ? { id_client: data.clientId } : null,
                 article: { id_article: article.id_article },
+                id_magasin,
             });
 
             const savedVente = await queryRunner.manager.save(vente);
@@ -120,6 +125,7 @@ export class VentesService {
             if (!data.clientId) throw new BadRequestException('Un client doit être sélectionné pour laisser un reste à payer à crédit.');
         }
 
+        const id_magasin = this.storeContext.requireMagasinId();
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -136,7 +142,7 @@ export class VentesService {
                 if (item.reparationId) {
                     // Repair pickup line: no stock/article involved, just closes out the ticket
                     const rep = await queryRunner.manager.findOne(Reparation, {
-                        where: { id_reparation: item.reparationId },
+                        where: { id_reparation: item.reparationId, id_magasin },
                     });
                     if (!rep) throw new NotFoundException(`Ticket de réparation ${item.reparationId} introuvable`);
 
@@ -163,6 +169,7 @@ export class VentesService {
                         client: data.clientId ? { id_client: data.clientId } : null,
                         article: null,
                         id_reparation_origine: item.reparationId,
+                        id_magasin,
                     });
                     const saved = await queryRunner.manager.save(vente);
                     savedIds.push(saved.id_vente);
@@ -171,7 +178,7 @@ export class VentesService {
                 }
 
                 const article = await queryRunner.manager.findOne(Article, {
-                    where: { id_article: item.articleId as number },
+                    where: { id_article: item.articleId as number, id_magasin },
                     lock: { mode: 'pessimistic_write' },
                 });
                 if (!article) throw new NotFoundException(`Article ${item.articleId} introuvable`);
@@ -197,6 +204,7 @@ export class VentesService {
                     date,
                     client: data.clientId ? { id_client: data.clientId } : null,
                     article: { id_article: article.id_article },
+                    id_magasin,
                 });
                 const saved = await queryRunner.manager.save(vente);
                 savedIds.push(saved.id_vente);
@@ -211,8 +219,8 @@ export class VentesService {
                 montantSoldeUtilise = montantSolde;
                 // Paid from the client's balance, not cash: the caisse must not expect it in the drawer
                 await queryRunner.query(
-                    `INSERT INTO client_solde_usage (id_client, montant, date) VALUES ($1, $2, $3)`,
-                    [data.clientId, montantSolde, date],
+                    `INSERT INTO client_solde_usage (id_client, montant, date, id_magasin) VALUES ($1, $2, $3, $4)`,
+                    [data.clientId, montantSolde, date, id_magasin],
                 );
             }
 
@@ -294,13 +302,14 @@ export class VentesService {
      * versus the immediately preceding period of the same length.
      */
     async getStats(period: 'today' | 'week' | 'month' | 'year' = 'month') {
+        const id_magasin = this.storeContext.requireMagasinId();
         const { start, end, granularite } = this.bornesPeriode(period);
         const startStr = this.jourLocal(start);
         const endStr = this.jourLocal(end);
         const joursPeriode = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
 
         const ventes = await this.venteRepo.find({
-            where: { date: Between(start, end) },
+            where: { date: Between(start, end), id_magasin },
             relations: ['article'],
         });
 
@@ -366,8 +375,9 @@ export class VentesService {
                JOIN reparation_item ri ON ri.id_reparation = r.id_reparation
                LEFT JOIN article a ON a.id_article = ri.id_article
               WHERE r.retour_de IS NOT NULL AND r.date_reception BETWEEN $1 AND $2
-                AND r.statut NOT IN ('Vente avec reçu', 'Livré')`,
-            [startStr, endStr],
+                AND r.statut NOT IN ('Vente avec reçu', 'Livré')
+                AND r.id_magasin = $3`,
+            [startStr, endStr, id_magasin],
         );
         reparationsPertes += Number(retourLigne[0]?.total) || 0;
 
@@ -404,10 +414,11 @@ export class VentesService {
                JOIN reparation r ON r.id_reparation = ri.id_reparation
                JOIN article a ON a.id_article = ri.id_article
               WHERE r.date_reception BETWEEN $1 AND $2
+                AND r.id_magasin = $3
               GROUP BY a.id_article, a.designation, a.marque, a.modele
               ORDER BY SUM(ri.qte) DESC
               LIMIT 8`,
-            [startStr, endStr],
+            [startStr, endStr, id_magasin],
         );
         const topPieces = piecesRows.map((r: any) => ({
             articleId: r.id_article,
@@ -423,7 +434,7 @@ export class VentesService {
         const prevStart = new Date(prevEnd);
         prevStart.setDate(prevEnd.getDate() - (joursPeriode - 1));
         const prevVentes = await this.venteRepo.find({
-            where: { date: Between(prevStart, prevEnd) },
+            where: { date: Between(prevStart, prevEnd), id_magasin },
         });
         const prevRevenue = prevVentes.reduce((s, v) => s + (v.qte || 0) * (Number(v.prix) || 0), 0);
 
@@ -469,6 +480,7 @@ export class VentesService {
      * Either way, the supplier shown is from that part's most recent purchase.
      */
     async getPertesDetail(period: 'today' | 'week' | 'month' | 'year' = 'month') {
+        const id_magasin = this.storeContext.requireMagasinId();
         const { start, end } = this.bornesPeriode(period);
         const startStr = this.jourLocal(start);
         const endStr = this.jourLocal(end);
@@ -498,8 +510,9 @@ export class VentesService {
                ${fournisseurJoin}
               WHERE r.retour_de IS NOT NULL AND r.date_reception BETWEEN $1 AND $2
                 AND r.statut NOT IN ('Vente avec reçu', 'Livré')
+                AND r.id_magasin = $3
               ORDER BY r.date_reception DESC, r.id_reparation DESC`,
-            [startStr, endStr],
+            [startStr, endStr, id_magasin],
         );
 
         // Repairs checked out (with a matching Vente line) for less than their parts cost — whether
@@ -521,8 +534,9 @@ export class VentesService {
               WHERE v.id_article IS NULL AND v.cout IS NOT NULL
                 AND v.prix < v.cout
                 AND v.date BETWEEN $1 AND $2
+                AND v.id_magasin = $3
               ORDER BY v.date DESC, r.id_reparation DESC`,
-            [startStr, endStr],
+            [startStr, endStr, id_magasin],
         );
 
         const nomFournisseur = (l: any) => l.fournisseur_entreprise || (l.fournisseur_nom ? `${l.fournisseur_nom} ${l.fournisseur_prenom || ''}`.trim() : null);
@@ -567,6 +581,7 @@ export class VentesService {
     }
 
     async remove(id: number, authorization?: string): Promise<void> {
+        const id_magasin = this.storeContext.requireMagasinId();
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -574,7 +589,7 @@ export class VentesService {
 
         try {
             const vente = await queryRunner.manager.findOne(Vente, {
-                where: { id_vente: id },
+                where: { id_vente: id, id_magasin },
                 relations: ['article'],
             });
             if (!vente) throw new NotFoundException(`Vente #${id} introuvable`);
@@ -582,7 +597,7 @@ export class VentesService {
             // Restore stock
             if (vente.article) {
                 const article = await queryRunner.manager.findOne(Article, {
-                    where: { id_article: vente.article.id_article },
+                    where: { id_article: vente.article.id_article, id_magasin },
                     lock: { mode: 'pessimistic_write' },
                 });
                 if (article) {

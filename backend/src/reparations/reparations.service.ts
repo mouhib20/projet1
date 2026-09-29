@@ -8,6 +8,7 @@ import { Client } from '../clients/client.entity';
 import { Article } from '../articles/article.entity';
 import { Vente } from '../ventes/vente.entity';
 import { CaisseService } from '../caisse/caisse.service';
+import { StoreContextService } from '../store-context/store-context.service';
 
 @Injectable()
 export class ReparationsService {
@@ -16,10 +17,12 @@ export class ReparationsService {
         private readonly reparationRepo: Repository<Reparation>,
         private readonly dataSource: DataSource,
         private readonly caisseService: CaisseService,
+        private readonly storeContext: StoreContextService,
     ) { }
 
     findAll(): Promise<Reparation[]> {
         return this.reparationRepo.find({
+            where: { id_magasin: this.storeContext.requireMagasinId() },
             relations: ['client', 'items', 'items.article'],
             order: { date_reception: 'DESC', id_reparation: 'DESC' },
         });
@@ -38,8 +41,9 @@ export class ReparationsService {
      * module is left untouched.
      */
     async findRetours(): Promise<any[]> {
+        const id_magasin = this.storeContext.requireMagasinId();
         const retours = await this.reparationRepo.find({
-            where: { retour_de: Not(IsNull()) },
+            where: { retour_de: Not(IsNull()), id_magasin },
             relations: ['client', 'items', 'items.article'],
             order: { id_reparation: 'DESC' },
         });
@@ -47,7 +51,7 @@ export class ReparationsService {
         const result: any[] = [];
         for (const retour of retours) {
             const origine = await this.reparationRepo.findOne({
-                where: { id_reparation: retour.retour_de as number },
+                where: { id_reparation: retour.retour_de as number, id_magasin },
                 relations: ['items', 'items.article'],
             });
 
@@ -80,7 +84,7 @@ export class ReparationsService {
 
     async findOne(id: number): Promise<Reparation> {
         const reparation = await this.reparationRepo.findOne({
-            where: { id_reparation: id },
+            where: { id_reparation: id, id_magasin: this.storeContext.requireMagasinId() },
             relations: ['client', 'items', 'items.article'],
         });
         if (!reparation) throw new NotFoundException(`Reparation #${id} introuvable`);
@@ -88,13 +92,14 @@ export class ReparationsService {
     }
 
     async create(data: CreateReparationDto, authorization?: string): Promise<Reparation> {
+        const id_magasin = this.storeContext.requireMagasinId();
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
 
         try {
             const client = await queryRunner.manager.findOne(Client, {
-                where: { id_client: data.id_client }
+                where: { id_client: data.id_client, id_magasin }
             });
             if (!client) throw new NotFoundException(`Client #${data.id_client} introuvable`);
 
@@ -104,7 +109,7 @@ export class ReparationsService {
             if (data.items && data.items.length > 0) {
                 for (const itemDto of data.items) {
                     const article = await queryRunner.manager.findOne(Article, {
-                        where: { id_article: itemDto.id_article },
+                        where: { id_article: itemDto.id_article, id_magasin },
                         lock: { mode: 'pessimistic_write' },
                     });
                     if (!article) throw new NotFoundException(`Article #${itemDto.id_article} introuvable`);
@@ -123,7 +128,8 @@ export class ReparationsService {
                     const repItem = queryRunner.manager.create(ReparationItem, {
                         article: { id_article: article.id_article },
                         qte: itemDto.qte,
-                        prix: prixUnitaire
+                        prix: prixUnitaire,
+                        id_magasin,
                     });
                     repItems.push(repItem);
                 }
@@ -147,7 +153,8 @@ export class ReparationsService {
                 degre_dommage: data.degre_dommage ?? null,
                 statut: data.statut ?? 'En attente',
                 date_reception: data.date_reception ?? new Date(),
-                items: repItems
+                items: repItems,
+                id_magasin,
             });
 
             const savedReparation = await queryRunner.manager.save(reparation);
@@ -166,6 +173,7 @@ export class ReparationsService {
                     client: { id_client: data.id_client },
                     article: null,
                     id_reparation_origine: savedReparation.id_reparation,
+                    id_magasin,
                 });
                 await queryRunner.manager.save(venteAcompte);
             }
@@ -197,15 +205,16 @@ export class ReparationsService {
      * adds its price to the ticket's total.
      */
     async addItem(id: number, data: { id_article: number; qte?: number; prix?: number }): Promise<Reparation> {
+        const id_magasin = this.storeContext.requireMagasinId();
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
 
         try {
-            const rep = await queryRunner.manager.findOne(Reparation, { where: { id_reparation: id } });
+            const rep = await queryRunner.manager.findOne(Reparation, { where: { id_reparation: id, id_magasin } });
             if (!rep) throw new NotFoundException(`Reparation #${id} introuvable`);
 
-            const article = await queryRunner.manager.findOne(Article, { where: { id_article: data.id_article }, lock: { mode: 'pessimistic_write' } });
+            const article = await queryRunner.manager.findOne(Article, { where: { id_article: data.id_article, id_magasin }, lock: { mode: 'pessimistic_write' } });
             if (!article) throw new NotFoundException(`Article #${data.id_article} introuvable`);
 
             const qte = data.qte ?? 1;
@@ -222,6 +231,7 @@ export class ReparationsService {
                 article: { id_article: article.id_article },
                 qte,
                 prix: prixUnitaire,
+                id_magasin,
             });
             await queryRunner.manager.save(item);
 
@@ -256,13 +266,14 @@ export class ReparationsService {
             throw new BadRequestException('Le montant reçu est invalide.');
         }
 
+        const id_magasin = this.storeContext.requireMagasinId();
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
 
         try {
             const rep = await queryRunner.manager.findOne(Reparation, {
-                where: { id_reparation: id },
+                where: { id_reparation: id, id_magasin },
                 relations: ['client'],
             });
             if (!rep) throw new NotFoundException(`Reparation #${id} introuvable`);
@@ -286,6 +297,7 @@ export class ReparationsService {
                 client: rep.client ? { id_client: rep.client.id_client } : null,
                 article: null,
                 id_reparation_origine: id,
+                id_magasin,
             });
             await queryRunner.manager.save(vente);
 
@@ -300,13 +312,14 @@ export class ReparationsService {
     }
 
     async remove(id: number): Promise<void> {
+        const id_magasin = this.storeContext.requireMagasinId();
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
 
         try {
             const reparation = await queryRunner.manager.findOne(Reparation, {
-                where: { id_reparation: id },
+                where: { id_reparation: id, id_magasin },
                 relations: ['items', 'items.article'],
             });
             if (!reparation) throw new NotFoundException(`Reparation #${id} introuvable`);
@@ -316,7 +329,7 @@ export class ReparationsService {
                 for (const item of reparation.items) {
                     if (item.article) {
                         const article = await queryRunner.manager.findOne(Article, {
-                            where: { id_article: item.article.id_article },
+                            where: { id_article: item.article.id_article, id_magasin },
                             lock: { mode: 'pessimistic_write' },
                         });
                         if (article) {
@@ -345,6 +358,7 @@ export class ReparationsService {
      * already taken is handed back: its sale line is removed and the amount leaves the caisse.
      */
     async annuler(id: number, motif: string | undefined, authorization?: string): Promise<Reparation> {
+        const id_magasin = this.storeContext.requireMagasinId();
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -353,7 +367,7 @@ export class ReparationsService {
         let savedReparation: Reparation;
         try {
             const reparation = await queryRunner.manager.findOne(Reparation, {
-                where: { id_reparation: id },
+                where: { id_reparation: id, id_magasin },
                 relations: ['items', 'items.article', 'client'],
             });
             if (!reparation) throw new NotFoundException(`Reparation #${id} introuvable`);
@@ -364,7 +378,7 @@ export class ReparationsService {
             // Give back the parts reserved for this ticket
             for (const item of reparation.items || []) {
                 if (!item.article) continue;
-                const article = await queryRunner.manager.findOne(Article, { where: { id_article: item.article.id_article }, lock: { mode: 'pessimistic_write' } });
+                const article = await queryRunner.manager.findOne(Article, { where: { id_article: item.article.id_article, id_magasin }, lock: { mode: 'pessimistic_write' } });
                 if (article) {
                     article.quantite += item.qte;
                     await queryRunner.manager.save(article);

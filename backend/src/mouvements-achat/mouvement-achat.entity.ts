@@ -18,6 +18,9 @@ export class MouvementAchat {
     @Column({ type: 'date' })
     date_mouvement: Date;
 
+    @Column({ nullable: true })
+    id_magasin: number;
+
     @ManyToOne(() => Article, article => article.mouvements_achat, { onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'id_article' })
     article: Article;

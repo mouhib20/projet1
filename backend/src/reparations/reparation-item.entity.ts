@@ -20,4 +20,7 @@ export class ReparationItem {
     @ManyToOne(() => Article, { onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'id_article' })
     article: Article;
+
+    @Column({ nullable: true })
+    id_magasin: number;
 }

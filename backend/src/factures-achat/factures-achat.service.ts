@@ -6,6 +6,7 @@ import { MouvementAchat } from '../mouvements-achat/mouvement-achat.entity';
 import { Article } from '../articles/article.entity';
 import { Fournisseur } from '../fournisseurs/fournisseur.entity';
 import { StocksService } from '../stocks/stocks.service';
+import { StoreContextService } from '../store-context/store-context.service';
 
 @Injectable()
 export class FacturesAchatService {
@@ -14,15 +15,19 @@ export class FacturesAchatService {
         private readonly factureRepo: Repository<FactureAchat>,
         private readonly dataSource: DataSource,
         private readonly stocksService: StocksService,
+        private readonly storeContext: StoreContextService,
     ) { }
 
     findAll(): Promise<FactureAchat[]> {
-        return this.factureRepo.find({ relations: ['fournisseur', 'mouvements_achat', 'mouvements_achat.article'] });
+        return this.factureRepo.find({
+            where: { id_magasin: this.storeContext.requireMagasinId() },
+            relations: ['fournisseur', 'mouvements_achat', 'mouvements_achat.article'],
+        });
     }
 
     async findOne(id: number): Promise<FactureAchat> {
         const facture = await this.factureRepo.findOne({
-            where: { id_facture: id },
+            where: { id_facture: id, id_magasin: this.storeContext.requireMagasinId() },
             relations: ['fournisseur', 'mouvements_achat', 'mouvements_achat.article']
         });
         if (!facture) throw new NotFoundException(`Facture #${id} introuvable`);
@@ -30,6 +35,7 @@ export class FacturesAchatService {
     }
 
     async create(data: any): Promise<FactureAchat> {
+        const id_magasin = this.storeContext.requireMagasinId();
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -45,14 +51,16 @@ export class FacturesAchatService {
                 net_a_payer: data.net_a_payer || data.total_ht,
                 montant_paye: data.montant_paye || 0,
                 reste_a_payer: data.reste_a_payer ?? (data.net_a_payer || data.total_ht),
-                fournisseur: { id_fournisseur: data.fournisseurId }
-            });
+                fournisseur: { id_fournisseur: data.fournisseurId },
+                id_magasin,
+            } as any);
 
             const savedFacture = await queryRunner.manager.save(facture);
 
-            // 2. Load fournisseur (no articles relation to avoid join table query)
+            // 2. Load fournisseur (no articles relation to avoid join table query) — must belong
+            // to this store, so an invoice can never be attached to another store's supplier.
             const fournisseur = await queryRunner.manager.findOne(Fournisseur, {
-                where: { id_fournisseur: data.fournisseurId },
+                where: { id_fournisseur: data.fournisseurId, id_magasin },
             });
             if (!fournisseur) throw new Error(`Fournisseur ${data.fournisseurId} introuvable`);
 
@@ -84,7 +92,8 @@ export class FacturesAchatService {
                             marque: item.marque || null,
                             modele: item.modele || null,
                             image: item.image || null,
-                        });
+                            id_magasin,
+                        } as any);
                         article = await queryRunner.manager.save(article);
 
                         // Link new article to the fournisseur via raw SQL (avoids TypeORM column naming issues)
@@ -94,9 +103,9 @@ export class FacturesAchatService {
                         );
 
                     } else {
-                        // ---------- EXISTING ARTICLE ----------
+                        // ---------- EXISTING ARTICLE ---------- (must belong to this store)
                         article = await queryRunner.manager.findOne(Article, {
-                            where: { id_article: item.articleId },
+                            where: { id_article: item.articleId, id_magasin },
                         });
                         if (!article) throw new Error(`Article ${item.articleId} introuvable`);
 
@@ -119,8 +128,9 @@ export class FacturesAchatService {
                         date_mouvement: savedFacture.date_facture,
                         fournisseur: { id_fournisseur: data.fournisseurId },
                         article: { id_article: article.id_article },
-                        facture_achat: { id_facture: savedFacture.id_facture }
-                    });
+                        facture_achat: { id_facture: savedFacture.id_facture },
+                        id_magasin,
+                    } as any);
                     await queryRunner.manager.save(mouvement);
                 }
             }

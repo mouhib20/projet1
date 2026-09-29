@@ -165,6 +165,17 @@ async function migrer(): Promise<void> {
         await client.query(`ALTER TABLE "reparation_item" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
         await client.query(`ALTER TABLE "stock" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
         await client.query(`ALTER TABLE "vente" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        // These have no TypeORM entity (raw SQL only) but are just as store-scoped as the rest
+        await client.query(`ALTER TABLE "caisse_mouvement" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "caisse_session" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        // Pre-dates multi-store: enforced "only one open session in the whole app" via a constant
+        // expression index. Now that several stores each run their own drawer, it must be per store.
+        await client.query(`DROP INDEX IF EXISTS "caisse_session_une_ouverte"`);
+        await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "caisse_session_une_ouverte_par_magasin" ON "caisse_session" ("id_magasin") WHERE (("statut")::text = 'ouverte'::text)`);
+        await client.query(`ALTER TABLE "client_solde_usage" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "paiement_fournisseur" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "retour_fournisseur" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "sav_accessoire" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
 
         // One-time backfill: an install that predates this feature gets one default store, and
         // every existing row across every store-scoped table is attached to it.
@@ -179,10 +190,18 @@ async function migrer(): Promise<void> {
                 await client.query(`INSERT INTO "magasin_module" ("id_magasin", "departement") VALUES ($1, $2)`, [idMagasinDefaut, dep]);
             }
             await client.query(`UPDATE "utilisateurs" SET id_magasin = $1 WHERE id_magasin IS NULL AND role != 'super_admin'`, [idMagasinDefaut]);
-            for (const table of ['article', 'charge', 'client', 'client_depot', 'facture_achat', 'fournisseur', 'mouvement_achat', 'reparation', 'reparation_item', 'stock', 'vente']) {
+            for (const table of ['article', 'charge', 'client', 'client_depot', 'facture_achat', 'fournisseur', 'mouvement_achat', 'reparation', 'reparation_item', 'stock', 'vente', 'caisse_mouvement', 'caisse_session', 'client_solde_usage', 'paiement_fournisseur', 'retour_fournisseur', 'sav_accessoire']) {
                 await client.query(`UPDATE "${table}" SET id_magasin = $1 WHERE id_magasin IS NULL`, [idMagasinDefaut]);
             }
             console.log(`[migrations] migration multi-magasin : magasin par défaut créé (id ${idMagasinDefaut}), données existantes rattachées.`);
+        } else if (nMagasins === 1) {
+            // Supplementary, idempotent: tables discovered/added to the store-scoping list after the
+            // migration above already ran once (still safe while there is only one store — no ambiguity
+            // about which store an orphaned row belongs to).
+            const { rows: [{ id_magasin: idUnique }] } = await client.query(`SELECT id_magasin FROM "magasin" LIMIT 1`);
+            for (const table of ['caisse_mouvement', 'caisse_session', 'client_solde_usage', 'paiement_fournisseur', 'retour_fournisseur', 'sav_accessoire']) {
+                await client.query(`UPDATE "${table}" SET id_magasin = $1 WHERE id_magasin IS NULL`, [idUnique]);
+            }
         }
 
         // Seed a super_admin account if requested and none exists yet (idempotent, every boot)

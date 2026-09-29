@@ -21,4 +21,7 @@ export class Charge {
     // Payée en espèces avec l'argent de la caisse: la sortie est alors enregistrée dans la caisse
     @Column({ type: 'boolean', default: false })
     paye_caisse: boolean;
+
+    @Column({ nullable: true })
+    id_magasin: number;
 }

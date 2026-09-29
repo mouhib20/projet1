@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Param, ParseIntPipe, Query, Headers } from '@nestjs/common';
 import { CaisseService } from './caisse.service';
+import { ScopedByStore } from '../store-context/scoped-by-store.decorator';
 
 @Controller('caisse')
 export class CaisseController {
@@ -46,6 +47,7 @@ export class CaisseController {
     }
 
     @Get('sessions/:id')
+    @ScopedByStore('caisse_session', 'id')
     async session(@Headers('authorization') auth: string | undefined, @Param('id', ParseIntPipe) id: number) {
         return this.service.mouvementsDeSession(await this.service.acteurRequis(auth), id);
     }

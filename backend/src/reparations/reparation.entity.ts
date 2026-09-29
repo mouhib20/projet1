@@ -41,6 +41,9 @@ export class Reparation {
     @Column({ type: 'date', nullable: true })
     date_reception: Date;
 
+    @Column({ nullable: true })
+    id_magasin: number;
+
     @ManyToOne(() => Client, client => client.reparations, { onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'id_client' })
     client: Client;

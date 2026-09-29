@@ -12,6 +12,9 @@ export class Stock {
     @Column({ type: 'int', default: 0 })
     qte_restante: number;
 
+    @Column({ nullable: true })
+    id_magasin: number;
+
     // The stock belongs to a specific purchase movement
     @OneToOne(() => MouvementAchat, mouvement => mouvement.stock, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'id_mouvement' })
