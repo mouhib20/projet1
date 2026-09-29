@@ -1,7 +1,10 @@
 ﻿import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ClsModule } from 'nestjs-cls';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -35,13 +38,21 @@ import { PaiementsFournisseurModule } from './paiements-fournisseur/paiements-fo
 import { PermissionsModule } from './permissions/permissions.module';
 import { Permission } from './permissions/permission.entity';
 import { EmployeesModule } from './employees/employees.module';
+import { Magasin } from './magasins/magasin.entity';
+import { MagasinModule as MagasinModuleEntity } from './magasins/magasin-module.entity';
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
         }),
+        // Per-request store context (id_magasin/role), set once by JwtAuthGuard and read by
+        // every store-scoped service via StoreContextService — avoids re-deriving it everywhere.
+        ClsModule.forRoot({ global: true, middleware: { mount: true } }),
         ScheduleModule.forRoot(),
+        // Broad safety net against abuse/DoS on the whole API (login already has its own,
+        // stricter, per-account throttle in AuthController — this is a second, general layer).
+        ThrottlerModule.forRoot([{ ttl: 60_000, limit: 200 }]),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
@@ -60,7 +71,7 @@ import { EmployeesModule } from './employees/employees.module';
                 return {
                     type: 'postgres' as const,
                     ...connexion,
-                    entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, ProductEntity, FactureAchat, Charge, Utilisateur, Permission],
+                    entities: [Article, Fournisseur, MouvementAchat, Stock, Client, ClientDepot, Vente, Reparation, ReparationItem, ProductEntity, FactureAchat, Charge, Utilisateur, Permission, Magasin, MagasinModuleEntity],
                     synchronize: configService.get<string>('DB_SYNC', 'false') === 'true',
                     ssl: configService.get<string>('DB_SSL', 'true') === 'true' ? { rejectUnauthorized: false } : false,
                 };
@@ -85,6 +96,9 @@ import { EmployeesModule } from './employees/employees.module';
         EmployeesModule,
     ],
     controllers: [AppController],
-    providers: [AppService],
+    providers: [
+        AppService,
+        { provide: APP_GUARD, useClass: ThrottlerGuard },
+    ],
 })
 export class AppModule { }

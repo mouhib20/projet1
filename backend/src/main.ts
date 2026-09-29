@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import helmet from 'helmet';
 import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { AppModule } from './app.module';
@@ -16,6 +17,17 @@ async function bootstrap() {
 
     // Behind a hosting proxy (Render, Railway…) the real client IP is in X-Forwarded-For
     app.set('trust proxy', 1);
+
+    // Baseline security headers (clickjacking, MIME-sniffing, etc.). CSP and the cross-origin
+    // resource/embedder policies are left off: the frontend is deployed on a separate origin
+    // from the API and fetches uploaded article images from /uploads across that origin, so a
+    // default-strict CSP or COEP/CORP would need per-app tuning to avoid breaking that — a
+    // follow-up, not something to guess at here.
+    app.use(helmet({
+        contentSecurityPolicy: false,
+        crossOriginResourcePolicy: false,
+        crossOriginEmbedderPolicy: false,
+    }));
 
     // CORS_ORIGIN: comma-separated list of allowed front-end addresses. Without it, any origin is
     // accepted in development, and none in production (front and API then share one address).

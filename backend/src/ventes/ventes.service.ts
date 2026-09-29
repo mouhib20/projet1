@@ -41,9 +41,11 @@ export class VentesService {
         await queryRunner.startTransaction();
 
         try {
-            // 1. Load the article and check stock
+            // 1. Load the article and check stock (row-locked: two concurrent sales of the
+            // last unit must serialize, not both read the same quantity and both succeed)
             const article = await queryRunner.manager.findOne(Article, {
                 where: { id_article: data.articleId },
+                lock: { mode: 'pessimistic_write' },
             });
             if (!article) throw new NotFoundException(`Article ${data.articleId} introuvable`);
 
@@ -170,6 +172,7 @@ export class VentesService {
 
                 const article = await queryRunner.manager.findOne(Article, {
                     where: { id_article: item.articleId as number },
+                    lock: { mode: 'pessimistic_write' },
                 });
                 if (!article) throw new NotFoundException(`Article ${item.articleId} introuvable`);
 
@@ -580,6 +583,7 @@ export class VentesService {
             if (vente.article) {
                 const article = await queryRunner.manager.findOne(Article, {
                     where: { id_article: vente.article.id_article },
+                    lock: { mode: 'pessimistic_write' },
                 });
                 if (article) {
                     article.quantite += vente.qte || 1;

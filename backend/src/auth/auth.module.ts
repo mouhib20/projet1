@@ -8,12 +8,15 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { PermissionsModule } from '../permissions/permissions.module';
 import { PermissionsGuard } from '../permissions/permissions.guard';
+import { StoreContextModule } from '../store-context/store-context.module';
+import { StoreOwnershipGuard } from '../store-context/store-ownership.guard';
 import { JWT_SECRET } from './jwt.constants';
 
 @Module({
     imports: [
         UsersModule,
         PermissionsModule,
+        StoreContextModule,
         JwtModule.register({
             secret: JWT_SECRET,
             signOptions: { expiresIn: '8h' },
@@ -23,6 +26,7 @@ import { JWT_SECRET } from './jwt.constants';
         AuthService,
         { provide: APP_GUARD, useClass: JwtAuthGuard },
         { provide: APP_GUARD, useClass: PermissionsGuard },
+        { provide: APP_GUARD, useClass: StoreOwnershipGuard },
         { provide: APP_INTERCEPTOR, useClass: AntiDoubleSoumissionInterceptor },
     ],
     controllers: [AuthController],

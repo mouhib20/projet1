@@ -21,12 +21,13 @@ export class AuthService {
         if (!valid) throw new UnauthorizedException('Mot de passe incorrect');
         if (!user.actif) throw new ForbiddenException('Compte suspendu.');
 
-        const payload = { sub: user.id, username: user.username, role: user.role };
+        const payload = { sub: user.id, username: user.username, role: user.role, id_magasin: user.id_magasin };
         return {
             access_token: this.jwtService.sign(payload),
             role: user.role,
             username: user.username,
             nom: user.nom,
+            id_magasin: user.id_magasin,
             permissions: await this.permissionsService.getMatrix(user.id),
         };
     }

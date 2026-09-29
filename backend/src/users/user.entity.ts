@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-export type UserRole = 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
+export type UserRole = 'super_admin' | 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
 
 @Entity('utilisateurs')
 export class Utilisateur {
@@ -26,7 +26,14 @@ export class Utilisateur {
     @Column({ default: true })
     actif: boolean;
 
-    /** NULL for an owner/admin account; set to the owner's own id for every employee they create. */
+    /**
+     * Deprecated: superseded by id_magasin (kept in the DB, no longer read/written by the code).
+     * Was: NULL for an owner/admin account; the owner's own id for every employee they created.
+     */
     @Column({ nullable: true })
     id_proprietaire: number | null;
+
+    /** Which store this account belongs to. NULL only for super_admin (not scoped to any store). */
+    @Column({ nullable: true })
+    id_magasin: number | null;
 }

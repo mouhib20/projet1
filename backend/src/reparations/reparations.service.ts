@@ -104,7 +104,8 @@ export class ReparationsService {
             if (data.items && data.items.length > 0) {
                 for (const itemDto of data.items) {
                     const article = await queryRunner.manager.findOne(Article, {
-                        where: { id_article: itemDto.id_article }
+                        where: { id_article: itemDto.id_article },
+                        lock: { mode: 'pessimistic_write' },
                     });
                     if (!article) throw new NotFoundException(`Article #${itemDto.id_article} introuvable`);
 
@@ -204,7 +205,7 @@ export class ReparationsService {
             const rep = await queryRunner.manager.findOne(Reparation, { where: { id_reparation: id } });
             if (!rep) throw new NotFoundException(`Reparation #${id} introuvable`);
 
-            const article = await queryRunner.manager.findOne(Article, { where: { id_article: data.id_article } });
+            const article = await queryRunner.manager.findOne(Article, { where: { id_article: data.id_article }, lock: { mode: 'pessimistic_write' } });
             if (!article) throw new NotFoundException(`Article #${data.id_article} introuvable`);
 
             const qte = data.qte ?? 1;
@@ -315,7 +316,8 @@ export class ReparationsService {
                 for (const item of reparation.items) {
                     if (item.article) {
                         const article = await queryRunner.manager.findOne(Article, {
-                            where: { id_article: item.article.id_article }
+                            where: { id_article: item.article.id_article },
+                            lock: { mode: 'pessimistic_write' },
                         });
                         if (article) {
                             article.quantite += item.qte;
@@ -362,7 +364,7 @@ export class ReparationsService {
             // Give back the parts reserved for this ticket
             for (const item of reparation.items || []) {
                 if (!item.article) continue;
-                const article = await queryRunner.manager.findOne(Article, { where: { id_article: item.article.id_article } });
+                const article = await queryRunner.manager.findOne(Article, { where: { id_article: item.article.id_article }, lock: { mode: 'pessimistic_write' } });
                 if (article) {
                     article.quantite += item.qte;
                     await queryRunner.manager.save(article);

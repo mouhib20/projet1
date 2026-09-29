@@ -3,7 +3,8 @@ import { join } from 'path';
 import { Client } from 'pg';
 import * as bcrypt from 'bcrypt';
 
-const ROLES = ['admin', 'vendeur', 'vendeuse', 'visiteur'];
+const ROLES = ['super_admin', 'admin', 'vendeur', 'vendeuse', 'visiteur'];
+const DEPARTEMENTS = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports'];
 const ATTENTE_MS = 3000;
 const ESSAIS = 15;
 
@@ -127,6 +128,75 @@ async function migrer(): Promise<void> {
         `);
         await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "permission_utilisateur_departement_idx" ON "permission" ("id_utilisateur", "departement")`);
         await client.query(`DO $$ BEGIN ALTER TABLE "permission" ADD CONSTRAINT "permission_id_utilisateur_fkey" FOREIGN KEY (id_utilisateur) REFERENCES utilisateurs(id) ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+
+        // Multi-store feature: which store an account belongs to (NULL only for super_admin)
+        await client.query(`ALTER TABLE "utilisateurs" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        // Stores, and which of the 7 departments are enabled per store (Super Admin's switch)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "magasin" (
+                "id_magasin" SERIAL PRIMARY KEY,
+                "nom" character varying NOT NULL,
+                "adresse" character varying,
+                "telephone" character varying,
+                "logo" character varying,
+                "actif" boolean DEFAULT true NOT NULL,
+                "date_creation" timestamp DEFAULT now() NOT NULL
+            )
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "magasin_module" (
+                "id" SERIAL PRIMARY KEY,
+                "id_magasin" integer NOT NULL,
+                "departement" character varying(20) NOT NULL,
+                "actif" boolean DEFAULT true NOT NULL
+            )
+        `);
+        await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "magasin_module_magasin_departement_idx" ON "magasin_module" ("id_magasin", "departement")`);
+        await client.query(`DO $$ BEGIN ALTER TABLE "magasin_module" ADD CONSTRAINT "magasin_module_id_magasin_fkey" FOREIGN KEY (id_magasin) REFERENCES magasin(id_magasin) ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        // id_magasin on every store-scoped table
+        await client.query(`ALTER TABLE "article" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "charge" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "client" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "client_depot" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "facture_achat" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "fournisseur" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "mouvement_achat" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "reparation" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "reparation_item" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "stock" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+        await client.query(`ALTER TABLE "vente" ADD COLUMN IF NOT EXISTS "id_magasin" integer`);
+
+        // One-time backfill: an install that predates this feature gets one default store, and
+        // every existing row across every store-scoped table is attached to it.
+        const { rows: [{ n: nMagasins }] } = await client.query(`SELECT COUNT(*)::int AS n FROM "magasin"`);
+        const { rows: [{ n: nUtilisateurs }] } = await client.query(`SELECT COUNT(*)::int AS n FROM "utilisateurs"`);
+        if (nMagasins === 0 && nUtilisateurs > 0) {
+            const { rows: [{ id_magasin: idMagasinDefaut }] } = await client.query(
+                `INSERT INTO "magasin" ("nom") VALUES ($1) RETURNING id_magasin`,
+                ['Mon magasin'],
+            );
+            for (const dep of DEPARTEMENTS) {
+                await client.query(`INSERT INTO "magasin_module" ("id_magasin", "departement") VALUES ($1, $2)`, [idMagasinDefaut, dep]);
+            }
+            await client.query(`UPDATE "utilisateurs" SET id_magasin = $1 WHERE id_magasin IS NULL AND role != 'super_admin'`, [idMagasinDefaut]);
+            for (const table of ['article', 'charge', 'client', 'client_depot', 'facture_achat', 'fournisseur', 'mouvement_achat', 'reparation', 'reparation_item', 'stock', 'vente']) {
+                await client.query(`UPDATE "${table}" SET id_magasin = $1 WHERE id_magasin IS NULL`, [idMagasinDefaut]);
+            }
+            console.log(`[migrations] migration multi-magasin : magasin par défaut créé (id ${idMagasinDefaut}), données existantes rattachées.`);
+        }
+
+        // Seed a super_admin account if requested and none exists yet (idempotent, every boot)
+        const superAdminPwd = process.env.SEED_SUPER_ADMIN_PASSWORD || '';
+        if (superAdminPwd.length >= 10) {
+            const { rows: [{ n: nSuperAdmins }] } = await client.query(`SELECT COUNT(*)::int AS n FROM "utilisateurs" WHERE role = 'super_admin'`);
+            if (nSuperAdmins === 0) {
+                await client.query(
+                    `INSERT INTO "utilisateurs" ("username", "nom", "password", "role") VALUES ($1, $2, $3, 'super_admin') ON CONFLICT (username) DO NOTHING`,
+                    ['super_admin', 'Super Admin', await bcrypt.hash(superAdminPwd, 10)],
+                );
+                console.log('[migrations] compte super_admin créé.');
+            }
+        }
     } catch (err) {
         console.warn('[migrations] non appliquées :', (err as Error).message);
     } finally {
