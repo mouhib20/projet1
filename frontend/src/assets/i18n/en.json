@@ -25,13 +25,18 @@
         "FEAT_RECARDS": "Tickets",
         "FEAT_TRACKING": "Tracking",
         "FEAT_CLIENTS": "Clients",
+        "FEAT_SEARCH": "Search",
+        "FEAT_PARTS": "Parts",
+        "FEAT_DEVICES": "Devices",
         "FOOTER": "© 2026 GSMPro — All rights reserved"
     },
     "SPACE": {
         "VENTE_TITLE": "Sales Space",
         "VENTE_DESC": "Manage your products, orders, and sales transactions",
         "REPARATION_TITLE": "Phone Repair",
-        "REPARATION_DESC": "Track repair tickets and device status"
+        "REPARATION_DESC": "Track repair tickets and device status",
+        "COMPATIBILITE_TITLE": "Compatibility",
+        "COMPATIBILITE_DESC": "Find parts compatible with any device"
     },
     "BTN": {
         "ACCESS": "Access",

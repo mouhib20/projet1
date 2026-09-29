@@ -25,13 +25,18 @@
         "FEAT_RECARDS": "Fiches",
         "FEAT_TRACKING": "Suivi",
         "FEAT_CLIENTS": "Clients",
+        "FEAT_SEARCH": "Recherche",
+        "FEAT_PARTS": "Pièces",
+        "FEAT_DEVICES": "Appareils",
         "FOOTER": "© 2026 GSMPro — Tous droits réservés"
     },
     "SPACE": {
         "VENTE_TITLE": "Espace Vente",
         "VENTE_DESC": "Gérez vos produits, commandes et transactions de vente",
         "REPARATION_TITLE": "Réparation de téléphone",
-        "REPARATION_DESC": "Suivez les fiches de réparation et l'état des appareils"
+        "REPARATION_DESC": "Suivez les fiches de réparation et l'état des appareils",
+        "COMPATIBILITE_TITLE": "Compatibilité",
+        "COMPATIBILITE_DESC": "Trouvez les pièces compatibles avec n'importe quel appareil"
     },
     "BTN": {
         "ACCESS": "Accéder",

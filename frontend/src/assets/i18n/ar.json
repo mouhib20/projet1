@@ -25,13 +25,18 @@
         "FEAT_RECARDS": "بطاقات",
         "FEAT_TRACKING": "تتبع",
         "FEAT_CLIENTS": "عملاء",
+        "FEAT_SEARCH": "بحث",
+        "FEAT_PARTS": "قطع",
+        "FEAT_DEVICES": "أجهزة",
         "FOOTER": "© 2026 GSMPro — جميع الحقوق محفوظة"
     },
     "SPACE": {
         "VENTE_TITLE": "مساحة المبيعات",
         "VENTE_DESC": "إدارة المنتجات والطلبات ومعاملات البيع",
         "REPARATION_TITLE": "تصليح الهاتف",
-        "REPARATION_DESC": "تتبع بطاقات الإصلاح وحالة الأجهزة"
+        "REPARATION_DESC": "تتبع بطاقات الإصلاح وحالة الأجهزة",
+        "COMPATIBILITE_TITLE": "التوافقية",
+        "COMPATIBILITE_DESC": "ابحث عن القطع المتوافقة مع أي جهاز"
     },
     "BTN": {
         "ACCESS": "دخول",
