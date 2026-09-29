@@ -390,7 +390,8 @@
         "SUCCESS_UPDATE": "Groupe mis à jour avec succès.",
         "SUCCESS_DELETE": "Groupe supprimé avec succès.",
         "ERR_SAVE": "Erreur lors de l'enregistrement.",
-        "ERR_DELETE": "Erreur lors de la suppression."
+        "ERR_DELETE": "Erreur lors de la suppression.",
+        "SUGGESTIONS_LINK": "Suggestions des magasins"
     },
     "COMPATIBILITE": {
         "TITLE": "Compatibilité",
@@ -408,7 +409,32 @@
         "STATUS_IN_STOCK": "En stock",
         "STATUS_NOT_STOCKED": "Non stocké",
         "ERR_SEARCH": "Erreur lors de la recherche.",
-        "ERR_LOAD_PARTS": "Impossible de charger les pièces."
+        "ERR_LOAD_PARTS": "Impossible de charger les pièces.",
+        "SUGGEST_BTN": "Suggérer un appareil ou une pièce manquante",
+        "SUGGEST_HINT": "Décrivez ce qui manque (appareil, pièce...) — un éditeur de compatibilité l'examinera.",
+        "SUGGEST_PLACEHOLDER": "Ex : Samsung A54 — écran manquant",
+        "SUGGESTING": "Envoi…",
+        "SUGGEST_SUBMIT": "Envoyer la suggestion",
+        "SUGGEST_SUCCESS": "Suggestion envoyée avec succès, merci !",
+        "ERR_SUGGESTION_REQUIRED": "Décrivez votre suggestion.",
+        "ERR_SUGGESTION_SAVE": "Erreur lors de l'envoi de la suggestion."
+    },
+    "COMPAT_SUGGESTIONS": {
+        "TITLE": "Suggestions des magasins",
+        "SUBTITLE": "Examinez les appareils ou pièces manquants signalés par les magasins",
+        "BACK_TO_GROUPS": "Retour aux groupes",
+        "LOADING": "Chargement…",
+        "PENDING_TITLE": "En attente",
+        "EMPTY_PENDING": "Aucune suggestion en attente.",
+        "PROCESSED_TITLE": "Traitées",
+        "BTN_ACCEPT": "Accepter",
+        "BTN_REFUSE": "Refuser",
+        "STATUS_ACCEPTED": "Acceptée",
+        "STATUS_REFUSED": "Refusée",
+        "SUCCESS_ACCEPTED": "Suggestion acceptée.",
+        "SUCCESS_REFUSED": "Suggestion refusée.",
+        "ERR_LOAD": "Impossible de charger les suggestions.",
+        "ERR_PROCESS": "Erreur lors du traitement de la suggestion."
     },
     "CHARGES": {
         "SUBTITLE": "Gérez vos dépenses et charges (loyer, salaires, électricité...)",

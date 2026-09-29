@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CompatService } from '../../services/compat.service';
 import { AuthService } from '../../services/auth.service';
@@ -42,6 +43,7 @@ export class CompatGroupsComponent implements OnInit {
         private compatService: CompatService,
         public auth: AuthService,
         private translate: TranslateService,
+        private router: Router,
     ) { }
 
     ngOnInit(): void {
@@ -207,6 +209,10 @@ export class CompatGroupsComponent implements OnInit {
             },
             error: (err) => { this.errorMsg = err.error?.message || 'COMPAT_GROUPS.ERR_CREATE'; }
         });
+    }
+
+    goToSuggestions(): void {
+        this.router.navigate(['/compat-editor/suggestions']);
     }
 
     logout(): void {

@@ -390,7 +390,8 @@
         "SUCCESS_UPDATE": "تم تحديث المجموعة بنجاح.",
         "SUCCESS_DELETE": "تم حذف المجموعة بنجاح.",
         "ERR_SAVE": "خطأ أثناء الحفظ.",
-        "ERR_DELETE": "خطأ أثناء الحذف."
+        "ERR_DELETE": "خطأ أثناء الحذف.",
+        "SUGGESTIONS_LINK": "اقتراحات المحلات"
     },
     "COMPATIBILITE": {
         "TITLE": "التوافقية",
@@ -408,7 +409,32 @@
         "STATUS_IN_STOCK": "متوفرة",
         "STATUS_NOT_STOCKED": "غير مخزّنة",
         "ERR_SEARCH": "خطأ أثناء البحث.",
-        "ERR_LOAD_PARTS": "تعذّر تحميل القطع."
+        "ERR_LOAD_PARTS": "تعذّر تحميل القطع.",
+        "SUGGEST_BTN": "اقتراح جهاز أو قطعة ناقصة",
+        "SUGGEST_HINT": "صف ما ينقص (جهاز، قطعة...) — سيراجعه أحد خدام التوافقات.",
+        "SUGGEST_PLACEHOLDER": "مثال: Samsung A54 — تنقصها شاشة",
+        "SUGGESTING": "جارٍ الإرسال…",
+        "SUGGEST_SUBMIT": "إرسال الاقتراح",
+        "SUGGEST_SUCCESS": "تم إرسال اقتراحك بنجاح، شكرًا لك!",
+        "ERR_SUGGESTION_REQUIRED": "صف اقتراحك.",
+        "ERR_SUGGESTION_SAVE": "خطأ أثناء إرسال الاقتراح."
+    },
+    "COMPAT_SUGGESTIONS": {
+        "TITLE": "اقتراحات المحلات",
+        "SUBTITLE": "راجع الأجهزة أو القطع الناقصة التي أبلغت عنها المحلات",
+        "BACK_TO_GROUPS": "العودة إلى المجموعات",
+        "LOADING": "جارٍ التحميل…",
+        "PENDING_TITLE": "قيد الانتظار",
+        "EMPTY_PENDING": "لا توجد أي اقتراحات قيد الانتظار.",
+        "PROCESSED_TITLE": "تمت معالجتها",
+        "BTN_ACCEPT": "قبول",
+        "BTN_REFUSE": "رفض",
+        "STATUS_ACCEPTED": "مقبولة",
+        "STATUS_REFUSED": "مرفوضة",
+        "SUCCESS_ACCEPTED": "تم قبول الاقتراح.",
+        "SUCCESS_REFUSED": "تم رفض الاقتراح.",
+        "ERR_LOAD": "تعذّر تحميل الاقتراحات.",
+        "ERR_PROCESS": "خطأ أثناء معالجة الاقتراح."
     },
     "CHARGES": {
         "SUBTITLE": "إدارة نفقاتك ومصاريفك (الإيجار، الرواتب، الكهرباء...)",

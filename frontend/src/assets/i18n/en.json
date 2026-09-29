@@ -390,7 +390,8 @@
         "SUCCESS_UPDATE": "Group updated successfully.",
         "SUCCESS_DELETE": "Group deleted successfully.",
         "ERR_SAVE": "Error saving.",
-        "ERR_DELETE": "Error deleting."
+        "ERR_DELETE": "Error deleting.",
+        "SUGGESTIONS_LINK": "Store suggestions"
     },
     "COMPATIBILITE": {
         "TITLE": "Compatibility",
@@ -408,7 +409,32 @@
         "STATUS_IN_STOCK": "In stock",
         "STATUS_NOT_STOCKED": "Not stocked",
         "ERR_SEARCH": "Error searching.",
-        "ERR_LOAD_PARTS": "Could not load the parts."
+        "ERR_LOAD_PARTS": "Could not load the parts.",
+        "SUGGEST_BTN": "Suggest a missing device or part",
+        "SUGGEST_HINT": "Describe what's missing (device, part...) - a compatibility editor will review it.",
+        "SUGGEST_PLACEHOLDER": "E.g.: Samsung A54 - screen missing",
+        "SUGGESTING": "Sending…",
+        "SUGGEST_SUBMIT": "Send suggestion",
+        "SUGGEST_SUCCESS": "Suggestion sent successfully, thank you!",
+        "ERR_SUGGESTION_REQUIRED": "Describe your suggestion.",
+        "ERR_SUGGESTION_SAVE": "Error sending the suggestion."
+    },
+    "COMPAT_SUGGESTIONS": {
+        "TITLE": "Store suggestions",
+        "SUBTITLE": "Review devices or parts stores reported as missing",
+        "BACK_TO_GROUPS": "Back to groups",
+        "LOADING": "Loading…",
+        "PENDING_TITLE": "Pending",
+        "EMPTY_PENDING": "No pending suggestion.",
+        "PROCESSED_TITLE": "Processed",
+        "BTN_ACCEPT": "Accept",
+        "BTN_REFUSE": "Refuse",
+        "STATUS_ACCEPTED": "Accepted",
+        "STATUS_REFUSED": "Refused",
+        "SUCCESS_ACCEPTED": "Suggestion accepted.",
+        "SUCCESS_REFUSED": "Suggestion refused.",
+        "ERR_LOAD": "Could not load the suggestions.",
+        "ERR_PROCESS": "Error processing the suggestion."
     },
     "CHARGES": {
         "SUBTITLE": "Manage your expenses and charges (rent, salaries, electricity...)",

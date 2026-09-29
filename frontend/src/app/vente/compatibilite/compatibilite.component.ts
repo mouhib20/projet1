@@ -47,6 +47,12 @@ export class CompatibiliteComponent {
     partsLoading = false;
     parts: PartRow[] = [];
 
+    showSuggestForm = false;
+    suggestionText = '';
+    suggesting = false;
+    suggestSuccess = false;
+    suggestError = '';
+
     constructor(
         private compatService: CompatService,
         public auth: AuthService,
@@ -65,6 +71,8 @@ export class CompatibiliteComponent {
         this.errorMsg = '';
         this.expandedModelId = null;
         this.parts = [];
+        this.showSuggestForm = false;
+        this.suggestSuccess = false;
         if (term.length < 2) {
             this.results = [];
             this.searched = false;
@@ -95,6 +103,39 @@ export class CompatibiliteComponent {
             error: (err) => {
                 this.partsLoading = false;
                 this.errorMsg = err.error?.message || 'COMPATIBILITE.ERR_LOAD_PARTS';
+            }
+        });
+    }
+
+    openSuggestForm(): void {
+        this.showSuggestForm = true;
+        this.suggestSuccess = false;
+        this.suggestError = '';
+        if (!this.suggestionText.trim() && this.searchTerm.trim()) {
+            this.suggestionText = this.searchTerm.trim();
+        }
+    }
+
+    cancelSuggestForm(): void {
+        this.showSuggestForm = false;
+    }
+
+    submitSuggestion(): void {
+        if (this.suggesting) return;
+        const texte = this.suggestionText.trim();
+        if (!texte) { this.suggestError = 'COMPATIBILITE.ERR_SUGGESTION_REQUIRED'; return; }
+        this.suggesting = true;
+        this.suggestError = '';
+        this.compatService.createSuggestion({ texte_libre: texte }).subscribe({
+            next: () => {
+                this.suggesting = false;
+                this.suggestSuccess = true;
+                this.showSuggestForm = false;
+                this.suggestionText = '';
+            },
+            error: (err) => {
+                this.suggesting = false;
+                this.suggestError = err.error?.message || 'COMPATIBILITE.ERR_SUGGESTION_SAVE';
             }
         });
     }

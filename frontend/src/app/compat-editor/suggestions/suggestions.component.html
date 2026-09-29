@@ -1,0 +1,56 @@
+<div class="suggestions-page">
+
+    <div class="page-header">
+        <div>
+            <button class="btn btn-secondary btn-sm" (click)="back()">← {{ 'COMPAT_SUGGESTIONS.BACK_TO_GROUPS' | translate }}</button>
+            <div class="page-title">💡 {{ 'COMPAT_SUGGESTIONS.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'COMPAT_SUGGESTIONS.SUBTITLE' | translate }}</div>
+        </div>
+        <div class="header-boutons">
+            <button class="btn btn-secondary" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
+        </div>
+    </div>
+
+    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg | translate }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
+
+    <div class="loading-state" *ngIf="loading">
+        <div class="loading-icon">⟳</div>
+        <strong>{{ 'COMPAT_SUGGESTIONS.LOADING' | translate }}</strong>
+    </div>
+
+    <ng-container *ngIf="!loading">
+        <div class="section-title">{{ 'COMPAT_SUGGESTIONS.PENDING_TITLE' | translate }} ({{ pending.length }})</div>
+        <div class="empty-state" *ngIf="pending.length === 0">
+            <div class="empty-icon">✅</div>
+            <strong>{{ 'COMPAT_SUGGESTIONS.EMPTY_PENDING' | translate }}</strong>
+        </div>
+
+        <div class="suggestion-card" *ngFor="let s of pending">
+            <div class="suggestion-main">
+                <div class="suggestion-store">🏬 {{ s.magasin_nom || '—' }}</div>
+                <div class="suggestion-text">{{ s.texte_libre || s.modele_nom || '—' }}</div>
+                <div class="suggestion-meta">{{ s.cree_par_nom || '—' }} · {{ s.date_creation | date:'short' }}</div>
+            </div>
+            <div class="suggestion-actions">
+                <button class="btn-outline btn-sm accept" [disabled]="processingId === s.id" (click)="process(s, 'acceptee')">
+                    ✅ {{ 'COMPAT_SUGGESTIONS.BTN_ACCEPT' | translate }}
+                </button>
+                <button class="btn-outline btn-sm refuse" [disabled]="processingId === s.id" (click)="process(s, 'refusee')">
+                    ❌ {{ 'COMPAT_SUGGESTIONS.BTN_REFUSE' | translate }}
+                </button>
+            </div>
+        </div>
+
+        <div class="section-title" *ngIf="processed.length > 0">{{ 'COMPAT_SUGGESTIONS.PROCESSED_TITLE' | translate }}</div>
+        <div class="suggestion-card processed" *ngFor="let s of processed">
+            <div class="suggestion-main">
+                <div class="suggestion-store">🏬 {{ s.magasin_nom || '—' }}</div>
+                <div class="suggestion-text">{{ s.texte_libre || s.modele_nom || '—' }}</div>
+                <div class="suggestion-meta">{{ s.cree_par_nom || '—' }} · {{ s.date_creation | date:'short' }}</div>
+            </div>
+            <span class="badge-accepted" *ngIf="s.statut === 'acceptee'">{{ 'COMPAT_SUGGESTIONS.STATUS_ACCEPTED' | translate }}</span>
+            <span class="badge-refused" *ngIf="s.statut === 'refusee'">{{ 'COMPAT_SUGGESTIONS.STATUS_REFUSED' | translate }}</span>
+        </div>
+    </ng-container>
+</div>

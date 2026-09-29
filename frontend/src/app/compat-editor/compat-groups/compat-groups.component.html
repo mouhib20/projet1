@@ -6,6 +6,7 @@
             <div class="page-subtitle">{{ 'COMPAT_GROUPS.SUBTITLE' | translate }}</div>
         </div>
         <div class="header-boutons">
+            <button class="btn btn-secondary" (click)="goToSuggestions()">💡 {{ 'COMPAT_GROUPS.SUGGESTIONS_LINK' | translate }}</button>
             <button class="btn btn-primary" *ngIf="!showForm" (click)="openAddForm()">＋ {{ 'COMPAT_GROUPS.ADD_GROUP' | translate }}</button>
             <button class="btn btn-secondary" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
         </div>

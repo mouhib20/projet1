@@ -25,6 +25,25 @@
         <strong>{{ 'COMPATIBILITE.NO_RESULTS' | translate }}</strong>
     </div>
 
+    <!-- Suggest a missing device/part -->
+    <div class="alert alert-success" *ngIf="suggestSuccess">✅ {{ 'COMPATIBILITE.SUGGEST_SUCCESS' | translate }}</div>
+    <div class="suggest-box" *ngIf="searched && !searching && auth.hasPermission('compatibilite', 'ajouter')">
+        <button class="btn-outline" *ngIf="!showSuggestForm" (click)="openSuggestForm()">
+            💡 {{ 'COMPATIBILITE.SUGGEST_BTN' | translate }}
+        </button>
+        <div class="suggest-form" *ngIf="showSuggestForm">
+            <div class="suggest-hint">{{ 'COMPATIBILITE.SUGGEST_HINT' | translate }}</div>
+            <textarea [(ngModel)]="suggestionText" rows="3" [placeholder]="'COMPATIBILITE.SUGGEST_PLACEHOLDER' | translate"></textarea>
+            <div class="alert alert-error" *ngIf="suggestError">⚠️ {{ suggestError | translate }}</div>
+            <div class="suggest-actions">
+                <button class="btn-outline" (click)="cancelSuggestForm()">{{ 'CANCEL' | translate }}</button>
+                <button class="btn btn-primary" [disabled]="suggesting" (click)="submitSuggestion()">
+                    {{ (suggesting ? 'COMPATIBILITE.SUGGESTING' : 'COMPATIBILITE.SUGGEST_SUBMIT') | translate }}
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="results-list" *ngIf="!searching && results.length > 0">
         <div class="model-card" *ngFor="let r of results">
             <div class="model-row" (click)="toggleModel(r)">

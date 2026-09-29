@@ -23,6 +23,7 @@ import { StoresListComponent } from './super-admin/stores-list/stores-list.compo
 import { StoreModulesComponent } from './super-admin/store-modules/store-modules.component';
 import { CompatEditorsComponent } from './super-admin/compat-editors/compat-editors.component';
 import { CompatGroupsComponent } from './compat-editor/compat-groups/compat-groups.component';
+import { SuggestionsComponent } from './compat-editor/suggestions/suggestions.component';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -58,6 +59,9 @@ export const routes: Routes = [
     },
     {
         path: 'compat-editor/groups', component: CompatGroupsComponent, canActivate: [compatEditorGuard],
+    },
+    {
+        path: 'compat-editor/suggestions', component: SuggestionsComponent, canActivate: [compatEditorGuard],
     },
     { path: '**', redirectTo: '' }
 ];

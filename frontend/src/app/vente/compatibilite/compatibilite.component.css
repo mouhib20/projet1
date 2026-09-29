@@ -76,6 +76,73 @@
     color: #fff;
 }
 
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid #30363d;
+    color: #a5b4fc;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.btn-outline:hover {
+    border-color: #6366f1;
+}
+
+.suggest-box {
+    margin-bottom: 1.5rem;
+}
+
+.suggest-form {
+    background: #161b27;
+    border: 1px solid #21263a;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-top: 8px;
+}
+
+.suggest-hint {
+    color: #8b949e;
+    font-size: 0.82rem;
+    margin-bottom: 8px;
+}
+
+.suggest-form textarea {
+    width: 100%;
+    background: #0f1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    color: #e1e4e8;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.suggest-form textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.suggest-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+}
+
 .loading-state,
 .empty-state {
     text-align: center;
