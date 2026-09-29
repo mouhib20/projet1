@@ -9,7 +9,10 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "db:schema": "node db/export-schema.js",
-    "db:seed": "node db/seed-users.js"
+    "db:seed": "node db/seed-users.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -36,9 +39,24 @@
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
+    "@nestjs/testing": "^11.2.6",
     "@types/express": "^5.0.0",
+    "@types/jest": "^30.0.0",
     "@types/multer": "^2.2.0",
     "@types/node": "^22.10.0",
+    "jest": "^30.5.2",
+    "ts-jest": "^29.4.14",
     "typescript": "^5.7.2"
+  },
+  "jest": {
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": ["**/*.(t|j)s"],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
   }
 }
