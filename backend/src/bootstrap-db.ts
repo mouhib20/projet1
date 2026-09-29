@@ -4,7 +4,7 @@ import { Client } from 'pg';
 import * as bcrypt from 'bcrypt';
 
 const ROLES = ['super_admin', 'compat_editor', 'admin', 'vendeur', 'vendeuse', 'visiteur'];
-const DEPARTEMENTS = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports', 'compatibilite'];
+const DEPARTEMENTS = ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports', 'compatibilite', 'wholesale'];
 const ATTENTE_MS = 3000;
 const ESSAIS = 15;
 
@@ -269,6 +269,61 @@ async function migrer(): Promise<void> {
             )
         `);
         await client.query(`ALTER TABLE "article" ADD COLUMN IF NOT EXISTS "compat_group_id" integer`);
+
+        // Wholesale portal: the wholesale store is an ordinary magasin (est_grossiste flags
+        // which one); listings/orders/lines/events are new tables, shared across stores by
+        // design for the catalogue side, store-scoped for the ordering side.
+        await client.query(`ALTER TABLE "magasin" ADD COLUMN IF NOT EXISTS "est_grossiste" boolean NOT NULL DEFAULT false`);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "wholesale_listing" (
+                "id" SERIAL PRIMARY KEY,
+                "id_article" integer NOT NULL,
+                "prix_gros" numeric(10,2) NOT NULL,
+                "qte_min" integer NOT NULL DEFAULT 1,
+                "visible" boolean NOT NULL DEFAULT true
+            )
+        `);
+        await client.query(`DO $$ BEGIN ALTER TABLE "wholesale_listing" ADD CONSTRAINT "wholesale_listing_id_article_fkey" FOREIGN KEY (id_article) REFERENCES article(id_article) ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "wholesale_listing_article_idx" ON "wholesale_listing" ("id_article")`);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "wholesale_order" (
+                "id" SERIAL PRIMARY KEY,
+                "id_magasin_demandeur" integer NOT NULL,
+                "statut" character varying(30) NOT NULL DEFAULT 'en_attente',
+                "total" numeric(10,2) NOT NULL DEFAULT 0,
+                "note" text,
+                "methode_reception" character varying(255),
+                "cree_par" integer,
+                "date_creation" timestamp NOT NULL DEFAULT now(),
+                "date_confirmation" timestamp,
+                "date_envoi" timestamp,
+                "date_reception" timestamp
+            )
+        `);
+        await client.query(`DO $$ BEGIN ALTER TABLE "wholesale_order" ADD CONSTRAINT "wholesale_order_id_magasin_demandeur_fkey" FOREIGN KEY (id_magasin_demandeur) REFERENCES magasin(id_magasin); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "wholesale_order_line" (
+                "id" SERIAL PRIMARY KEY,
+                "id_order" integer NOT NULL,
+                "id_listing" integer NOT NULL,
+                "qte_demandee" integer NOT NULL,
+                "qte_confirmee" integer,
+                "prix_unitaire" numeric(10,2) NOT NULL
+            )
+        `);
+        await client.query(`DO $$ BEGIN ALTER TABLE "wholesale_order_line" ADD CONSTRAINT "wholesale_order_line_id_order_fkey" FOREIGN KEY (id_order) REFERENCES wholesale_order(id) ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        await client.query(`DO $$ BEGIN ALTER TABLE "wholesale_order_line" ADD CONSTRAINT "wholesale_order_line_id_listing_fkey" FOREIGN KEY (id_listing) REFERENCES wholesale_listing(id); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "wholesale_order_event" (
+                "id" SERIAL PRIMARY KEY,
+                "id_order" integer NOT NULL,
+                "par" integer,
+                "statut_avant" character varying(30),
+                "statut_apres" character varying(30) NOT NULL,
+                "date_creation" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+        await client.query(`DO $$ BEGIN ALTER TABLE "wholesale_order_event" ADD CONSTRAINT "wholesale_order_event_id_order_fkey" FOREIGN KEY (id_order) REFERENCES wholesale_order(id) ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
 
         // Seed a super_admin account if requested and none exists yet (idempotent, every boot)
         const superAdminPwd = process.env.SEED_SUPER_ADMIN_PASSWORD || '';

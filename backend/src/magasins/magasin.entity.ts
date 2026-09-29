@@ -22,6 +22,10 @@ export class Magasin {
     @Column({ default: true })
     actif: boolean;
 
+    /** The single store, if any, whose inventory is offered wholesale to every other store. */
+    @Column({ default: false })
+    est_grossiste: boolean;
+
     @CreateDateColumn()
     date_creation: Date;
 }
