@@ -32,9 +32,11 @@ export class ChargesComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.loadCharges();
-    this.chargerFournisseurs();
-    this.loadVentes();
+    if (this.auth.hasPermission('charges', 'voir')) {
+      this.loadCharges();
+      this.chargerFournisseurs();
+      this.loadVentes();
+    }
   }
 
   // ── What's actually been earned this month, to compare against the objective ──

@@ -71,10 +71,12 @@ export class StockComponent implements OnInit {
     constructor(private articleService: ArticleService, private clientService: ClientService, private translate: TranslateService, public auth: AuthService) { }
 
     ngOnInit(): void {
-        this.loadProducts();
-        this.loadRetours();
-        this.loadSav();
-        this.clientService.getClients().subscribe(c => this.clients = c);
+        if (this.auth.hasPermission('stock', 'voir')) {
+            this.loadProducts();
+            this.loadRetours();
+            this.loadSav();
+            this.clientService.getClients().subscribe(c => this.clients = c);
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────

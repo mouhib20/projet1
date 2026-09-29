@@ -38,6 +38,9 @@
         </div>
     </div>
 
+    <!-- Everything below is "view" content: hidden for an employee who can only add clients -->
+    <ng-container *ngIf="auth.hasPermission('clients', 'voir')">
+
     <!-- Toolbar -->
     <div class="table-toolbar">
         <div class="search-box">
@@ -89,6 +92,8 @@
             </tbody>
         </table>
     </div>
+
+    </ng-container>
 
     <!-- Deposit panel modal -->
     <div class="modal-overlay" *ngIf="selectedClient" (click)="closeDepotPanel()">

@@ -36,8 +36,10 @@ export class ClientsComponent implements OnInit {
   constructor(private clientService: ClientService, public auth: AuthService) { }
 
   ngOnInit(): void {
-    this.loadClients();
-    this.loadDepotsSummary();
+    if (this.auth.hasPermission('clients', 'voir')) {
+      this.loadClients();
+      this.loadDepotsSummary();
+    }
   }
 
   /** Same person entered several times (same name and phone): merged into one record. */

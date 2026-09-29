@@ -15,6 +15,7 @@ import { EmployeesComponent } from './vente/employees/employees.component';
 import { EmployeePermissionsComponent } from './vente/employees/permissions/employee-permissions.component';
 import { authGuard } from './guards/auth.guard';
 import { adminGuard } from './guards/admin.guard';
+import { permissionGuard } from './guards/permission.guard';
 
 export const routes: Routes = [
     { path: '', component: HomeComponent },
@@ -26,17 +27,17 @@ export const routes: Routes = [
         children: [
             { path: '', redirectTo: 'accueil', pathMatch: 'full' },
             { path: 'accueil', component: AccueilComponent },
-            { path: 'operations', component: OperationsComponent },
-            { path: 'statistiques', component: StatistiquesComponent },
-            { path: 'charges', component: ChargesComponent, canActivate: [authGuard], data: { roles: ['admin', 'vendeur', 'vendeuse'] } },
-            { path: 'stock', component: StockComponent, canActivate: [adminGuard] },
-            { path: 'fournisseurs', component: FournisseursComponent, canActivate: [adminGuard] },
-            { path: 'factures', component: FacturesComponent, canActivate: [adminGuard], canDeactivate: [(page: FacturesComponent) => page.peutQuitter()] },
-            { path: 'clients', component: ClientsComponent, canActivate: [authGuard], data: { roles: ['admin', 'vendeur', 'vendeuse'] } },
+            { path: 'operations', component: OperationsComponent, canActivate: [permissionGuard('ventes')] },
+            { path: 'statistiques', component: StatistiquesComponent, canActivate: [permissionGuard('rapports')] },
+            { path: 'charges', component: ChargesComponent, canActivate: [permissionGuard('charges')] },
+            { path: 'stock', component: StockComponent, canActivate: [permissionGuard('stock')] },
+            { path: 'fournisseurs', component: FournisseursComponent, canActivate: [permissionGuard('fournisseurs')] },
+            { path: 'factures', component: FacturesComponent, canActivate: [permissionGuard('fournisseurs')], canDeactivate: [(page: FacturesComponent) => page.peutQuitter()] },
+            { path: 'clients', component: ClientsComponent, canActivate: [permissionGuard('clients')] },
             { path: 'employees', component: EmployeesComponent, canActivate: [adminGuard] },
             { path: 'employees/:id/permissions', component: EmployeePermissionsComponent, canActivate: [adminGuard] },
         ]
     },
-    { path: 'reparation', component: ReparationComponent, canActivate: [authGuard] },
+    { path: 'reparation', component: ReparationComponent, canActivate: [permissionGuard('reparation')] },
     { path: '**', redirectTo: '' }
 ];

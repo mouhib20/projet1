@@ -17,19 +17,19 @@
 
         <nav class="sidebar-nav">
             <a routerLink="accueil" routerLinkActive="active" class="nav-link">🏠 {{ 'SIDEBAR.HOME' | translate }}</a>
-            <a *ngIf="auth.hasPermission('ventes', 'voir')" routerLink="operations" routerLinkActive="active" class="nav-link">💳 {{ 'SIDEBAR.VENTE' | translate
+            <a *ngIf="auth.hasAnyPermission('ventes')" routerLink="operations" routerLinkActive="active" class="nav-link">💳 {{ 'SIDEBAR.VENTE' | translate
                 }}</a>
-            <a *ngIf="auth.hasPermission('clients', 'voir')" routerLink="clients" routerLinkActive="active"
+            <a *ngIf="auth.hasAnyPermission('clients')" routerLink="clients" routerLinkActive="active"
                 class="nav-link">👥 {{ 'SIDEBAR.CLIENTS' | translate }}</a>
-            <a *ngIf="auth.hasPermission('rapports', 'voir')" routerLink="statistiques" routerLinkActive="active" class="nav-link">📊 {{ 'SIDEBAR.STATS' | translate
+            <a *ngIf="auth.hasAnyPermission('rapports')" routerLink="statistiques" routerLinkActive="active" class="nav-link">📊 {{ 'SIDEBAR.STATS' | translate
                 }}</a>
-            <a *ngIf="auth.hasPermission('charges', 'voir')" routerLink="charges" routerLinkActive="active" class="nav-link">💸
+            <a *ngIf="auth.hasAnyPermission('charges')" routerLink="charges" routerLinkActive="active" class="nav-link">💸
                 {{ 'SIDEBAR.CHARGES' | translate }}</a>
-            <a *ngIf="auth.hasPermission('stock', 'voir')" routerLink="stock" routerLinkActive="active" class="nav-link">📦 {{
+            <a *ngIf="auth.hasAnyPermission('stock')" routerLink="stock" routerLinkActive="active" class="nav-link">📦 {{
                 'SIDEBAR.STOCK' | translate }}</a>
-            <a *ngIf="auth.hasPermission('fournisseurs', 'voir')" routerLink="fournisseurs" routerLinkActive="active" class="nav-link">🤝 {{
+            <a *ngIf="auth.hasAnyPermission('fournisseurs')" routerLink="fournisseurs" routerLinkActive="active" class="nav-link">🤝 {{
                 'SIDEBAR.SUPPLIERS' | translate }}</a>
-            <a *ngIf="auth.hasPermission('fournisseurs', 'voir')" routerLink="factures" routerLinkActive="active" class="nav-link">📄 {{
+            <a *ngIf="auth.hasAnyPermission('fournisseurs')" routerLink="factures" routerLinkActive="active" class="nav-link">📄 {{
                 'SIDEBAR.INVOICES' | translate }}</a>
             <a *ngIf="auth.isAdmin()" routerLink="employees" routerLinkActive="active" class="nav-link">👤 {{
                 'SIDEBAR.EMPLOYEES' | translate }}</a>

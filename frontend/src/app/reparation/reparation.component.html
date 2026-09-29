@@ -41,7 +41,7 @@
             </div>
         </header>
 
-        <main class="content-area">
+        <main class="content-area" *ngIf="auth.hasPermission('reparation', 'voir')">
             <!-- TICKETS TAB -->
             <div *ngIf="activeTab === 'tickets'" class="fade-in">
                 <div class="table-container">

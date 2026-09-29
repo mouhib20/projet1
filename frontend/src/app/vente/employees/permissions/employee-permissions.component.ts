@@ -54,15 +54,6 @@ export class EmployeePermissionsComponent implements OnInit {
     });
   }
 
-  /** Ticking "voir" off also clears the other three (can't add/edit/delete what you can't see). */
-  onVoirChange(dept: Departement): void {
-    if (!this.matrix[dept].voir) {
-      this.matrix[dept].ajouter = false;
-      this.matrix[dept].modifier = false;
-      this.matrix[dept].supprimer = false;
-    }
-  }
-
   save(): void {
     if (this.saving) return;
     this.saving = true;

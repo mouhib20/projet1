@@ -202,8 +202,8 @@
         </div>
     </div>
 
-    <!-- ─── Table Card ─────────────────────────────────────────── -->
-    <div class="table-card">
+    <!-- ─── Table Card (view content, hidden for an employee who can only add) ── -->
+    <div class="table-card" *ngIf="auth.hasPermission('stock', 'voir')">
 
         <!-- Tab Bar -->
         <div class="tab-bar">

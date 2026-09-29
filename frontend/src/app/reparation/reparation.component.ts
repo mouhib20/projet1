@@ -257,7 +257,7 @@ export class ReparationComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-        this.loadReparations();
+        if (this.auth.hasPermission('reparation', 'voir')) this.loadReparations();
         this.loadClients();
         this.loadArticles();
         this.loadFournisseurs();

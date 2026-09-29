@@ -7,6 +7,9 @@
         </button>
     </div>
 
+    <!-- Everything below is "view" content: hidden for an employee who can only add expenses -->
+    <ng-container *ngIf="auth.hasPermission('charges', 'voir')">
+
     <!-- Stats Cards -->
     <div class="stats-row">
         <div class="stat-card">
@@ -298,6 +301,8 @@
             <p>{{ 'CHARGES.NO_EXPENSE_FOUND' | translate }}</p>
         </div>
     </div>
+
+    </ng-container>
 </div>
 
 <!-- =========================================================

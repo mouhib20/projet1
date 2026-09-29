@@ -98,4 +98,18 @@ export class AuthService {
         if (Object.keys(perms).length === 0) return this.legacyPeutParDefaut(dept, action);
         return !!perms[dept]?.[action];
     }
+
+    /**
+     * True if the employee has been granted at least one of the four actions on this department
+     * (e.g. can add expenses without being able to browse the existing list). Used to decide
+     * whether a page/section is reachable at all; the page itself still hides its "view" content
+     * when 'voir' specifically is not granted.
+     */
+    hasAnyPermission(dept: Departement): boolean {
+        if (this.isAdmin()) return true;
+        const perms = this.getPermissions();
+        if (Object.keys(perms).length === 0) return this.legacyPeutParDefaut(dept, 'voir');
+        const entry = perms[dept];
+        return !!entry && (entry.voir || entry.ajouter || entry.modifier || entry.supprimer);
+    }
 }
