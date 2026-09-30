@@ -81,7 +81,8 @@
         <table class="parts-table">
             <thead>
                 <tr>
-                    <th>{{ 'COMPATIBILITE.COL_PART_TYPE' | translate }}</th>
+                    <th>{{ 'COMPATIBILITE.COL_BRAND' | translate }}</th>
+                    <th>{{ 'COMPATIBILITE.COL_MODEL' | translate }}</th>
                     <th>{{ 'COMPATIBILITE.COL_STATUS' | translate }}</th>
                     <th class="text-center">{{ 'COMPATIBILITE.COL_QTY' | translate }}</th>
                     <th class="text-center">{{ 'COMPATIBILITE.COL_PRICE' | translate }}</th>
@@ -89,7 +90,8 @@
             </thead>
             <tbody>
                 <tr>
-                    <td class="fw-bold">{{ partTypeName(matchedPart) }}</td>
+                    <td class="fw-bold">{{ selectedBrand?.nom }}</td>
+                    <td class="fw-bold">{{ selectedModel?.nom }}</td>
                     <td>
                         <span class="badge-ok" *ngIf="matchedPart.id_article">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }}</span>
                         <span class="badge-out" *ngIf="!matchedPart.id_article">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>
