@@ -370,6 +370,7 @@
         "BRAND_FILTER_HINT": "Optionnel — sert juste à préremplir la marque d'un nouveau modèle ci-dessous ; la recherche de modèles reste ouverte à toutes les marques.",
         "MODEL_SEARCH_LABEL": "Modèle",
         "MODELS_LABEL": "Modèles compatibles *",
+        "FILTER_COMPATIBLE_MODELS_PLACEHOLDER": "Filtrer la liste…",
         "SEARCH_MODELS_PLACEHOLDER": "Chercher un modèle…",
         "ADD_MODEL_PROMPT": "Ajouter « {{term}} » comme nouveau modèle",
         "NO_MODELS": "Aucun modèle trouvé.",

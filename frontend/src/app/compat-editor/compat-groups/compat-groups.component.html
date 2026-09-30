@@ -85,9 +85,10 @@
         <!-- Compatible models: results of the search above, tick, or add on the spot when nothing matches -->
         <div class="form-group full">
             <label>{{ 'COMPAT_GROUPS.MODELS_LABEL' | translate }}</label>
+            <input type="text" class="search-input-full" [(ngModel)]="compatModelsFilterTerm" [placeholder]="'COMPAT_GROUPS.FILTER_COMPATIBLE_MODELS_PLACEHOLDER' | translate" />
             <div class="alert alert-error" *ngIf="modelImageError">⚠️ {{ modelImageError | translate }}</div>
             <div class="models-list">
-                <div class="model-row" *ngFor="let m of filteredModels">
+                <div class="model-row" *ngFor="let m of filteredModelsForChecklist">
                     <label class="model-checkbox">
                         <input type="checkbox" [checked]="isModelSelected(m.id)" (change)="toggleModel(m.id)" />
                         <img *ngIf="imageUrl(m.image)" [src]="imageUrl(m.image)" class="model-thumb" [alt]="m.nom" />
@@ -99,7 +100,7 @@
                         <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onModelImageSelected($event, m)" />
                     </label>
                 </div>
-                <div class="empty-hint" *ngIf="filteredModels.length === 0 && !modelSearchTerm.trim()">{{ 'COMPAT_GROUPS.NO_MODELS' | translate }}</div>
+                <div class="empty-hint" *ngIf="filteredModelsForChecklist.length === 0 && !modelSearchTerm.trim()">{{ 'COMPAT_GROUPS.NO_MODELS' | translate }}</div>
                 <div class="combobox-add-prompt" *ngIf="showAddModelPrompt" (click)="openAddModelFromSearch()">
                     ＋ {{ 'COMPAT_GROUPS.ADD_MODEL_PROMPT' | translate:{ term: modelSearchTerm.trim() } }}
                 </div>

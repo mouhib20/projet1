@@ -370,6 +370,7 @@
         "BRAND_FILTER_HINT": "اختياري — يُستخدم فقط لتعبئة ماركة الموديل الجديد أدناه مسبقًا؛ البحث عن الموديلات يبقى مفتوحًا لكل الماركات.",
         "MODEL_SEARCH_LABEL": "الموديل",
         "MODELS_LABEL": "الموديلات المتوافقة *",
+        "FILTER_COMPATIBLE_MODELS_PLACEHOLDER": "تصفية هذه القائمة…",
         "SEARCH_MODELS_PLACEHOLDER": "ابحث عن موديل…",
         "ADD_MODEL_PROMPT": "إضافة \"{{term}}\" كموديل جديد",
         "NO_MODELS": "لا يوجد أي موديل مطابق.",

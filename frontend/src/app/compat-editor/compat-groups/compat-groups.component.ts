@@ -271,6 +271,20 @@ export class CompatGroupsComponent implements OnInit {
         return this.modelSearchTerm.trim().length > 0 && this.filteredModels.length === 0 && !this.showNewModel;
     }
 
+    /** A second, independent filter inside "Compatible models" itself - narrows the checklist
+     *  further without touching the "Model" search above or its add-new-model prompt. */
+    compatModelsFilterTerm = '';
+
+    get filteredModelsForChecklist(): DeviceModel[] {
+        if (!this.compatModelsFilterTerm.trim()) return this.filteredModels;
+        const term = this.compatModelsFilterTerm.toLowerCase();
+        return this.filteredModels.filter(m =>
+            m.nom.toLowerCase().includes(term) ||
+            m.marque.toLowerCase().includes(term) ||
+            (m.code || '').toLowerCase().includes(term)
+        );
+    }
+
     clearMessages(): void {
         this.errorMsg = '';
         this.successMsg = '';
@@ -286,6 +300,7 @@ export class CompatGroupsComponent implements OnInit {
         this.groupBrandFilterId = null;
         this.groupBrandSearchTerm = '';
         this.showGroupBrandDropdown = false;
+        this.compatModelsFilterTerm = '';
         this.newModelBrandSearchTerm = '';
         this.showNewModelBrandDropdown = false;
         this.showNewModel = false;
@@ -419,6 +434,7 @@ export class CompatGroupsComponent implements OnInit {
                 this.models = [...this.models, { id: res.id, nom, nom_commercial: nomCommercial ?? null, code: code ?? null, image: image ?? null, id_brand: idBrand, marque: brand?.nom || '' }];
                 this.form.modeleIds.push(res.id); // select it immediately, no wait on a refetch
                 this.modelSearchTerm = '';
+                this.compatModelsFilterTerm = '';
                 this.newModel = { id_brand: null, nom: '', nom_commercial: '', code: '', image: undefined };
                 this.newModelBrandSearchTerm = '';
                 this.showNewModel = false;
