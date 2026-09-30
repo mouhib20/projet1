@@ -83,7 +83,7 @@
             </div>
         </div>
 
-        <div class="space-card" (click)="goTo('vente/compatibilite')">
+        <div class="space-card" *ngIf="auth.isModuleEnabled('compatibilite')" (click)="goTo('vente/compatibilite')">
             <div class="card-glow card-glow--blue"></div>
             <div class="card-icon">🧩</div>
             <h2 class="card-title">{{ 'SPACE.COMPATIBILITE_TITLE' | translate }}</h2>
@@ -102,7 +102,7 @@
             </div>
         </div>
 
-        <div class="space-card" (click)="goTo('wholesale/catalogue')">
+        <div class="space-card" *ngIf="auth.isModuleEnabled('wholesale')" (click)="goTo('wholesale/catalogue')">
             <div class="card-glow card-glow--purple"></div>
             <div class="card-icon">🚚</div>
             <h2 class="card-title">{{ 'SPACE.WHOLESALE_TITLE' | translate }}</h2>
