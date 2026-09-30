@@ -98,10 +98,12 @@ export class CompatibiliteComponent implements OnInit {
         return articleImageUrl(image);
     }
 
-    // ── Result: the part matching the chosen type, once a model is picked - plus every other
-    // device that shares that exact same part (compat_group) ──
+    // ── Result: EVERY part matching the chosen type, once a model is picked - a device can now
+    // belong to more than one group of the same part type (its own native part, plus another
+    // device's part that also happens to fit it), so this is a list, not a single match - plus
+    // every other device that shares any of those same parts (compat_group), combined ──
     partsLoading = false;
-    matchedPart: PartRow | null = null;
+    matchedParts: PartRow[] = [];
     devicesLoading = false;
     compatibleDevices: DeviceModel[] = [];
     searched = false;
@@ -175,9 +177,9 @@ export class CompatibiliteComponent implements OnInit {
         this.partsLoading = true;
         this.compatService.partsForModel(this.selectedModelId).subscribe({
             next: (data: PartRow[]) => {
-                this.matchedPart = data.find(p => p.id_part_type === this.selectedPartTypeId) || null;
+                this.matchedParts = data.filter(p => p.id_part_type === this.selectedPartTypeId);
                 this.partsLoading = false;
-                if (this.matchedPart) this.loadCompatibleDevices(this.matchedPart.id_group);
+                if (this.matchedParts.length) this.loadCompatibleDevices(this.matchedParts.map(p => p.id_group));
             },
             error: (err) => {
                 this.partsLoading = false;
@@ -186,19 +188,31 @@ export class CompatibiliteComponent implements OnInit {
         });
     }
 
-    private loadCompatibleDevices(idGroup: number): void {
+    /** Combines every matched group's devices into one deduped list - a device compatible via
+     *  more than one of the matched groups still only shows once. */
+    private loadCompatibleDevices(idGroups: number[]): void {
         this.devicesLoading = true;
-        this.compatService.getModelsForGroup(idGroup).subscribe({
-            next: (data) => { this.compatibleDevices = data; this.devicesLoading = false; },
-            error: (err) => {
-                this.devicesLoading = false;
-                this.errorMsg = err.error?.message || 'COMPATIBILITE.ERR_LOAD_PARTS';
-            }
+        let remaining = idGroups.length;
+        const parDevice = new Map<number, DeviceModel>();
+        idGroups.forEach((idGroup) => {
+            this.compatService.getModelsForGroup(idGroup).subscribe({
+                next: (data) => {
+                    data.forEach((d) => parDevice.set(d.id, d));
+                    if (--remaining === 0) {
+                        this.compatibleDevices = [...parDevice.values()];
+                        this.devicesLoading = false;
+                    }
+                },
+                error: (err) => {
+                    this.devicesLoading = false;
+                    this.errorMsg = err.error?.message || 'COMPATIBILITE.ERR_LOAD_PARTS';
+                }
+            });
         });
     }
 
     private resetResult(): void {
-        this.matchedPart = null;
+        this.matchedParts = [];
         this.compatibleDevices = [];
         this.searched = false;
         this.showSuggestForm = false;

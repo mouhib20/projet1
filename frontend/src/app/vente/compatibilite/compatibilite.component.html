@@ -77,7 +77,7 @@
         <div class="loading-icon">⟳</div>
     </div>
 
-    <div class="result-card" *ngIf="!partsLoading && searched && matchedPart">
+    <div class="result-card" *ngIf="!partsLoading && searched && matchedParts.length">
         <table class="parts-table">
             <thead>
                 <tr>
@@ -89,7 +89,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
+                <tr *ngFor="let matchedPart of matchedParts">
                     <td class="fw-bold">{{ selectedBrand?.nom }}</td>
                     <td class="fw-bold">{{ selectedModel?.nom }}</td>
                     <td>
@@ -103,7 +103,7 @@
         </table>
     </div>
 
-    <div class="devices-section" *ngIf="!partsLoading && searched && matchedPart">
+    <div class="devices-section" *ngIf="!partsLoading && searched && matchedParts.length">
         <div class="devices-title">{{ 'COMPATIBILITE.COMPATIBLE_DEVICES_TITLE' | translate }}</div>
         <div class="loading-state small" *ngIf="devicesLoading">
             <div class="loading-icon">⟳</div>
@@ -119,14 +119,14 @@
         </div>
     </div>
 
-    <div class="empty-state" *ngIf="!partsLoading && searched && !matchedPart">
+    <div class="empty-state" *ngIf="!partsLoading && searched && !matchedParts.length">
         <div class="empty-icon">🔍</div>
         <strong>{{ 'COMPATIBILITE.NO_MATCH_FOUND' | translate }}</strong>
     </div>
 
     <!-- Suggest a missing device/part -->
     <div class="alert alert-success" *ngIf="suggestSuccess">✅ {{ 'COMPATIBILITE.SUGGEST_SUCCESS' | translate }}</div>
-    <div class="suggest-box" *ngIf="!partsLoading && searched && !matchedPart && auth.hasPermission('compatibilite', 'ajouter')">
+    <div class="suggest-box" *ngIf="!partsLoading && searched && !matchedParts.length && auth.hasPermission('compatibilite', 'ajouter')">
         <button class="btn-outline" *ngIf="!showSuggestForm" (click)="openSuggestForm()">
             💡 {{ 'COMPATIBILITE.SUGGEST_BTN' | translate }}
         </button>
