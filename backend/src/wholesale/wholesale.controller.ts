@@ -1,6 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Patch, Body, Param, Query, ParseIntPipe, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Patch, Body, Param, Query, ParseIntPipe, Headers, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { promises as fs } from 'fs';
 import { WholesaleService } from './wholesale.service';
 import { RequirePermission } from '../permissions/require-permission.decorator';
+import { imageUploadOptions } from '../common/image-upload.util';
 
 @Controller('wholesale')
 export class WholesaleController {
@@ -74,6 +77,19 @@ export class WholesaleController {
     @Get('listings')
     listerOffres(@Headers('authorization') auth?: string) {
         return this.service.listerOffres(auth);
+    }
+
+    @Post('listings/upload-image')
+    @UseInterceptors(FileInterceptor('image', imageUploadOptions('wholesale')))
+    async uploadImage(@UploadedFile() file: Express.Multer.File, @Headers('authorization') auth?: string) {
+        if (!file) throw new BadRequestException('Aucun fichier reçu.');
+        try {
+            await this.service.verifierEditeur(auth);
+        } catch (e) {
+            await fs.unlink(file.path).catch(() => undefined); // avoid an orphaned file if the role check fails
+            throw e;
+        }
+        return { url: `/uploads/wholesale/${file.filename}` };
     }
 
     @Post('listings')

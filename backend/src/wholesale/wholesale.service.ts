@@ -36,6 +36,12 @@ export class WholesaleService {
         return acteur;
     }
 
+    /** Exposes the editor-role check for the controller's upload-image route, which needs it
+     *  before returning the uploaded file's URL. */
+    async verifierEditeur(authorization?: string): Promise<void> {
+        await this.editeurRequis(authorization);
+    }
+
     /** The order, provided it belongs to the caller's own store; never leaks another store's order. */
     private async commandeDuDemandeur(id: number): Promise<any> {
         const id_magasin = this.storeContext.requireMagasinId();

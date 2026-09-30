@@ -72,6 +72,12 @@ export class WholesaleService {
         return this.http.delete<void>(`${this.apiUrl}/listings/${id}`);
     }
 
+    uploadListingImage(file: File): Observable<{ url: string }> {
+        const formData = new FormData();
+        formData.append('image', file);
+        return this.http.post<{ url: string }>(`${this.apiUrl}/listings/upload-image`, formData);
+    }
+
     // ── Wholesale-editor accounts (super_admin) ──
 
     getEditors(): Observable<WholesaleEditor[]> {

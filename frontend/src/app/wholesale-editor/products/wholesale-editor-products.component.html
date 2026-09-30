@@ -50,6 +50,20 @@
                 <label>{{ 'WHOLESALE_EDITOR_PRODUCTS.MIN_QTY_LABEL' | translate }}</label>
                 <input type="number" min="1" [(ngModel)]="form.qte_min" />
             </div>
+            <div class="form-group full">
+                <label>{{ 'WHOLESALE_EDITOR_PRODUCTS.IMAGE_LABEL' | translate }}</label>
+                <div class="image-upload-row">
+                    <img *ngIf="imageUrl(form.image)" [src]="imageUrl(form.image)" class="image-preview" [alt]="'WHOLESALE_EDITOR_PRODUCTS.IMAGE_PREVIEW_ALT' | translate" />
+                    <div class="image-upload-controls">
+                        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+                            (change)="onImageSelected($event)" />
+                        <button type="button" class="btn btn-secondary" *ngIf="form.image"
+                            (click)="removeImage()">{{ 'WHOLESALE_EDITOR_PRODUCTS.REMOVE_IMAGE' | translate }}</button>
+                        <span *ngIf="imageUploading" class="text-muted">{{ 'WHOLESALE_EDITOR_PRODUCTS.UPLOADING' | translate }}</span>
+                        <span *ngIf="imageError" class="alert-error-inline">{{ imageError | translate }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="form-actions">
             <button class="btn btn-secondary" (click)="cancelForm()">{{ 'CANCEL' | translate }}</button>

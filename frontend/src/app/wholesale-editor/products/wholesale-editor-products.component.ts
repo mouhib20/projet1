@@ -37,7 +37,34 @@ export class WholesaleEditorProductsComponent implements OnInit {
     }
 
     emptyForm(): WholesaleListingSave {
-        return { designation: '', marque: '', modele: '', barcode: '', type: '', sous_categorie: '', quantite: 0, prix_gros: 0, qte_min: 1 };
+        return { designation: '', marque: '', modele: '', barcode: '', image: '', type: '', sous_categorie: '', quantite: 0, prix_gros: 0, qte_min: 1 };
+    }
+
+    imageUploading = false;
+    imageError = '';
+
+    onImageSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) return;
+
+        this.imageError = '';
+        this.imageUploading = true;
+        this.wholesaleService.uploadListingImage(file).subscribe({
+            next: (res) => {
+                this.form.image = res.url;
+                this.imageUploading = false;
+            },
+            error: (err) => {
+                this.imageError = err.error?.message || 'WHOLESALE_EDITOR_PRODUCTS.ERR_IMAGE_UPLOAD';
+                this.imageUploading = false;
+            }
+        });
+        input.value = '';
+    }
+
+    removeImage(): void {
+        this.form.image = '';
     }
 
     load(): void {
@@ -64,7 +91,7 @@ export class WholesaleEditorProductsComponent implements OnInit {
         this.editingId = listing.id;
         this.form = {
             designation: listing.designation, marque: listing.marque || '', modele: listing.modele || '',
-            barcode: listing.barcode || '', type: listing.type || '', sous_categorie: listing.sous_categorie || '',
+            barcode: listing.barcode || '', image: listing.image || '', type: listing.type || '', sous_categorie: listing.sous_categorie || '',
             quantite: listing.quantite, prix_gros: listing.prix_gros, qte_min: listing.qte_min,
         };
         this.showForm = true;

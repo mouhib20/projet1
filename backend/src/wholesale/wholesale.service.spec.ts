@@ -97,6 +97,23 @@ describe('WholesaleService', () => {
         });
     });
 
+    describe('verifierEditeur() — the check WholesaleController.uploadImage runs before returning a URL', () => {
+        it('rejects a regular store admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
+            await expect(service.verifierEditeur('Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('allows wholesale_editor', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'wholesale_editor' });
+            await expect(service.verifierEditeur('Bearer x')).resolves.toBeUndefined();
+        });
+
+        it('allows super_admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'SA', role: 'super_admin' });
+            await expect(service.verifierEditeur('Bearer x')).resolves.toBeUndefined();
+        });
+    });
+
     describe('superAdminRequis (via creerEditeur) — super_admin only, not wholesale_editor itself', () => {
         it('rejects wholesale_editor from creating another editor account', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'wholesale_editor' });
