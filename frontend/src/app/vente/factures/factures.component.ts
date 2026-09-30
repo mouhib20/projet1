@@ -57,6 +57,12 @@ export class FacturesComponent implements OnInit, OnDestroy {
   catalogueLookupPending = false;
   @ViewChild('searchInput') searchInput!: ElementRef;
 
+  /** Display-only correction for category labels whose stored value can't change (Stock/Factures
+   *  already have real articles under it) - 'Glace' shows as "Glass" everywhere, nothing stored changes. */
+  displayType(t: string): string {
+    return t === 'Glace' ? 'Glass' : t;
+  }
+
   imageUrl(image?: string | null): string | null {
     return articleImageUrl(image);
   }
@@ -538,7 +544,7 @@ export class FacturesComponent implements OnInit, OnDestroy {
 
   get currentItemDisplayType(): string {
     if (!this.currentItem.type) return 'Détails';
-    return this.currentItem.type.split('(')[0].trim();
+    return this.displayType(this.currentItem.type.split('(')[0].trim());
   }
 
   get showNewArticleForm(): boolean {

@@ -341,11 +341,13 @@ export class OperationsComponent implements OnInit {
     }).slice(0, 40);
   }
 
-  /** Category of an article as a short label (Afficheur → Écran, Vitre, Batterie, Filtre, Cendre, Glace…). */
+  /** Category of an article as a short label (Afficheur → Écran, Vitre, Batterie, Filtre, Cendre, Glace → Glass…). */
   categorieArticle(a: ArticleForm): string {
     const c = (a.sous_categorie || '').split('(')[0].trim();
     if (!c) return '';
-    return c.toLowerCase() === 'afficheur' ? 'Écran' : c;
+    if (c.toLowerCase() === 'afficheur') return 'Écran';
+    if (c.toLowerCase() === 'glace') return 'Glass';
+    return c;
   }
 
   /** Rest of the product sheet on one line: brand, model, barcode and description. */

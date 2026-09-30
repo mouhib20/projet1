@@ -348,7 +348,7 @@
                         </td>
                         <td class="td-barcode">{{ p.barcode || '—' }}</td>
                         <td>
-                            <span class="badge-cat" *ngIf="p.sous_categorie">{{ p.sous_categorie }}</span>
+                            <span class="badge-cat" *ngIf="p.sous_categorie">{{ categoryLabel(p.sous_categorie) }}</span>
                             <span *ngIf="!p.sous_categorie">—</span>
                         </td>
                         <td>{{ p.marque || '—' }}</td>

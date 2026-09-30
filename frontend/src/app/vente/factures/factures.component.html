@@ -104,7 +104,7 @@
                             <select [(ngModel)]="currentItem.type" (ngModelChange)="onTypeChange()"
                                 class="form-control select-box item-type-select mt-2" style="width: 100%;">
                                 <option value="">{{ 'FACTURES.SELECT_TYPE' | translate }}</option>
-                                <option *ngFor="let t of supplierTypes" [value]="t">{{ t }}</option>
+                                <option *ngFor="let t of supplierTypes" [value]="t">{{ displayType(t) }}</option>
                             </select>
                         </div>
 

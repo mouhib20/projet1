@@ -25,7 +25,7 @@ const PART_SUB_CATEGORIES = [
 
 const ACCESSORY_SUB_CATEGORIES = [
     { key: 'Cendre', label: 'Cendre' },
-    { key: 'Glace', label: 'Glace' },
+    { key: 'Glace', label: 'Glass' }, // stored value stays 'Glace' - only the shown label changed
 ];
 
 @Component({
@@ -65,6 +65,14 @@ export class StockComponent implements OnInit {
     imageUploading = false;
     imageError = '';
     saving = false;
+
+    /** Display-only label for a stored sous_categorie value (e.g. 'Glace' -> "Glass") - the stored
+     *  value itself never changes, so existing articles keep matching correctly. */
+    categoryLabel(raw?: string | null): string {
+        if (!raw) return '';
+        const match = [...PART_SUB_CATEGORIES, ...ACCESSORY_SUB_CATEGORIES].find(c => c.key === raw);
+        return match?.label ?? raw;
+    }
 
     imageUrl(image?: string | null): string | null {
         return articleImageUrl(image);
