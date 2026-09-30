@@ -154,13 +154,16 @@ export class CompatibilityService {
      *  auto-link to its compat group without the user re-picking brand/model by hand. Exact,
      *  case-insensitive, trimmed matches only (plus a whitespace-insensitive fallback for the
      *  model name, e.g. 'spark6' vs 'spark 6') - never a fuzzy/partial match, to avoid linking
-     *  the wrong device. Returns null at the first unmatched step. */
-    async autoResolveGroupeRecherche(termesType: string[], marque: string, modele: string): Promise<{ id_group: number; id_part_type: number } | null> {
+     *  the wrong device. `raison` says exactly which step failed, so the Stock form can tell the
+     *  user why instead of a generic "no match". */
+    async autoResolveGroupeRecherche(termesType: string[], marque: string, modele: string): Promise<{ id_group: number; id_part_type: number } | { raison: 'type' | 'marque' | 'modele' | 'groupe' }> {
         const termes = [...new Set(termesType.map(t => t.trim().toLowerCase()).filter(Boolean))];
         const marqueNorm = marque.trim().toLowerCase();
         const modeleNorm = modele.trim().toLowerCase();
         const modeleCompact = modeleNorm.replace(/\s+/g, '');
-        if (!termes.length || !marqueNorm || !modeleNorm) return null;
+        if (!termes.length) return { raison: 'type' };
+        if (!marqueNorm) return { raison: 'marque' };
+        if (!modeleNorm) return { raison: 'modele' };
 
         const typeRows = await this.dataSource.query(
             `SELECT id FROM part_type
@@ -168,14 +171,14 @@ export class CompatibilityService {
                LIMIT 1`,
             [termes],
         );
-        if (!typeRows[0]) return null;
+        if (!typeRows[0]) return { raison: 'type' };
         const idPartType = typeRows[0].id;
 
         const brandRows = await this.dataSource.query(
             `SELECT id FROM brand WHERE LOWER(TRIM(nom)) = $1 LIMIT 1`,
             [marqueNorm],
         );
-        if (!brandRows[0]) return null;
+        if (!brandRows[0]) return { raison: 'marque' };
         const idBrand = brandRows[0].id;
 
         const modelRows = await this.dataSource.query(
@@ -186,11 +189,11 @@ export class CompatibilityService {
                LIMIT 1`,
             [idBrand, modeleNorm, modeleCompact],
         );
-        if (!modelRows[0]) return null;
+        if (!modelRows[0]) return { raison: 'modele' };
         const idModel = modelRows[0].id;
 
         const groupe = await this.resolveGroupeRecherche(idModel, idPartType);
-        return groupe ? { id_group: groupe.id_group, id_part_type: idPartType } : null;
+        return groupe ? { id_group: groupe.id_group, id_part_type: idPartType } : { raison: 'groupe' };
     }
 
     /** A group's part-type name, for displaying "already linked to <type>" on an existing article. */

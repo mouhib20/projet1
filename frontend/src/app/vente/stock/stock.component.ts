@@ -86,12 +86,14 @@ export class StockComponent implements OnInit {
     linkResolving = false;
     linkNotFound = false;
     linkAutoFailed = false;
+    linkAutoFailReason: 'type' | 'marque' | 'modele' | 'groupe' | null = null;
     linkPickerOpen = false;
     linkedGroupInfo: { partTypeName: string; models: DeviceModel[] } | null = null;
 
     /** Best-effort auto-link using the form's own Type/Marque/Modèle text - never overrides an
      *  existing link, and never runs until all three fields are filled. Falls back silently to
-     *  the manual picker (linkAutoFailed) when the text doesn't match the compat catalogue. */
+     *  the manual picker (linkAutoFailed) when the text doesn't match the compat catalogue -
+     *  linkAutoFailReason says exactly which step failed, so the message isn't a guess. */
     tryAutoLinkCompat(): void {
         if (!this.canLinkCompat || this.form.compat_group_id) return;
         const marque = (this.form.marque || '').trim();
@@ -104,15 +106,17 @@ export class StockComponent implements OnInit {
         this.compatService.autoResolveGroup(terms, marque, modele).subscribe({
             next: (res) => {
                 this.linkResolving = false;
-                if (res) {
+                if ('id_group' in res) {
                     this.form.compat_group_id = res.id_group;
                     this.linkAutoFailed = false;
+                    this.linkAutoFailReason = null;
                     this.loadLinkedGroupSummary(res.id_group);
                 } else {
                     this.linkAutoFailed = true;
+                    this.linkAutoFailReason = res.raison;
                 }
             },
-            error: () => { this.linkResolving = false; this.linkAutoFailed = true; }
+            error: () => { this.linkResolving = false; this.linkAutoFailed = true; this.linkAutoFailReason = null; }
         });
     }
 
@@ -180,6 +184,19 @@ export class StockComponent implements OnInit {
         });
     }
 
+    linkAutoFailMessageKey(): string {
+        const key = this.linkAutoFailReason ? this.linkAutoFailReason.toUpperCase() : 'GENERIC';
+        return `STOCK.COMPAT_LINK_AUTO_FAILED_${key}`;
+    }
+
+    linkAutoFailParams(): { type: string; marque: string; modele: string } {
+        return {
+            type: this.categoryLabel(this.form.sous_categorie) || this.form.sous_categorie || '',
+            marque: this.form.marque || '',
+            modele: this.form.modele || ''
+        };
+    }
+
     linkedModelsSummary(): string {
         if (!this.linkedGroupInfo?.models.length) return '';
         return this.linkedGroupInfo.models.map(m => `${m.marque} ${m.nom}`).join(', ');
@@ -212,6 +229,7 @@ export class StockComponent implements OnInit {
         this.linkModels = [];
         this.linkNotFound = false;
         this.linkAutoFailed = false;
+        this.linkAutoFailReason = null;
         this.linkPickerOpen = false;
     }
 

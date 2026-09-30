@@ -198,24 +198,41 @@ describe('CompatibilityService', () => {
     });
 
     describe('autoResolveGroupeRecherche() — best-effort text match from the Stock form, no editor check', () => {
-        it('returns null immediately when marque or modele is blank, without querying', async () => {
-            expect(await service.autoResolveGroupeRecherche(['Vitre'], '', 'A12')).toBeNull();
-            expect(await service.autoResolveGroupeRecherche(['Vitre'], 'Samsung', '')).toBeNull();
-            expect(await service.autoResolveGroupeRecherche([], 'Samsung', 'A12')).toBeNull();
+        it('reports which step is blank, without querying', async () => {
+            expect(await service.autoResolveGroupeRecherche(['Vitre'], '', 'A12')).toEqual({ raison: 'marque' });
+            expect(await service.autoResolveGroupeRecherche(['Vitre'], 'Samsung', '')).toEqual({ raison: 'modele' });
+            expect(await service.autoResolveGroupeRecherche([], 'Samsung', 'A12')).toEqual({ raison: 'type' });
             expect(dataSource.query).not.toHaveBeenCalled();
         });
 
-        it('returns null when no part_type matches any of the candidate names', async () => {
+        it('reports raison "type" when no part_type matches any of the candidate names', async () => {
             dataSource.query.mockResolvedValueOnce([]); // part_type lookup
-            await expect(service.autoResolveGroupeRecherche(['Glace', 'Glass'], 'Samsung', 'A12')).resolves.toBeNull();
+            await expect(service.autoResolveGroupeRecherche(['Glace', 'Glass'], 'Samsung', 'A12')).resolves.toEqual({ raison: 'type' });
             expect(dataSource.query).toHaveBeenCalledTimes(1);
         });
 
-        it('returns null when the brand text does not match any brand', async () => {
+        it('reports raison "marque" when the brand text does not match any brand', async () => {
             dataSource.query
                 .mockResolvedValueOnce([{ id: 2 }]) // part_type found
                 .mockResolvedValueOnce([]); // brand not found
-            await expect(service.autoResolveGroupeRecherche(['Vitre'], 'Anker', 'A12')).resolves.toBeNull();
+            await expect(service.autoResolveGroupeRecherche(['Vitre'], 'Anker', 'A12')).resolves.toEqual({ raison: 'marque' });
+        });
+
+        it('reports raison "modele" when the model text does not match any model of that brand', async () => {
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 2 }]) // part_type found
+                .mockResolvedValueOnce([{ id: 1 }]) // brand found
+                .mockResolvedValueOnce([]); // model not found
+            await expect(service.autoResolveGroupeRecherche(['Vitre'], 'Samsung', 'Z99')).resolves.toEqual({ raison: 'modele' });
+        });
+
+        it('reports raison "groupe" when type/brand/model all match but no group links them', async () => {
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 2 }]) // part_type
+                .mockResolvedValueOnce([{ id: 1 }]) // brand
+                .mockResolvedValueOnce([{ id: 5 }]) // device_model
+                .mockResolvedValueOnce([]); // resolveGroupeRecherche finds nothing
+            await expect(service.autoResolveGroupeRecherche(['Vitre'], 'Samsung', 'A12')).resolves.toEqual({ raison: 'groupe' });
         });
 
         it('resolves the group when type/brand/model all match, case-insensitively and trimmed', async () => {

@@ -117,7 +117,7 @@
 
             <div class="compat-link-auto-status" *ngIf="!linkedGroupInfo && !linkPickerOpen">
                 <span class="text-muted" *ngIf="linkResolving">{{ 'STOCK.COMPAT_LINK_RESOLVING' | translate }}</span>
-                <span class="alert-error-inline" *ngIf="linkAutoFailed && !linkResolving">{{ 'STOCK.COMPAT_LINK_AUTO_FAILED' | translate }}</span>
+                <span class="alert-error-inline" *ngIf="linkAutoFailed && !linkResolving">{{ linkAutoFailMessageKey() | translate:linkAutoFailParams() }}</span>
                 <button type="button" class="btn btn-secondary" (click)="openLinkPicker()">
                     {{ (linkAutoFailed ? 'STOCK.COMPAT_LINK_ADD_MANUAL' : 'STOCK.COMPAT_LINK_ADD') | translate }}
                 </button>
