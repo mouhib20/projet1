@@ -55,9 +55,11 @@
             <input type="text" [(ngModel)]="form.note" [placeholder]="'COMPAT_GROUPS.NOTE_PLACEHOLDER' | translate" />
         </div>
 
-        <!-- Brand: search, pick, or add on the spot - also narrows the model list below -->
+        <!-- Brand: search, pick, or add on the spot - just a shortcut for the brand of any NEW
+             model added below; the model search/list itself stays open to every brand. -->
         <div class="form-group combobox-group">
             <label>{{ 'COMPAT_GROUPS.BRAND_LABEL' | translate }}</label>
+            <div class="field-hint">{{ 'COMPAT_GROUPS.BRAND_FILTER_HINT' | translate }}</div>
             <div class="combobox-chosen" *ngIf="selectedGroupBrandFilter && !showGroupBrandDropdown">
                 <span>{{ selectedGroupBrandFilter.nom }}</span>
                 <button type="button" class="combobox-clear" (click)="clearGroupBrandFilter()">✕</button>

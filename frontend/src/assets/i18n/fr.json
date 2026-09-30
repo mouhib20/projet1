@@ -367,6 +367,7 @@
         "NOTE_LABEL": "Note",
         "NOTE_PLACEHOLDER": "Remarque optionnelle",
         "BRAND_LABEL": "Marque",
+        "BRAND_FILTER_HINT": "Optionnel — sert juste à préremplir la marque d'un nouveau modèle ci-dessous ; la recherche de modèles reste ouverte à toutes les marques.",
         "MODELS_LABEL": "Modèles compatibles *",
         "SEARCH_MODELS_PLACEHOLDER": "Chercher un modèle…",
         "ADD_MODEL_PROMPT": "Ajouter « {{term}} » comme nouveau modèle",

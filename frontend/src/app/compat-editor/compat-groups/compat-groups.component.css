@@ -189,6 +189,12 @@ select:focus {
     position: relative;
 }
 
+.field-hint {
+    color: #8b949e;
+    font-size: 0.76rem;
+    margin-bottom: 4px;
+}
+
 .combobox-chosen {
     display: flex;
     align-items: center;

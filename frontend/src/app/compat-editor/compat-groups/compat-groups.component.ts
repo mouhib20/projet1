@@ -253,11 +253,13 @@ export class CompatGroupsComponent implements OnInit {
         input.value = '';
     }
 
+    /** Deliberately NOT filtered by groupBrandFilterId - a group can (and often does) link models
+     *  across different brands (e.g. a glass that fits several manufacturers' phones). The brand
+     *  field above is only a convenience default for the "add new model" form below. */
     get filteredModels(): DeviceModel[] {
-        let pool = this.groupBrandFilterId ? this.models.filter(m => m.id_brand === this.groupBrandFilterId) : this.models;
-        if (!this.modelSearchTerm) return pool;
+        if (!this.modelSearchTerm) return this.models;
         const term = this.modelSearchTerm.toLowerCase();
-        return pool.filter(m =>
+        return this.models.filter(m =>
             m.nom.toLowerCase().includes(term) ||
             m.marque.toLowerCase().includes(term) ||
             (m.code || '').toLowerCase().includes(term)
