@@ -184,6 +184,13 @@ select:focus {
     padding: 8px;
 }
 
+.model-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
 .model-checkbox {
     display: flex;
     align-items: center;
@@ -194,15 +201,48 @@ select:focus {
     font-weight: 400;
     color: #c9d1d9;
     cursor: pointer;
+    flex: 1;
+    min-width: 0;
 }
 
 .model-checkbox input {
     width: auto;
 }
 
+.model-thumb {
+    width: 26px;
+    height: 26px;
+    object-fit: cover;
+    border-radius: 5px;
+    border: 1px solid #30363d;
+    flex-shrink: 0;
+}
+
 .model-code {
     color: #8b949e;
     font-size: 0.8rem;
+}
+
+.model-photo-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+}
+
+.model-photo-btn input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
 }
 
 .selected-count {

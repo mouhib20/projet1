@@ -154,6 +154,31 @@ describe('CompatibilityService', () => {
                 service.creerTypePiece({ nom_fr: 'Écran', nom_en: '', nom_ar: 'شاشة' }, 'Bearer x'),
             ).rejects.toThrow();
         });
+
+        it('modifierModele rejects a store admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
+            await expect(service.modifierModele(1, { image: '/x.png' }, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('modifierModele allows compat_editor and updates only the image', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValue(undefined);
+            await service.modifierModele(7, { image: '/uploads/compat-models/x.png' }, 'Bearer x');
+            const [sql, params] = dataSource.query.mock.calls[0];
+            expect(sql).toMatch(/UPDATE device_model SET image = COALESCE\(\$2, image\) WHERE id = \$1/);
+            expect(params).toEqual([7, '/uploads/compat-models/x.png']);
+        });
+    });
+
+    describe('modelesPourGroupe() — the "confirmed compatible devices" list, no editor check (matches piecesPourModele)', () => {
+        it('joins compat_group_model/device_model/brand filtered by the group id', async () => {
+            dataSource.query.mockResolvedValue([]);
+            await service.modelesPourGroupe(10);
+            const [sql, params] = dataSource.query.mock.calls[0];
+            expect(sql).toMatch(/WHERE cgm\.id_group = \$1/);
+            expect(params).toEqual([10]);
+            expect(caisseService.acteurRequis).not.toHaveBeenCalled();
+        });
     });
 
     describe('obtenirGroupe() — editor-only, 404 when missing', () => {

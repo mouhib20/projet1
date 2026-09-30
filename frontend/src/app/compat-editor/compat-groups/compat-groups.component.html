@@ -50,11 +50,20 @@
         <div class="form-group full">
             <label>{{ 'COMPAT_GROUPS.MODELS_LABEL' | translate }}</label>
             <input type="text" class="search-input-full" [(ngModel)]="modelSearchTerm" [placeholder]="'COMPAT_GROUPS.SEARCH_MODELS_PLACEHOLDER' | translate" />
+            <div class="alert alert-error" *ngIf="modelImageError">⚠️ {{ modelImageError | translate }}</div>
             <div class="models-list">
-                <label class="model-checkbox" *ngFor="let m of filteredModels">
-                    <input type="checkbox" [checked]="isModelSelected(m.id)" (change)="toggleModel(m.id)" />
-                    <span>{{ m.marque }} {{ m.nom }}<span class="model-code" *ngIf="m.code"> · {{ m.code }}</span></span>
-                </label>
+                <div class="model-row" *ngFor="let m of filteredModels">
+                    <label class="model-checkbox">
+                        <input type="checkbox" [checked]="isModelSelected(m.id)" (change)="toggleModel(m.id)" />
+                        <img *ngIf="imageUrl(m.image)" [src]="imageUrl(m.image)" class="model-thumb" [alt]="m.nom" />
+                        <span>{{ m.marque }} {{ m.nom }}<span class="model-code" *ngIf="m.code"> · {{ m.code }}</span></span>
+                    </label>
+                    <label class="model-photo-btn" [title]="'COMPAT_GROUPS.ADD_MODEL_PHOTO' | translate">
+                        <span *ngIf="modelImageUploadingId !== m.id">📷</span>
+                        <span *ngIf="modelImageUploadingId === m.id">⟳</span>
+                        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onModelImageSelected($event, m)" />
+                    </label>
+                </div>
                 <div class="empty-hint" *ngIf="filteredModels.length === 0">{{ 'COMPAT_GROUPS.NO_MODELS' | translate }}</div>
             </div>
             <div class="selected-count">{{ form.modeleIds.length }} {{ 'COMPAT_GROUPS.SELECTED_SUFFIX' | translate }}</div>

@@ -30,6 +30,18 @@ export class CompatService {
         return this.http.post<{ id: number }>(`${this.apiUrl}/suggestions`, dto);
     }
 
+    getPartTypesForSearch(): Observable<PartType[]> {
+        return this.http.get<PartType[]>(`${this.apiUrl}/search/part-types`);
+    }
+
+    getBrandsForSearch(): Observable<Brand[]> {
+        return this.http.get<Brand[]>(`${this.apiUrl}/search/brands`);
+    }
+
+    getModelsForSearch(idBrand: number): Observable<DeviceModel[]> {
+        return this.http.get<DeviceModel[]>(`${this.apiUrl}/search/models`, { params: { id_brand: idBrand } });
+    }
+
     // ── Reference data (editor) ──
 
     getBrands(): Observable<Brand[]> {
@@ -44,8 +56,22 @@ export class CompatService {
         return this.http.get<DeviceModel[]>(`${this.apiUrl}/models`);
     }
 
-    createModel(dto: { id_brand: number; nom: string; nom_commercial?: string; code?: string }): Observable<{ id: number }> {
+    createModel(dto: { id_brand: number; nom: string; nom_commercial?: string; code?: string; image?: string }): Observable<{ id: number }> {
         return this.http.post<{ id: number }>(`${this.apiUrl}/models`, dto);
+    }
+
+    updateModel(id: number, dto: { image?: string }): Observable<void> {
+        return this.http.put<void>(`${this.apiUrl}/models/${id}`, dto);
+    }
+
+    uploadModelImage(file: File): Observable<{ url: string }> {
+        const formData = new FormData();
+        formData.append('image', file);
+        return this.http.post<{ url: string }>(`${this.apiUrl}/models/upload-image`, formData);
+    }
+
+    getModelsForGroup(idGroup: number): Observable<DeviceModel[]> {
+        return this.http.get<DeviceModel[]>(`${this.apiUrl}/groups/${idGroup}/models`);
     }
 
     getPartTypes(): Observable<PartType[]> {

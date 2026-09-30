@@ -9,25 +9,122 @@
 
     <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
 
-    <div class="search-box">
-        <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="search()"
-            [placeholder]="'COMPATIBILITE.SEARCH_PLACEHOLDER' | translate" class="search-input" />
-        <button class="btn btn-primary" (click)="search()">🔍 {{ 'COMPATIBILITE.SEARCH_BTN' | translate }}</button>
+    <div class="picker-row">
+        <div class="picker-group">
+            <label>{{ 'COMPATIBILITE.TYPE_LABEL' | translate }}</label>
+            <select [(ngModel)]="selectedPartTypeId" (ngModelChange)="onPartTypeChange()">
+                <option [ngValue]="null">{{ 'COMPATIBILITE.TYPE_PLACEHOLDER' | translate }}</option>
+                <option *ngFor="let t of partTypes" [ngValue]="t.id">{{ partTypeName(t) }}</option>
+            </select>
+        </div>
+
+        <div class="picker-group">
+            <label>{{ 'COMPATIBILITE.BRAND_LABEL' | translate }}</label>
+            <button type="button" class="picker-field" [disabled]="!selectedPartTypeId" (click)="openBrandPicker()">
+                <img *ngIf="imageUrl(selectedBrand?.logo)" [src]="imageUrl(selectedBrand?.logo)" class="picker-field-logo" [alt]="selectedBrand?.nom" />
+                <span>{{ selectedBrand?.nom || ('COMPATIBILITE.BRAND_PLACEHOLDER' | translate) }}</span>
+            </button>
+        </div>
+
+        <div class="picker-group">
+            <label>{{ 'COMPATIBILITE.MODEL_LABEL' | translate }}</label>
+            <button type="button" class="picker-field" [disabled]="!selectedBrandId || modelsLoading" (click)="openModelPicker()">
+                <img *ngIf="imageUrl(selectedModel?.image)" [src]="imageUrl(selectedModel?.image)" class="picker-field-logo" [alt]="selectedModel?.nom" />
+                <span>{{ selectedModel?.nom || ('COMPATIBILITE.MODEL_PLACEHOLDER' | translate) }}</span>
+            </button>
+        </div>
     </div>
 
-    <div class="loading-state" *ngIf="searching">
+    <!-- Brand picker modal -->
+    <div class="picker-modal-overlay" *ngIf="showBrandPicker" (click)="closeBrandPicker()">
+        <div class="picker-modal" (click)="$event.stopPropagation()">
+            <div class="picker-modal-header">
+                <span>{{ 'COMPATIBILITE.BRAND_LABEL' | translate }}</span>
+                <button class="picker-modal-close" (click)="closeBrandPicker()">✕</button>
+            </div>
+            <input type="text" class="picker-search" [(ngModel)]="brandSearchTerm" [placeholder]="'COMPATIBILITE.SEARCH_IN_GRID_PLACEHOLDER' | translate" />
+            <div class="picker-grid">
+                <div class="picker-card" *ngFor="let b of filteredBrands" [class.selected]="b.id === selectedBrandId" (click)="selectBrand(b)">
+                    <img *ngIf="imageUrl(b.logo)" [src]="imageUrl(b.logo)" [alt]="b.nom" />
+                    <span *ngIf="!imageUrl(b.logo)" class="picker-card-placeholder">🏷️</span>
+                    <div class="picker-card-label">{{ b.nom }}</div>
+                </div>
+                <div class="empty-hint" *ngIf="filteredBrands.length === 0">{{ 'COMPATIBILITE.NO_MATCH_FOUND' | translate }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model picker modal -->
+    <div class="picker-modal-overlay" *ngIf="showModelPicker" (click)="closeModelPicker()">
+        <div class="picker-modal" (click)="$event.stopPropagation()">
+            <div class="picker-modal-header">
+                <span>{{ 'COMPATIBILITE.MODEL_LABEL' | translate }}</span>
+                <button class="picker-modal-close" (click)="closeModelPicker()">✕</button>
+            </div>
+            <input type="text" class="picker-search" [(ngModel)]="modelSearchTerm" [placeholder]="'COMPATIBILITE.SEARCH_IN_GRID_PLACEHOLDER' | translate" />
+            <div class="picker-grid">
+                <div class="picker-card" *ngFor="let m of filteredModelsForPicker" [class.selected]="m.id === selectedModelId" (click)="selectModelFromPicker(m)">
+                    <img *ngIf="imageUrl(m.image)" [src]="imageUrl(m.image)" [alt]="m.nom" />
+                    <span *ngIf="!imageUrl(m.image)" class="picker-card-placeholder">📱</span>
+                    <div class="picker-card-label">{{ m.nom }}<span class="picker-card-code" *ngIf="m.code"> ({{ m.code }})</span></div>
+                </div>
+                <div class="empty-hint" *ngIf="filteredModelsForPicker.length === 0">{{ 'COMPATIBILITE.NO_MATCH_FOUND' | translate }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-state" *ngIf="partsLoading">
         <div class="loading-icon">⟳</div>
-        <strong>{{ 'COMPATIBILITE.SEARCHING' | translate }}</strong>
     </div>
 
-    <div class="empty-state" *ngIf="searched && !searching && results.length === 0">
+    <div class="result-card" *ngIf="!partsLoading && searched && matchedPart">
+        <table class="parts-table">
+            <thead>
+                <tr>
+                    <th>{{ 'COMPATIBILITE.COL_PART_TYPE' | translate }}</th>
+                    <th>{{ 'COMPATIBILITE.COL_STATUS' | translate }}</th>
+                    <th class="text-center">{{ 'COMPATIBILITE.COL_QTY' | translate }}</th>
+                    <th class="text-center">{{ 'COMPATIBILITE.COL_PRICE' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="fw-bold">{{ partTypeName(matchedPart) }}</td>
+                    <td>
+                        <span class="badge-ok" *ngIf="matchedPart.id_article">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }}</span>
+                        <span class="badge-out" *ngIf="!matchedPart.id_article">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>
+                    </td>
+                    <td class="text-center">{{ matchedPart.id_article ? matchedPart.quantite : '—' }}</td>
+                    <td class="text-center">{{ matchedPart.id_article ? ((matchedPart.prix_vente | number:'1.3-3') + ' ' + ('CURRENCY' | translate)) : '—' }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="devices-section" *ngIf="!partsLoading && searched && matchedPart">
+        <div class="devices-title">{{ 'COMPATIBILITE.COMPATIBLE_DEVICES_TITLE' | translate }}</div>
+        <div class="loading-state small" *ngIf="devicesLoading">
+            <div class="loading-icon">⟳</div>
+        </div>
+        <div class="devices-grid" *ngIf="!devicesLoading">
+            <div class="device-card" *ngFor="let d of compatibleDevices">
+                <span class="confirmed-badge">✓ {{ 'COMPATIBILITE.CONFIRMED_MATCH_BADGE' | translate }}</span>
+                <img *ngIf="imageUrl(d.image)" [src]="imageUrl(d.image)" [alt]="d.nom" />
+                <span *ngIf="!imageUrl(d.image)" class="picker-card-placeholder">📱</span>
+                <div class="device-card-brand">{{ d.marque }}</div>
+                <div class="device-card-name">{{ d.nom }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!partsLoading && searched && !matchedPart">
         <div class="empty-icon">🔍</div>
-        <strong>{{ 'COMPATIBILITE.NO_RESULTS' | translate }}</strong>
+        <strong>{{ 'COMPATIBILITE.NO_MATCH_FOUND' | translate }}</strong>
     </div>
 
     <!-- Suggest a missing device/part -->
     <div class="alert alert-success" *ngIf="suggestSuccess">✅ {{ 'COMPATIBILITE.SUGGEST_SUCCESS' | translate }}</div>
-    <div class="suggest-box" *ngIf="searched && !searching && auth.hasPermission('compatibilite', 'ajouter')">
+    <div class="suggest-box" *ngIf="!partsLoading && searched && !matchedPart && auth.hasPermission('compatibilite', 'ajouter')">
         <button class="btn-outline" *ngIf="!showSuggestForm" (click)="openSuggestForm()">
             💡 {{ 'COMPATIBILITE.SUGGEST_BTN' | translate }}
         </button>
@@ -40,51 +137,6 @@
                 <button class="btn btn-primary" [disabled]="suggesting" (click)="submitSuggestion()">
                     {{ (suggesting ? 'COMPATIBILITE.SUGGESTING' : 'COMPATIBILITE.SUGGEST_SUBMIT') | translate }}
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="results-list" *ngIf="!searching && results.length > 0">
-        <div class="model-card" *ngFor="let r of results">
-            <div class="model-row" (click)="toggleModel(r)">
-                <div class="model-info">
-                    <span class="model-name">{{ r.marque }} {{ r.modele }}</span>
-                    <span class="model-code" *ngIf="r.code">· {{ r.code }}</span>
-                </div>
-                <div class="model-groups-count">{{ r.groupes.length }} {{ 'COMPATIBILITE.PARTS_SUFFIX' | translate }}</div>
-                <span class="chevron">{{ expandedModelId === r.id_model ? '▲' : '▼' }}</span>
-            </div>
-
-            <div class="model-detail" *ngIf="expandedModelId === r.id_model">
-                <div class="loading-state small" *ngIf="partsLoading">
-                    <div class="loading-icon">⟳</div>
-                </div>
-
-                <div class="empty-hint" *ngIf="!partsLoading && parts.length === 0">
-                    {{ 'COMPATIBILITE.NO_PARTS_YET' | translate }}
-                </div>
-
-                <table class="parts-table" *ngIf="!partsLoading && parts.length > 0">
-                    <thead>
-                        <tr>
-                            <th>{{ 'COMPATIBILITE.COL_PART_TYPE' | translate }}</th>
-                            <th>{{ 'COMPATIBILITE.COL_STATUS' | translate }}</th>
-                            <th class="text-center">{{ 'COMPATIBILITE.COL_QTY' | translate }}</th>
-                            <th class="text-center">{{ 'COMPATIBILITE.COL_PRICE' | translate }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let p of parts">
-                            <td class="fw-bold">{{ partTypeName(p) }}</td>
-                            <td>
-                                <span class="badge-ok" *ngIf="p.id_article">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }}</span>
-                                <span class="badge-out" *ngIf="!p.id_article">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>
-                            </td>
-                            <td class="text-center">{{ p.id_article ? p.quantite : '—' }}</td>
-                            <td class="text-center">{{ p.id_article ? ((p.prix_vente | number:'1.3-3') + ' ' + ('CURRENCY' | translate)) : '—' }}</td>
-                        </tr>
-                    </tbody>
-                </table>
             </div>
         </div>
     </div>

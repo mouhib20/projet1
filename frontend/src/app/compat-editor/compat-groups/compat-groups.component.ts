@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CompatService } from '../../services/compat.service';
 import { AuthService } from '../../services/auth.service';
+import { articleImageUrl } from '../../services/article.service';
 import { Brand, DeviceModel, PartType, CompatGroupListItem } from '../../models/compat.model';
 
 @Component({
@@ -70,6 +71,41 @@ export class CompatGroupsComponent implements OnInit {
         if (lang === 'en') return pt.nom_en;
         if (lang === 'ar') return pt.nom_ar;
         return pt.nom_fr;
+    }
+
+    imageUrl(image?: string | null): string | null {
+        return articleImageUrl(image);
+    }
+
+    modelImageUploadingId: number | null = null;
+    modelImageError = '';
+
+    onModelImageSelected(event: Event, model: DeviceModel): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) return;
+
+        this.modelImageError = '';
+        this.modelImageUploadingId = model.id;
+        this.compatService.uploadModelImage(file).subscribe({
+            next: (res) => {
+                this.compatService.updateModel(model.id, { image: res.url }).subscribe({
+                    next: () => {
+                        model.image = res.url; // update in place - it's the same object reference in `models`
+                        this.modelImageUploadingId = null;
+                    },
+                    error: (err) => {
+                        this.modelImageError = err.error?.message || 'COMPAT_GROUPS.ERR_IMAGE_UPLOAD';
+                        this.modelImageUploadingId = null;
+                    }
+                });
+            },
+            error: (err) => {
+                this.modelImageError = err.error?.message || 'COMPAT_GROUPS.ERR_IMAGE_UPLOAD';
+                this.modelImageUploadingId = null;
+            }
+        });
+        input.value = '';
     }
 
     get filteredModels(): DeviceModel[] {

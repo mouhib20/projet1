@@ -17,6 +17,7 @@ export interface DeviceModel {
     nom: string;
     nom_commercial?: string | null;
     code?: string | null;
+    image?: string | null;
     id_brand: number;
     marque: string;
 }

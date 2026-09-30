@@ -224,6 +224,7 @@ async function migrer(): Promise<void> {
             )
         `);
         await client.query(`DO $$ BEGIN ALTER TABLE "device_model" ADD CONSTRAINT "device_model_id_brand_fkey" FOREIGN KEY (id_brand) REFERENCES brand(id); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        await client.query(`ALTER TABLE "device_model" ADD COLUMN IF NOT EXISTS "image" character varying(255)`);
         await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "device_model_brand_nom_idx" ON "device_model" ("id_brand", "nom")`);
         await client.query(`CREATE INDEX IF NOT EXISTS "device_model_nom_idx" ON "device_model" ("nom")`);
         await client.query(`CREATE INDEX IF NOT EXISTS "device_model_code_idx" ON "device_model" ("code")`);

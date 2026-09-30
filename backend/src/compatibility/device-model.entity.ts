@@ -17,6 +17,9 @@ export class DeviceModel {
     @Column({ type: 'varchar', length: 100, nullable: true })
     code: string | null;
 
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    image: string | null;
+
     @ManyToOne(() => Brand, { onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'id_brand' })
     brand: Brand;

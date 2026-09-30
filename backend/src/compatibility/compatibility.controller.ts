@@ -1,6 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Patch, Body, Param, Query, ParseIntPipe, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Patch, Body, Param, Query, ParseIntPipe, Headers, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { promises as fs } from 'fs';
 import { CompatibilityService } from './compatibility.service';
 import { RequirePermission } from '../permissions/require-permission.decorator';
+import { imageUploadOptions } from '../common/image-upload.util';
 
 @Controller('compat')
 export class CompatibilityController {
@@ -18,6 +21,30 @@ export class CompatibilityController {
     @RequirePermission('compatibilite', 'voir')
     piecesPourModele(@Param('id', ParseIntPipe) id: number) {
         return this.service.piecesPourModele(id);
+    }
+
+    @Get('groups/:id/models')
+    @RequirePermission('compatibilite', 'voir')
+    modelesPourGroupe(@Param('id', ParseIntPipe) id: number) {
+        return this.service.modelesPourGroupe(id);
+    }
+
+    @Get('search/part-types')
+    @RequirePermission('compatibilite', 'voir')
+    listerTypesPiecesRecherche() {
+        return this.service.listerTypesPiecesRecherche();
+    }
+
+    @Get('search/brands')
+    @RequirePermission('compatibilite', 'voir')
+    listerMarquesRecherche() {
+        return this.service.listerMarquesRecherche();
+    }
+
+    @Get('search/models')
+    @RequirePermission('compatibilite', 'voir')
+    listerModelesParMarqueRecherche(@Query('id_brand', ParseIntPipe) idBrand: number) {
+        return this.service.listerModelesParMarqueRecherche(idBrand);
     }
 
     @Post('suggestions')
@@ -48,10 +75,32 @@ export class CompatibilityController {
 
     @Post('models')
     creerModele(
-        @Body() body: { id_brand: number; nom: string; nom_commercial?: string; code?: string },
+        @Body() body: { id_brand: number; nom: string; nom_commercial?: string; code?: string; image?: string },
         @Headers('authorization') auth?: string,
     ) {
         return this.service.creerModele(body, auth);
+    }
+
+    @Put('models/:id')
+    modifierModele(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: { image?: string },
+        @Headers('authorization') auth?: string,
+    ) {
+        return this.service.modifierModele(id, body, auth);
+    }
+
+    @Post('models/upload-image')
+    @UseInterceptors(FileInterceptor('image', imageUploadOptions('compat-models')))
+    async uploadModelImage(@UploadedFile() file: Express.Multer.File, @Headers('authorization') auth?: string) {
+        if (!file) throw new BadRequestException('Aucun fichier reçu.');
+        try {
+            await this.service.verifierEditeur(auth);
+        } catch (e) {
+            await fs.unlink(file.path).catch(() => undefined); // avoid an orphaned file if the role check fails
+            throw e;
+        }
+        return { url: `/uploads/compat-models/${file.filename}` };
     }
 
     @Get('part-types')

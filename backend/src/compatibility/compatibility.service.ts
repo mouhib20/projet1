@@ -33,6 +33,11 @@ export class CompatibilityService {
         return acteur;
     }
 
+    /** Exposes the editor-role check for the controller's upload-image route. */
+    async verifierEditeur(authorization?: string): Promise<void> {
+        await this.editeurRequis(authorization);
+    }
+
     // ── Search (shared, read-only for every store) ─────────────────
 
     /**
@@ -97,6 +102,40 @@ export class CompatibilityService {
         );
     }
 
+    // ── Reference data for the search page's type→brand→model pickers (same access as search
+    // itself - no editeurRequis, just @RequirePermission at the controller) ──
+
+    async listerTypesPiecesRecherche(): Promise<any[]> {
+        return this.dataSource.query(`SELECT id, nom_fr, nom_en, nom_ar, categorie FROM part_type ORDER BY nom_fr`);
+    }
+
+    async listerMarquesRecherche(): Promise<any[]> {
+        return this.dataSource.query(`SELECT id, nom, logo FROM brand ORDER BY nom`);
+    }
+
+    async listerModelesParMarqueRecherche(idBrand: number): Promise<any[]> {
+        return this.dataSource.query(
+            `SELECT dm.id, dm.nom, dm.nom_commercial, dm.code, dm.image, dm.id_brand, b.nom AS marque
+               FROM device_model dm JOIN brand b ON b.id = dm.id_brand
+              WHERE dm.id_brand = $1 ORDER BY dm.nom`,
+            [idBrand],
+        );
+    }
+
+    /** Every device model that shares the same compat_group (part) as the one just matched -
+     *  the "confirmed compatible devices" list shown once a type+brand+model search resolves. */
+    async modelesPourGroupe(idGroup: number): Promise<any[]> {
+        return this.dataSource.query(
+            `SELECT dm.id, dm.nom, dm.nom_commercial, dm.code, dm.image, dm.id_brand, b.nom AS marque
+               FROM compat_group_model cgm
+               JOIN device_model dm ON dm.id = cgm.id_model
+               JOIN brand b ON b.id = dm.id_brand
+              WHERE cgm.id_group = $1
+              ORDER BY b.nom, dm.nom`,
+            [idGroup],
+        );
+    }
+
     // ── Reference data (brands, models, part types): editor-only, for building groups ──
 
     async listerMarques(authorization?: string): Promise<any[]> {
@@ -124,16 +163,25 @@ export class CompatibilityService {
         );
     }
 
-    async creerModele(dto: { id_brand: number; nom: string; nom_commercial?: string; code?: string }, authorization?: string): Promise<{ id: number }> {
+    async creerModele(dto: { id_brand: number; nom: string; nom_commercial?: string; code?: string; image?: string }, authorization?: string): Promise<{ id: number }> {
         await this.editeurRequis(authorization);
         const nom = String(dto.nom ?? '').trim();
         if (!dto.id_brand) throw new BadRequestException('La marque est obligatoire.');
         if (!nom) throw new BadRequestException('Le nom du modèle est obligatoire.');
         const rows = await this.dataSource.query(
-            `INSERT INTO device_model (id_brand, nom, nom_commercial, code) VALUES ($1, $2, $3, $4) RETURNING id`,
-            [dto.id_brand, nom, dto.nom_commercial?.trim() || null, dto.code?.trim() || null],
+            `INSERT INTO device_model (id_brand, nom, nom_commercial, code, image) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+            [dto.id_brand, nom, dto.nom_commercial?.trim() || null, dto.code?.trim() || null, dto.image || null],
         );
         return { id: rows[0].id };
+    }
+
+    /** Only image is editable today - models otherwise have no edit path once created. */
+    async modifierModele(id: number, dto: { image?: string }, authorization?: string): Promise<void> {
+        await this.editeurRequis(authorization);
+        await this.dataSource.query(
+            `UPDATE device_model SET image = COALESCE($2, image) WHERE id = $1`,
+            [id, dto.image ?? null],
+        );
     }
 
     async listerTypesPieces(authorization?: string): Promise<any[]> {
