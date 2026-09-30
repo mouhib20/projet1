@@ -789,6 +789,8 @@
         "UPLOADING": "جاري الرفع…",
         "COMPAT_LINK_LABEL": "قطعة توافقية مرتبطة (اختياري)",
         "COMPAT_LINK_ADD": "🔗 ربط بقطعة توافقية",
+        "COMPAT_LINK_ADD_MANUAL": "🔗 ربط يدوي",
+        "COMPAT_LINK_AUTO_FAILED": "لم يتم العثور على تطابق تلقائي لهذه الماركة/الموديل.",
         "COMPAT_LINK_CHANGE": "تغيير",
         "COMPAT_LINK_UNLINK": "إلغاء الربط",
         "COMPAT_LINK_TYPE": "نوع القطعة",

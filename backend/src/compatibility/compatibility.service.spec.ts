@@ -197,6 +197,50 @@ describe('CompatibilityService', () => {
         });
     });
 
+    describe('autoResolveGroupeRecherche() — best-effort text match from the Stock form, no editor check', () => {
+        it('returns null immediately when marque or modele is blank, without querying', async () => {
+            expect(await service.autoResolveGroupeRecherche(['Vitre'], '', 'A12')).toBeNull();
+            expect(await service.autoResolveGroupeRecherche(['Vitre'], 'Samsung', '')).toBeNull();
+            expect(await service.autoResolveGroupeRecherche([], 'Samsung', 'A12')).toBeNull();
+            expect(dataSource.query).not.toHaveBeenCalled();
+        });
+
+        it('returns null when no part_type matches any of the candidate names', async () => {
+            dataSource.query.mockResolvedValueOnce([]); // part_type lookup
+            await expect(service.autoResolveGroupeRecherche(['Glace', 'Glass'], 'Samsung', 'A12')).resolves.toBeNull();
+            expect(dataSource.query).toHaveBeenCalledTimes(1);
+        });
+
+        it('returns null when the brand text does not match any brand', async () => {
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 2 }]) // part_type found
+                .mockResolvedValueOnce([]); // brand not found
+            await expect(service.autoResolveGroupeRecherche(['Vitre'], 'Anker', 'A12')).resolves.toBeNull();
+        });
+
+        it('resolves the group when type/brand/model all match, case-insensitively and trimmed', async () => {
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 2 }]) // part_type
+                .mockResolvedValueOnce([{ id: 1 }]) // brand
+                .mockResolvedValueOnce([{ id: 5 }]) // device_model
+                .mockResolvedValueOnce([{ id: 10 }]); // resolveGroupeRecherche's own query
+            await expect(service.autoResolveGroupeRecherche(['Glace', ' Vitre '], ' Samsung ', ' A12 ')).resolves.toEqual({ id_group: 10, id_part_type: 2 });
+            const [, brandParams] = dataSource.query.mock.calls[1];
+            expect(brandParams).toEqual(['samsung']);
+        });
+
+        it('sends a whitespace-compacted fallback term for the model (e.g. "spark 6" -> "spark6")', async () => {
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 2 }])
+                .mockResolvedValueOnce([{ id: 1 }])
+                .mockResolvedValueOnce([{ id: 5 }])
+                .mockResolvedValueOnce([{ id: 10 }]);
+            await service.autoResolveGroupeRecherche(['Vitre'], 'ticno', 'spark 6');
+            const [, modelParams] = dataSource.query.mock.calls[2];
+            expect(modelParams).toEqual([1, 'spark 6', 'spark6']);
+        });
+    });
+
     describe('groupeInfoRecherche() — the group\'s part-type name, no editor check', () => {
         it('returns the part-type names for the group', async () => {
             dataSource.query.mockResolvedValue([{ id_part_type: 2, nom_fr: 'Vitre', nom_en: 'Glass', nom_ar: 'زجاج' }]);

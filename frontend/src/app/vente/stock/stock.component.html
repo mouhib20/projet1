@@ -37,11 +37,11 @@
             <!-- Row 2: Brand + Model -->
             <div class="form-group">
                 <label>{{ 'STOCK.BRAND_LABEL' | translate }}</label>
-                <input type="text" [(ngModel)]="form.marque" [placeholder]="'STOCK.BRAND_PLACEHOLDER' | translate" />
+                <input type="text" [(ngModel)]="form.marque" [placeholder]="'STOCK.BRAND_PLACEHOLDER' | translate" (blur)="tryAutoLinkCompat()" />
             </div>
             <div class="form-group">
                 <label>{{ 'STOCK.MODEL_LABEL' | translate }}</label>
-                <input type="text" [(ngModel)]="form.modele" [placeholder]="'STOCK.MODEL_PLACEHOLDER' | translate" />
+                <input type="text" [(ngModel)]="form.modele" [placeholder]="'STOCK.MODEL_PLACEHOLDER' | translate" (blur)="tryAutoLinkCompat()" />
             </div>
 
             <!-- Row 3: Type + Sub-category -->
@@ -54,7 +54,7 @@
             </div>
             <div class="form-group">
                 <label>{{ 'STOCK.SUBCAT_LABEL' | translate }}</label>
-                <select [(ngModel)]="form.sous_categorie">
+                <select [(ngModel)]="form.sous_categorie" (ngModelChange)="tryAutoLinkCompat()">
                     <option value="">{{ 'STOCK.SUBCAT_SELECT' | translate }}</option>
                     <option *ngFor="let cat of subCategories" [value]="cat.key">{{ cat.label }}</option>
                 </select>
@@ -115,9 +115,13 @@
                 <button type="button" class="btn-link-action danger" (click)="unlinkCompatGroup()">{{ 'STOCK.COMPAT_LINK_UNLINK' | translate }}</button>
             </div>
 
-            <button type="button" class="btn btn-secondary" *ngIf="!linkedGroupInfo && !linkPickerOpen" (click)="openLinkPicker()">
-                {{ 'STOCK.COMPAT_LINK_ADD' | translate }}
-            </button>
+            <div class="compat-link-auto-status" *ngIf="!linkedGroupInfo && !linkPickerOpen">
+                <span class="text-muted" *ngIf="linkResolving">{{ 'STOCK.COMPAT_LINK_RESOLVING' | translate }}</span>
+                <span class="alert-error-inline" *ngIf="linkAutoFailed && !linkResolving">{{ 'STOCK.COMPAT_LINK_AUTO_FAILED' | translate }}</span>
+                <button type="button" class="btn btn-secondary" (click)="openLinkPicker()">
+                    {{ (linkAutoFailed ? 'STOCK.COMPAT_LINK_ADD_MANUAL' : 'STOCK.COMPAT_LINK_ADD') | translate }}
+                </button>
+            </div>
 
             <div class="compat-link-picker" *ngIf="linkPickerOpen">
                 <div class="form-grid">

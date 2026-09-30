@@ -789,6 +789,8 @@
         "UPLOADING": "Téléchargement…",
         "COMPAT_LINK_LABEL": "Pièce compatible liée (optionnel)",
         "COMPAT_LINK_ADD": "🔗 Lier à une pièce compatible",
+        "COMPAT_LINK_ADD_MANUAL": "🔗 Lier manuellement",
+        "COMPAT_LINK_AUTO_FAILED": "Aucune correspondance automatique trouvée pour cette marque/modèle.",
         "COMPAT_LINK_CHANGE": "Changer",
         "COMPAT_LINK_UNLINK": "Délier",
         "COMPAT_LINK_TYPE": "Type de pièce",

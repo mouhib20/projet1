@@ -53,6 +53,13 @@ export class CompatibilityController {
         return this.service.resolveGroupeRecherche(idModel, idPartType);
     }
 
+    @Get('search/auto-resolve')
+    @RequirePermission('compatibilite', 'voir')
+    autoResolveGroupeRecherche(@Query('type') type: string, @Query('marque') marque: string, @Query('modele') modele: string) {
+        const termes = (type || '').split(',').map((t) => t.trim()).filter(Boolean);
+        return this.service.autoResolveGroupeRecherche(termes, marque || '', modele || '');
+    }
+
     @Get('search/groups/:id')
     @RequirePermission('compatibilite', 'voir')
     groupeInfoRecherche(@Param('id', ParseIntPipe) id: number) {

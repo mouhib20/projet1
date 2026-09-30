@@ -355,6 +355,13 @@ textarea {
     color: #fca5a5;
 }
 
+.compat-link-auto-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
 .compat-link-picker {
     margin-top: 0.5rem;
 }

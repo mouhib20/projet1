@@ -149,6 +149,50 @@ export class CompatibilityService {
         return rows[0] ? { id_group: rows[0].id } : null;
     }
 
+    /** Best-effort text match of the Stock form's free-text type/marque/modele against the
+     *  compat catalogue (brand/device_model are ID-referenced there, not text) - lets an article
+     *  auto-link to its compat group without the user re-picking brand/model by hand. Exact,
+     *  case-insensitive, trimmed matches only (plus a whitespace-insensitive fallback for the
+     *  model name, e.g. 'spark6' vs 'spark 6') - never a fuzzy/partial match, to avoid linking
+     *  the wrong device. Returns null at the first unmatched step. */
+    async autoResolveGroupeRecherche(termesType: string[], marque: string, modele: string): Promise<{ id_group: number; id_part_type: number } | null> {
+        const termes = [...new Set(termesType.map(t => t.trim().toLowerCase()).filter(Boolean))];
+        const marqueNorm = marque.trim().toLowerCase();
+        const modeleNorm = modele.trim().toLowerCase();
+        const modeleCompact = modeleNorm.replace(/\s+/g, '');
+        if (!termes.length || !marqueNorm || !modeleNorm) return null;
+
+        const typeRows = await this.dataSource.query(
+            `SELECT id FROM part_type
+               WHERE LOWER(TRIM(nom_fr)) = ANY($1) OR LOWER(TRIM(nom_en)) = ANY($1) OR LOWER(TRIM(nom_ar)) = ANY($1)
+               LIMIT 1`,
+            [termes],
+        );
+        if (!typeRows[0]) return null;
+        const idPartType = typeRows[0].id;
+
+        const brandRows = await this.dataSource.query(
+            `SELECT id FROM brand WHERE LOWER(TRIM(nom)) = $1 LIMIT 1`,
+            [marqueNorm],
+        );
+        if (!brandRows[0]) return null;
+        const idBrand = brandRows[0].id;
+
+        const modelRows = await this.dataSource.query(
+            `SELECT id FROM device_model
+               WHERE id_brand = $1
+                 AND (LOWER(TRIM(nom)) = $2 OR LOWER(TRIM(nom_commercial)) = $2 OR LOWER(TRIM(code)) = $2
+                      OR REPLACE(LOWER(nom), ' ', '') = $3)
+               LIMIT 1`,
+            [idBrand, modeleNorm, modeleCompact],
+        );
+        if (!modelRows[0]) return null;
+        const idModel = modelRows[0].id;
+
+        const groupe = await this.resolveGroupeRecherche(idModel, idPartType);
+        return groupe ? { id_group: groupe.id_group, id_part_type: idPartType } : null;
+    }
+
     /** A group's part-type name, for displaying "already linked to <type>" on an existing article. */
     async groupeInfoRecherche(idGroup: number): Promise<{ id_part_type: number; nom_fr: string; nom_en: string; nom_ar: string } | null> {
         const rows = await this.dataSource.query(

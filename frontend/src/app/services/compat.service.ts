@@ -50,6 +50,12 @@ export class CompatService {
         return this.http.get<{ id_part_type: number; nom_fr: string; nom_en: string; nom_ar: string } | null>(`${this.apiUrl}/search/groups/${idGroup}`);
     }
 
+    autoResolveGroup(typeTerms: string[], marque: string, modele: string): Observable<{ id_group: number; id_part_type: number } | null> {
+        return this.http.get<{ id_group: number; id_part_type: number } | null>(`${this.apiUrl}/search/auto-resolve`, {
+            params: { type: typeTerms.join(','), marque, modele }
+        });
+    }
+
     // ── Reference data (editor) ──
 
     getBrands(): Observable<Brand[]> {

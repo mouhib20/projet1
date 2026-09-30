@@ -789,6 +789,8 @@
         "UPLOADING": "Uploading…",
         "COMPAT_LINK_LABEL": "Linked compatible part (optional)",
         "COMPAT_LINK_ADD": "🔗 Link to a compatible part",
+        "COMPAT_LINK_ADD_MANUAL": "🔗 Link manually",
+        "COMPAT_LINK_AUTO_FAILED": "No automatic match found for this brand/model.",
         "COMPAT_LINK_CHANGE": "Change",
         "COMPAT_LINK_UNLINK": "Unlink",
         "COMPAT_LINK_TYPE": "Part type",

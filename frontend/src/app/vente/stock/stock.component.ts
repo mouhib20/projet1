@@ -85,8 +85,36 @@ export class StockComponent implements OnInit {
     showLinkModelDropdown = false;
     linkResolving = false;
     linkNotFound = false;
+    linkAutoFailed = false;
     linkPickerOpen = false;
     linkedGroupInfo: { partTypeName: string; models: DeviceModel[] } | null = null;
+
+    /** Best-effort auto-link using the form's own Type/Marque/Modèle text - never overrides an
+     *  existing link, and never runs until all three fields are filled. Falls back silently to
+     *  the manual picker (linkAutoFailed) when the text doesn't match the compat catalogue. */
+    tryAutoLinkCompat(): void {
+        if (!this.canLinkCompat || this.form.compat_group_id) return;
+        const marque = (this.form.marque || '').trim();
+        const modele = (this.form.modele || '').trim();
+        const sousCategorie = (this.form.sous_categorie || '').trim();
+        if (!marque || !modele || !sousCategorie) return;
+
+        const terms = [...new Set([sousCategorie, this.categoryLabel(sousCategorie)])];
+        this.linkResolving = true;
+        this.compatService.autoResolveGroup(terms, marque, modele).subscribe({
+            next: (res) => {
+                this.linkResolving = false;
+                if (res) {
+                    this.form.compat_group_id = res.id_group;
+                    this.linkAutoFailed = false;
+                    this.loadLinkedGroupSummary(res.id_group);
+                } else {
+                    this.linkAutoFailed = true;
+                }
+            },
+            error: () => { this.linkResolving = false; this.linkAutoFailed = true; }
+        });
+    }
 
     get filteredLinkBrands(): Brand[] {
         if (!this.linkBrandSearchTerm.trim()) return this.linkBrands;
@@ -183,6 +211,7 @@ export class StockComponent implements OnInit {
         this.linkModelSearchTerm = '';
         this.linkModels = [];
         this.linkNotFound = false;
+        this.linkAutoFailed = false;
         this.linkPickerOpen = false;
     }
 
@@ -485,6 +514,7 @@ export class StockComponent implements OnInit {
         this.linkedGroupInfo = null;
         this.resetLinkPickerState();
         if (product.compat_group_id) this.loadLinkedGroupSummary(product.compat_group_id);
+        else this.tryAutoLinkCompat();
         this.clearMessages();
     }
 
