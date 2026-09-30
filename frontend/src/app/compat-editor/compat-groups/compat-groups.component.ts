@@ -161,6 +161,14 @@ export class CompatGroupsComponent implements OnInit {
         this.showNewModel = true;
     }
 
+    /** Same "search found nothing - offer to add it" prompt, but for the Compatible models
+     *  section's own independent filter. */
+    openAddModelFromChecklistFilter(): void {
+        this.newModel = { id_brand: this.groupBrandFilterId, nom: this.compatModelsFilterTerm.trim(), nom_commercial: '', code: '', image: undefined };
+        this.newModelBrandSearchTerm = '';
+        this.showNewModel = true;
+    }
+
     onNewModelImageSelected(event: Event): void {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0];
@@ -283,6 +291,10 @@ export class CompatGroupsComponent implements OnInit {
             m.marque.toLowerCase().includes(term) ||
             (m.code || '').toLowerCase().includes(term)
         );
+    }
+
+    get showAddModelPromptInChecklist(): boolean {
+        return this.compatModelsFilterTerm.trim().length > 0 && this.filteredModelsForChecklist.length === 0 && !this.showNewModel;
     }
 
     clearMessages(): void {
