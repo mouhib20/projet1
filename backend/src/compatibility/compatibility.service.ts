@@ -214,10 +214,17 @@ export class CompatibilityService {
         return this.dataSource.query(`SELECT id, nom, logo FROM brand ORDER BY nom`);
     }
 
+    /** Case-insensitive, trimmed dedup ("Samsung" / "samsung " / "SAMSUNG" must resolve to the
+     *  same row) - returns the existing brand instead of creating a near-duplicate. */
     async creerMarque(dto: { nom: string; logo?: string }, authorization?: string): Promise<{ id: number }> {
         await this.editeurRequis(authorization);
         const nom = String(dto.nom ?? '').trim();
         if (!nom) throw new BadRequestException('Le nom de la marque est obligatoire.');
+        const existant = await this.dataSource.query(
+            `SELECT id FROM brand WHERE LOWER(TRIM(nom)) = LOWER($1) LIMIT 1`,
+            [nom],
+        );
+        if (existant[0]) return { id: existant[0].id };
         const rows = await this.dataSource.query(
             `INSERT INTO brand (nom, logo) VALUES ($1, $2) RETURNING id`,
             [nom, dto.logo || null],
@@ -234,11 +241,25 @@ export class CompatibilityService {
         );
     }
 
+    /** Case-insensitive, trimmed dedup scoped to the brand (the same model name can legitimately
+     *  exist under two different brands) - returns the existing model instead of creating a
+     *  near-duplicate. Image, if given, still overwrites the existing row's (COALESCE keeps it
+     *  when not given), so re-"creating" a known model to attach a photo still works. */
     async creerModele(dto: { id_brand: number; nom: string; nom_commercial?: string; code?: string; image?: string }, authorization?: string): Promise<{ id: number }> {
         await this.editeurRequis(authorization);
         const nom = String(dto.nom ?? '').trim();
         if (!dto.id_brand) throw new BadRequestException('La marque est obligatoire.');
         if (!nom) throw new BadRequestException('Le nom du modèle est obligatoire.');
+        const existant = await this.dataSource.query(
+            `SELECT id FROM device_model WHERE id_brand = $1 AND LOWER(TRIM(nom)) = LOWER($2) LIMIT 1`,
+            [dto.id_brand, nom],
+        );
+        if (existant[0]) {
+            if (dto.image) {
+                await this.dataSource.query(`UPDATE device_model SET image = $2 WHERE id = $1`, [existant[0].id, dto.image]);
+            }
+            return { id: existant[0].id };
+        }
         const rows = await this.dataSource.query(
             `INSERT INTO device_model (id_brand, nom, nom_commercial, code, image) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
             [dto.id_brand, nom, dto.nom_commercial?.trim() || null, dto.code?.trim() || null, dto.image || null],

@@ -148,6 +148,41 @@ describe('CompatibilityService', () => {
             ).rejects.toBeInstanceOf(ForbiddenException);
         });
 
+        it('creerMarque returns the existing brand instead of inserting a case/whitespace duplicate', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValueOnce([{ id: 4 }]); // existing-brand lookup finds "Samsung"
+            await expect(service.creerMarque({ nom: ' SAMSUNG ' }, 'Bearer x')).resolves.toEqual({ id: 4 });
+            expect(dataSource.query).toHaveBeenCalledTimes(1); // never reaches the INSERT
+        });
+
+        it('creerMarque inserts when no existing brand matches', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query
+                .mockResolvedValueOnce([]) // no existing match
+                .mockResolvedValueOnce([{ id: 7 }]); // INSERT ... RETURNING id
+            await expect(service.creerMarque({ nom: 'NewBrand' }, 'Bearer x')).resolves.toEqual({ id: 7 });
+        });
+
+        it('creerModele returns the existing model instead of inserting a case/whitespace duplicate, scoped to the brand', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValueOnce([{ id: 11 }]); // existing-model lookup
+            await expect(service.creerModele({ id_brand: 1, nom: ' a12 ' }, 'Bearer x')).resolves.toEqual({ id: 11 });
+            const [sql, params] = dataSource.query.mock.calls[0];
+            expect(sql).toMatch(/WHERE id_brand = \$1 AND LOWER\(TRIM\(nom\)\) = LOWER\(\$2\)/);
+            expect(params).toEqual([1, 'a12']);
+        });
+
+        it('creerModele updates the existing model\'s image when re-"creating" it with a photo', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 11 }]) // existing-model lookup
+                .mockResolvedValueOnce(undefined); // UPDATE image
+            await expect(service.creerModele({ id_brand: 1, nom: 'A12', image: '/uploads/compat-models/x.png' }, 'Bearer x')).resolves.toEqual({ id: 11 });
+            const [sql, params] = dataSource.query.mock.calls[1];
+            expect(sql).toMatch(/UPDATE device_model SET image = \$2 WHERE id = \$1/);
+            expect(params).toEqual([11, '/uploads/compat-models/x.png']);
+        });
+
         it('creerTypePiece requires all three language names', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
             await expect(
