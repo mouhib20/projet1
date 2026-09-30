@@ -49,12 +49,6 @@
             </div>
         </div>
 
-        <!-- Note -->
-        <div class="form-group">
-            <label>{{ 'COMPAT_GROUPS.NOTE_LABEL' | translate }}</label>
-            <input type="text" [(ngModel)]="form.note" [placeholder]="'COMPAT_GROUPS.NOTE_PLACEHOLDER' | translate" />
-        </div>
-
         <!-- Brand: search, pick, or add on the spot - just a shortcut for the brand of any NEW
              model added below; the model search/list itself stays open to every brand. -->
         <div class="form-group combobox-group">
@@ -151,6 +145,12 @@
 
                 <button class="btn btn-success btn-sm" (click)="addModel()">{{ 'COMPAT_GROUPS.ADD' | translate }}</button>
             </div>
+        </div>
+
+        <!-- Note -->
+        <div class="form-group">
+            <label>{{ 'COMPAT_GROUPS.NOTE_LABEL' | translate }}</label>
+            <input type="text" [(ngModel)]="form.note" [placeholder]="'COMPAT_GROUPS.NOTE_PLACEHOLDER' | translate" />
         </div>
 
         <div class="form-actions">
