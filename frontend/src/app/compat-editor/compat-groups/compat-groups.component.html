@@ -76,10 +76,15 @@
             </div>
         </div>
 
-        <!-- Compatible models: search, tick, or add on the spot when nothing matches -->
+        <!-- Model: search box, on its own -->
+        <div class="form-group full">
+            <label>{{ 'COMPAT_GROUPS.MODEL_SEARCH_LABEL' | translate }}</label>
+            <input type="text" class="search-input-full" [(ngModel)]="modelSearchTerm" [placeholder]="'COMPAT_GROUPS.SEARCH_MODELS_PLACEHOLDER' | translate" />
+        </div>
+
+        <!-- Compatible models: results of the search above, tick, or add on the spot when nothing matches -->
         <div class="form-group full">
             <label>{{ 'COMPAT_GROUPS.MODELS_LABEL' | translate }}</label>
-            <input type="text" class="search-input-full" [(ngModel)]="modelSearchTerm" [placeholder]="'COMPAT_GROUPS.SEARCH_MODELS_PLACEHOLDER' | translate" />
             <div class="alert alert-error" *ngIf="modelImageError">⚠️ {{ modelImageError | translate }}</div>
             <div class="models-list">
                 <div class="model-row" *ngFor="let m of filteredModels">

@@ -368,6 +368,7 @@
         "NOTE_PLACEHOLDER": "ملاحظة اختيارية",
         "BRAND_LABEL": "الماركة",
         "BRAND_FILTER_HINT": "اختياري — يُستخدم فقط لتعبئة ماركة الموديل الجديد أدناه مسبقًا؛ البحث عن الموديلات يبقى مفتوحًا لكل الماركات.",
+        "MODEL_SEARCH_LABEL": "الموديل",
         "MODELS_LABEL": "الموديلات المتوافقة *",
         "SEARCH_MODELS_PLACEHOLDER": "ابحث عن موديل…",
         "ADD_MODEL_PROMPT": "إضافة \"{{term}}\" كموديل جديد",
