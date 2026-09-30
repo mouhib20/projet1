@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ArticleService, ArticleForm, articleImageUrl } from '../../services/article.service';
 import { ClientService } from '../../services/client.service';
 import { AuthService } from '../../services/auth.service';
+import { OfflineDbService } from '../../offline/offline-db.service';
+import { ConnectivityService } from '../../offline/connectivity.service';
 import { TranslatePipe, TranslateDirective, TranslateService } from '@ngx-translate/core';
 
 export type StockStatus = {
@@ -68,14 +70,24 @@ export class StockComponent implements OnInit {
         return articleImageUrl(image);
     }
 
-    constructor(private articleService: ArticleService, private clientService: ClientService, private translate: TranslateService, public auth: AuthService) { }
+    constructor(
+        private articleService: ArticleService,
+        private clientService: ClientService,
+        private translate: TranslateService,
+        public auth: AuthService,
+        private offlineDb: OfflineDbService,
+        public connectivity: ConnectivityService,
+    ) { }
 
     ngOnInit(): void {
         if (this.auth.hasPermission('stock', 'voir')) {
             this.loadProducts();
-            this.loadRetours();
-            this.loadSav();
-            this.clientService.getClients().subscribe(c => this.clients = c);
+            // Only the read path works offline - these secondary tabs need a live server anyway.
+            if (this.connectivity.isOnline()) {
+                this.loadRetours();
+                this.loadSav();
+                this.clientService.getClients().subscribe(c => this.clients = c);
+            }
         }
     }
 
@@ -108,13 +120,22 @@ export class StockComponent implements OnInit {
     // ── Load ──────────────────────────────────────────────────
 
     loadProducts(): void {
-        this.loading = true;
         this.errorMsg = '';
+        if (!this.connectivity.isOnline()) {
+            // Offline: serve the local cache (kept fresh by every prior live load and by SyncService).
+            this.offlineDb.articles.toArray().then((rows) => {
+                this.products = rows as any;
+                this.applyFilters();
+            });
+            return;
+        }
+        this.loading = true;
         this.articleService.getArticles().subscribe({
             next: (data) => {
                 this.products = data;
                 this.applyFilters();
                 this.loading = false;
+                this.offlineDb.articles.bulkPut(data as any);
             },
             error: () => {
                 this.errorMsg = 'STOCK.ERR_LOAD_PRODUCTS';

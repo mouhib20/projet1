@@ -1001,7 +1001,8 @@
     "OPERATIONS": {
         "PICKUP_SEARCH_PLACEHOLDER": "🔧 Search a device ready for pickup…",
         "PICKUP_DEFAULT_LABEL": "Repair",
-        "OFFLINE_SALE_QUEUED": "Sale recorded offline (ref. {{ref}}). It will sync as soon as the connection is back."
+        "OFFLINE_SALE_QUEUED": "Sale recorded offline (ref. {{ref}}). It will sync as soon as the connection is back.",
+        "OFFLINE_CLIENT_QUEUED": "Client saved locally. It will sync as soon as the connection is back."
     },
     "OFFLINE": {
         "ONLINE": "Online",
@@ -1023,6 +1024,7 @@
         "NEW_VERSION_AVAILABLE": "A new version is available.",
         "RELOAD": "Reload",
         "OFFLINE_SESSION_EXPIRED": "Your offline session has expired. Please connect to the internet to continue.",
-        "SYNC_WARNINGS_TITLE": "Sync warnings"
+        "SYNC_WARNINGS_TITLE": "Sync warnings",
+        "TYPE_CLIENT": "New client"
     }
 }

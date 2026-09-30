@@ -1001,7 +1001,8 @@
     "OPERATIONS": {
         "PICKUP_SEARCH_PLACEHOLDER": "🔧 البحث عن جهاز جاهز للاستلام...",
         "PICKUP_DEFAULT_LABEL": "إصلاح",
-        "OFFLINE_SALE_QUEUED": "تم تسجيل البيع دون اتصال (المرجع {{ref}}). ستتم مزامنته فور عودة الاتصال."
+        "OFFLINE_SALE_QUEUED": "تم تسجيل البيع دون اتصال (المرجع {{ref}}). ستتم مزامنته فور عودة الاتصال.",
+        "OFFLINE_CLIENT_QUEUED": "تم حفظ الزبون محليًا. ستتم مزامنته فور عودة الاتصال."
     },
     "OFFLINE": {
         "ONLINE": "متصل",
@@ -1023,6 +1024,7 @@
         "NEW_VERSION_AVAILABLE": "يتوفر إصدار جديد.",
         "RELOAD": "إعادة التحميل",
         "OFFLINE_SESSION_EXPIRED": "انتهت صلاحية جلسة العمل دون اتصال. يرجى الاتصال بالإنترنت للمتابعة.",
-        "SYNC_WARNINGS_TITLE": "تحذيرات المزامنة"
+        "SYNC_WARNINGS_TITLE": "تحذيرات المزامنة",
+        "TYPE_CLIENT": "زبون جديد"
     }
 }

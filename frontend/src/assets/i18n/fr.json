@@ -1001,7 +1001,8 @@
     "OPERATIONS": {
         "PICKUP_SEARCH_PLACEHOLDER": "🔧 Chercher un appareil prêt à récupérer…",
         "PICKUP_DEFAULT_LABEL": "Réparation",
-        "OFFLINE_SALE_QUEUED": "Vente enregistrée hors ligne (réf. {{ref}}). Elle sera synchronisée dès le retour de la connexion."
+        "OFFLINE_SALE_QUEUED": "Vente enregistrée hors ligne (réf. {{ref}}). Elle sera synchronisée dès le retour de la connexion.",
+        "OFFLINE_CLIENT_QUEUED": "Client enregistré localement. Il sera synchronisé dès le retour de la connexion."
     },
     "OFFLINE": {
         "ONLINE": "Connecté",
@@ -1023,6 +1024,7 @@
         "NEW_VERSION_AVAILABLE": "Une nouvelle version est disponible.",
         "RELOAD": "Recharger",
         "OFFLINE_SESSION_EXPIRED": "Votre session hors ligne a expiré. Veuillez vous connecter à l'internet pour continuer.",
-        "SYNC_WARNINGS_TITLE": "Avertissements de synchronisation"
+        "SYNC_WARNINGS_TITLE": "Avertissements de synchronisation",
+        "TYPE_CLIENT": "Nouveau client"
     }
 }

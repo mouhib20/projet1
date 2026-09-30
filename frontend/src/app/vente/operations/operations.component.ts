@@ -280,6 +280,10 @@ export class OperationsComponent implements OnInit {
       return;
     }
     this.savingClient = true;
+    if (!this.connectivity.isOnline()) {
+      this.saveClientHorsLigne();
+      return;
+    }
     this.clientService.createClient(this.clientForm as Client).subscribe({
       next: () => {
         this.savingClient = false;
@@ -292,6 +296,20 @@ export class OperationsComponent implements OnInit {
         alert(err.error?.message || "Erreur lors de l'enregistrement du client.");
       }
     });
+  }
+
+  /** Queues the new client for sync - it only becomes selectable once it has actually synced
+   *  (it is not added to `this.clients` here, to avoid mixing a not-yet-real id into the picker). */
+  private async saveClientHorsLigne(): Promise<void> {
+    if (!this.offlineSession.isOfflineCapable()) {
+      this.savingClient = false;
+      alert(this.translate.instant('OFFLINE.OFFLINE_SESSION_EXPIRED'));
+      return;
+    }
+    await this.syncService.enqueueClientCreate({ nom: this.clientForm.nom!, telephone: this.clientForm.telephone });
+    this.savingClient = false;
+    this.closeClientModal();
+    alert(this.translate.instant('OPERATIONS.OFFLINE_CLIENT_QUEUED'));
   }
 
   // ── POS (Vente Rapide) ──────────────────────────────────────

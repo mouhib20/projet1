@@ -98,10 +98,19 @@ export class SyncService {
 
     /** Queues an offline sale. Returns the client_id (used as the temporary local reference). */
     async enqueueCheckout(payload: any): Promise<string> {
+        return this.enqueue('vente_checkout', payload);
+    }
+
+    /** Queues an offline client creation (POS quick-add modal only). */
+    async enqueueClientCreate(payload: { nom: string; telephone?: string }): Promise<string> {
+        return this.enqueue('client_create', payload);
+    }
+
+    private async enqueue(type: OutboxEntry['type'], payload: any): Promise<string> {
         const client_id = crypto.randomUUID();
         const entry: OutboxEntry = {
             client_id,
-            type: 'vente_checkout',
+            type,
             payload,
             status: 'pending',
             created_at: Date.now(),
@@ -123,17 +132,25 @@ export class SyncService {
                 if (!this.connectivity.isOnline()) break;
                 await this.db.outbox.update(entry.client_id, { status: 'syncing' });
                 try {
-                    const res = await firstValueFrom(
-                        this.http.post<any[]>(`${this.apiUrl}/ventes/checkout`, { ...entry.payload, client_id: entry.client_id }, { observe: 'response' }),
-                    );
-                    const venteIds = (res.body || []).map((v: any) => v.id_vente);
-                    const header = res.headers.get('X-Vente-Avertissements');
-                    const avertissements: string[] = header ? JSON.parse(header) : [];
-                    await this.db.outbox.update(entry.client_id, {
-                        status: 'synced',
-                        result: { venteIds, avertissements },
-                    });
-                    if (avertissements.length) warnings.push({ client_id: entry.client_id, messages: avertissements });
+                    if (entry.type === 'client_create') {
+                        const client = await firstValueFrom(this.http.post<any>(`${this.apiUrl}/clients`, entry.payload));
+                        await this.db.outbox.update(entry.client_id, {
+                            status: 'synced',
+                            result: { id_client: client.id_client },
+                        });
+                    } else {
+                        const res = await firstValueFrom(
+                            this.http.post<any[]>(`${this.apiUrl}/ventes/checkout`, { ...entry.payload, client_id: entry.client_id }, { observe: 'response' }),
+                        );
+                        const venteIds = (res.body || []).map((v: any) => v.id_vente);
+                        const header = res.headers.get('X-Vente-Avertissements');
+                        const avertissements: string[] = header ? JSON.parse(header) : [];
+                        await this.db.outbox.update(entry.client_id, {
+                            status: 'synced',
+                            result: { venteIds, avertissements },
+                        });
+                        if (avertissements.length) warnings.push({ client_id: entry.client_id, messages: avertissements });
+                    }
                 } catch (err: any) {
                     await this.db.outbox.update(entry.client_id, {
                         status: 'failed',

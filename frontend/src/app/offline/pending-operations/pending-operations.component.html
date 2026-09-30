@@ -26,9 +26,10 @@
                 <span class="status-badge" [ngClass]="statusClass(e.status)">
                     {{ ('OFFLINE.STATUS_' + e.status.toUpperCase()) | translate }}
                 </span>
-                <span class="entry-total">{{ cartTotal(e) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
+                <span class="entry-total" *ngIf="e.type === 'vente_checkout'">{{ cartTotal(e) | number:'1.3-3' }} {{ 'CURRENCY' | translate }}</span>
             </div>
-            <div class="entry-meta">{{ e.payload.items?.length }} {{ 'OFFLINE.ITEMS_SUFFIX' | translate }}</div>
+            <div class="entry-meta" *ngIf="e.type === 'vente_checkout'">{{ e.payload.items?.length }} {{ 'OFFLINE.ITEMS_SUFFIX' | translate }}</div>
+            <div class="entry-meta" *ngIf="e.type === 'client_create'">{{ 'OFFLINE.TYPE_CLIENT' | translate }} — {{ e.payload.nom }}<ng-container *ngIf="e.payload.telephone">, {{ e.payload.telephone }}</ng-container></div>
             <div class="entry-error" *ngIf="e.status === 'failed' && e.last_error">⚠️ {{ e.last_error }}</div>
             <div class="entry-actions" *ngIf="e.status === 'failed'">
                 <button class="btn-outline" (click)="retry(e)">↻ {{ 'OFFLINE.RETRY' | translate }}</button>
