@@ -22,15 +22,24 @@
             <ng-container *ngIf="!editingId">➕ {{ 'COMPAT_GROUPS.NEW_GROUP' | translate }}</ng-container>
         </div>
 
-        <!-- Part type -->
-        <div class="form-group">
+        <!-- Part type: search, pick, or add on the spot -->
+        <div class="form-group combobox-group">
             <label>{{ 'COMPAT_GROUPS.PART_TYPE_LABEL' | translate }}</label>
-            <div class="inline-row">
-                <select [(ngModel)]="form.id_part_type">
-                    <option [ngValue]="null">{{ 'COMPAT_GROUPS.SELECT_PLACEHOLDER' | translate }}</option>
-                    <option *ngFor="let pt of partTypes" [ngValue]="pt.id">{{ partTypeName(pt) }}</option>
-                </select>
-                <button class="btn-outline btn-sm" (click)="showNewPartType = !showNewPartType">＋ {{ 'COMPAT_GROUPS.NEW_PART_TYPE' | translate }}</button>
+            <div class="combobox-chosen" *ngIf="selectedPartType && !showPartTypeDropdown">
+                <span>{{ partTypeName(selectedPartType) }}</span>
+                <button type="button" class="combobox-clear" (click)="clearPartType()">✕</button>
+            </div>
+            <div class="combobox-wrap" *ngIf="!selectedPartType || showPartTypeDropdown">
+                <input type="text" [(ngModel)]="partTypeSearchTerm" (focus)="showPartTypeDropdown = true" (blur)="closePartTypeDropdown()"
+                    [placeholder]="'COMPAT_GROUPS.SEARCH_PART_TYPE_PLACEHOLDER' | translate" />
+                <div class="combobox-dropdown" *ngIf="showPartTypeDropdown">
+                    <div class="combobox-item" *ngFor="let pt of filteredPartTypes" (mousedown)="selectPartType(pt)">
+                        {{ partTypeName(pt) }}
+                    </div>
+                    <div class="combobox-add-prompt" *ngIf="partTypeSearchTerm.trim() && filteredPartTypes.length === 0" (mousedown)="openAddPartTypeFromSearch()">
+                        ＋ {{ 'COMPAT_GROUPS.ADD_PART_TYPE_PROMPT' | translate:{ term: partTypeSearchTerm.trim() } }}
+                    </div>
+                </div>
             </div>
             <div class="inline-form" *ngIf="showNewPartType">
                 <input type="text" [(ngModel)]="newPartType.nom_fr" [placeholder]="'COMPAT_GROUPS.PART_TYPE_FR_PLACEHOLDER' | translate" />
@@ -46,7 +55,32 @@
             <input type="text" [(ngModel)]="form.note" [placeholder]="'COMPAT_GROUPS.NOTE_PLACEHOLDER' | translate" />
         </div>
 
-        <!-- Compatible models -->
+        <!-- Brand: search, pick, or add on the spot - also narrows the model list below -->
+        <div class="form-group combobox-group">
+            <label>{{ 'COMPAT_GROUPS.BRAND_LABEL' | translate }}</label>
+            <div class="combobox-chosen" *ngIf="selectedGroupBrandFilter && !showGroupBrandDropdown">
+                <span>{{ selectedGroupBrandFilter.nom }}</span>
+                <button type="button" class="combobox-clear" (click)="clearGroupBrandFilter()">✕</button>
+            </div>
+            <div class="combobox-wrap" *ngIf="!selectedGroupBrandFilter || showGroupBrandDropdown">
+                <input type="text" [(ngModel)]="groupBrandSearchTerm" (focus)="showGroupBrandDropdown = true" (blur)="closeGroupBrandDropdown()"
+                    [placeholder]="'COMPAT_GROUPS.SEARCH_BRAND_PLACEHOLDER' | translate" />
+                <div class="combobox-dropdown" *ngIf="showGroupBrandDropdown">
+                    <div class="combobox-item" *ngFor="let b of filteredBrandsForGroupFilter" (mousedown)="selectGroupBrandFilter(b)">
+                        {{ b.nom }}
+                    </div>
+                    <div class="combobox-add-prompt" *ngIf="groupBrandSearchTerm.trim() && filteredBrandsForGroupFilter.length === 0" (mousedown)="openAddBrandFromGroupFilter()">
+                        ＋ {{ 'COMPAT_GROUPS.ADD_BRAND_PROMPT' | translate:{ term: groupBrandSearchTerm.trim() } }}
+                    </div>
+                </div>
+            </div>
+            <div class="inline-form" *ngIf="showNewBrand && newBrandContext === 'group'">
+                <input type="text" [(ngModel)]="newBrand.nom" [placeholder]="'COMPAT_GROUPS.BRAND_NAME_PLACEHOLDER' | translate" />
+                <button class="btn btn-success btn-sm" (click)="addBrand()">{{ 'COMPAT_GROUPS.ADD' | translate }}</button>
+            </div>
+        </div>
+
+        <!-- Compatible models: search, tick, or add on the spot when nothing matches -->
         <div class="form-group full">
             <label>{{ 'COMPAT_GROUPS.MODELS_LABEL' | translate }}</label>
             <input type="text" class="search-input-full" [(ngModel)]="modelSearchTerm" [placeholder]="'COMPAT_GROUPS.SEARCH_MODELS_PLACEHOLDER' | translate" />
@@ -64,26 +98,55 @@
                         <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onModelImageSelected($event, m)" />
                     </label>
                 </div>
-                <div class="empty-hint" *ngIf="filteredModels.length === 0">{{ 'COMPAT_GROUPS.NO_MODELS' | translate }}</div>
+                <div class="empty-hint" *ngIf="filteredModels.length === 0 && !modelSearchTerm.trim()">{{ 'COMPAT_GROUPS.NO_MODELS' | translate }}</div>
+                <div class="combobox-add-prompt" *ngIf="showAddModelPrompt" (click)="openAddModelFromSearch()">
+                    ＋ {{ 'COMPAT_GROUPS.ADD_MODEL_PROMPT' | translate:{ term: modelSearchTerm.trim() } }}
+                </div>
             </div>
             <div class="selected-count">{{ form.modeleIds.length }} {{ 'COMPAT_GROUPS.SELECTED_SUFFIX' | translate }}</div>
 
-            <div class="inline-row">
-                <button class="btn-outline btn-sm" (click)="showNewBrand = !showNewBrand">＋ {{ 'COMPAT_GROUPS.NEW_BRAND' | translate }}</button>
-                <button class="btn-outline btn-sm" (click)="showNewModel = !showNewModel">＋ {{ 'COMPAT_GROUPS.NEW_MODEL' | translate }}</button>
-            </div>
-            <div class="inline-form" *ngIf="showNewBrand">
-                <input type="text" [(ngModel)]="newBrand.nom" [placeholder]="'COMPAT_GROUPS.BRAND_NAME_PLACEHOLDER' | translate" />
-                <button class="btn btn-success btn-sm" (click)="addBrand()">{{ 'COMPAT_GROUPS.ADD' | translate }}</button>
-            </div>
-            <div class="inline-form" *ngIf="showNewModel">
-                <select [(ngModel)]="newModel.id_brand">
-                    <option [ngValue]="null">{{ 'COMPAT_GROUPS.SELECT_BRAND_PLACEHOLDER' | translate }}</option>
-                    <option *ngFor="let b of brands" [ngValue]="b.id">{{ b.nom }}</option>
-                </select>
+            <div class="inline-form new-model-form" *ngIf="showNewModel">
+                <!-- Brand: reused from the filter above when set; otherwise its own search-or-add -->
+                <div class="combobox-chosen" *ngIf="groupBrandFilterId && selectedGroupBrandFilter">
+                    <span>{{ selectedGroupBrandFilter.nom }}</span>
+                </div>
+                <div class="combobox-group" *ngIf="!groupBrandFilterId">
+                    <div class="combobox-chosen" *ngIf="newModelSelectedBrand && !showNewModelBrandDropdown">
+                        <span>{{ newModelSelectedBrand.nom }}</span>
+                        <button type="button" class="combobox-clear" (click)="clearNewModelBrand()">✕</button>
+                    </div>
+                    <div class="combobox-wrap" *ngIf="!newModelSelectedBrand || showNewModelBrandDropdown">
+                        <input type="text" [(ngModel)]="newModelBrandSearchTerm" (focus)="showNewModelBrandDropdown = true" (blur)="closeNewModelBrandDropdown()"
+                            [placeholder]="'COMPAT_GROUPS.SEARCH_BRAND_PLACEHOLDER' | translate" />
+                        <div class="combobox-dropdown" *ngIf="showNewModelBrandDropdown">
+                            <div class="combobox-item" *ngFor="let b of filteredBrandsForNewModel" (mousedown)="selectBrandForNewModel(b)">
+                                {{ b.nom }}
+                            </div>
+                            <div class="combobox-add-prompt" *ngIf="newModelBrandSearchTerm.trim() && filteredBrandsForNewModel.length === 0" (mousedown)="openAddBrandFromSearch()">
+                                ＋ {{ 'COMPAT_GROUPS.ADD_BRAND_PROMPT' | translate:{ term: newModelBrandSearchTerm.trim() } }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inline-form" *ngIf="showNewBrand && newBrandContext === 'model'">
+                        <input type="text" [(ngModel)]="newBrand.nom" [placeholder]="'COMPAT_GROUPS.BRAND_NAME_PLACEHOLDER' | translate" />
+                        <button class="btn btn-success btn-sm" (click)="addBrand()">{{ 'COMPAT_GROUPS.ADD' | translate }}</button>
+                    </div>
+                </div>
+
                 <input type="text" [(ngModel)]="newModel.nom" [placeholder]="'COMPAT_GROUPS.MODEL_NAME_PLACEHOLDER' | translate" />
                 <input type="text" [(ngModel)]="newModel.nom_commercial" [placeholder]="'COMPAT_GROUPS.MODEL_COMMERCIAL_PLACEHOLDER' | translate" />
                 <input type="text" [(ngModel)]="newModel.code" [placeholder]="'COMPAT_GROUPS.MODEL_CODE_PLACEHOLDER' | translate" />
+
+                <div class="image-upload-row">
+                    <img *ngIf="imageUrl(newModel.image)" [src]="imageUrl(newModel.image)" class="image-preview" [alt]="'COMPAT_GROUPS.MODEL_NAME_PLACEHOLDER' | translate" />
+                    <div class="image-upload-controls">
+                        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onNewModelImageSelected($event)" />
+                        <button type="button" class="btn-outline btn-sm" *ngIf="newModel.image" (click)="removeNewModelImage()">{{ 'COMPAT_GROUPS.REMOVE_IMAGE' | translate }}</button>
+                        <span *ngIf="newModelImageUploading" class="text-muted">{{ 'COMPAT_GROUPS.UPLOADING' | translate }}</span>
+                        <span *ngIf="newModelImageError" class="alert-error-inline">{{ newModelImageError | translate }}</span>
+                    </div>
+                </div>
+
                 <button class="btn btn-success btn-sm" (click)="addModel()">{{ 'COMPAT_GROUPS.ADD' | translate }}</button>
             </div>
         </div>

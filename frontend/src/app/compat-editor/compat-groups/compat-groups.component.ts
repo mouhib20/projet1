@@ -31,14 +31,159 @@ export class CompatGroupsComponent implements OnInit {
     form: { id_part_type: number | null; modeleIds: number[]; note: string } = this.emptyForm();
     modelSearchTerm = '';
 
+    // ── Part type: search box + dropdown, auto-offers to create when nothing matches ──
+    partTypeSearchTerm = '';
+    showPartTypeDropdown = false;
     showNewPartType = false;
     newPartType = { nom_fr: '', nom_en: '', nom_ar: '' };
+
+    get filteredPartTypes(): PartType[] {
+        if (!this.partTypeSearchTerm.trim()) return this.partTypes;
+        const term = this.partTypeSearchTerm.toLowerCase();
+        return this.partTypes.filter(t => this.partTypeName(t).toLowerCase().includes(term));
+    }
+
+    get selectedPartType(): PartType | undefined {
+        return this.partTypes.find(t => t.id === this.form.id_part_type);
+    }
+
+    selectPartType(pt: PartType): void {
+        this.form.id_part_type = pt.id;
+        this.partTypeSearchTerm = '';
+        this.showPartTypeDropdown = false;
+        this.showNewPartType = false;
+    }
+
+    clearPartType(): void {
+        this.form.id_part_type = null;
+        this.partTypeSearchTerm = '';
+    }
+
+    /** Delayed so a (mousedown) selection inside the dropdown still registers before it closes. */
+    closePartTypeDropdown(): void {
+        setTimeout(() => this.showPartTypeDropdown = false, 200);
+    }
+
+    openAddPartTypeFromSearch(): void {
+        this.newPartType = { nom_fr: this.partTypeSearchTerm.trim(), nom_en: '', nom_ar: '' };
+        this.showNewPartType = true;
+    }
 
     showNewBrand = false;
     newBrand = { nom: '' };
 
+    // ── Brand: a dedicated search box that also narrows the model list below it ──
+    groupBrandFilterId: number | null = null;
+    groupBrandSearchTerm = '';
+    showGroupBrandDropdown = false;
+
+    get filteredBrandsForGroupFilter(): Brand[] {
+        if (!this.groupBrandSearchTerm.trim()) return this.brands;
+        const term = this.groupBrandSearchTerm.toLowerCase();
+        return this.brands.filter(b => b.nom.toLowerCase().includes(term));
+    }
+
+    get selectedGroupBrandFilter(): Brand | undefined {
+        return this.brands.find(b => b.id === this.groupBrandFilterId);
+    }
+
+    selectGroupBrandFilter(b: Brand): void {
+        this.groupBrandFilterId = b.id;
+        this.groupBrandSearchTerm = '';
+        this.showGroupBrandDropdown = false;
+        this.showNewBrand = false;
+    }
+
+    clearGroupBrandFilter(): void {
+        this.groupBrandFilterId = null;
+        this.groupBrandSearchTerm = '';
+    }
+
+    closeGroupBrandDropdown(): void {
+        setTimeout(() => this.showGroupBrandDropdown = false, 200);
+    }
+
+    /** Which combobox opened the "add brand" mini-form - decides where addBrand() assigns the result. */
+    newBrandContext: 'group' | 'model' = 'group';
+
+    openAddBrandFromGroupFilter(): void {
+        this.newBrand = { nom: this.groupBrandSearchTerm.trim() };
+        this.newBrandContext = 'group';
+        this.showNewBrand = true;
+    }
+
+    // ── Brand nested inside "add model": same search-or-create pattern, used only when no
+    // brand filter is selected above (otherwise the filter's brand is reused automatically) ──
+    newModelBrandSearchTerm = '';
+    showNewModelBrandDropdown = false;
+
+    get filteredBrandsForNewModel(): Brand[] {
+        if (!this.newModelBrandSearchTerm.trim()) return this.brands;
+        const term = this.newModelBrandSearchTerm.toLowerCase();
+        return this.brands.filter(b => b.nom.toLowerCase().includes(term));
+    }
+
+    get newModelSelectedBrand(): Brand | undefined {
+        return this.brands.find(b => b.id === this.newModel.id_brand);
+    }
+
+    selectBrandForNewModel(b: Brand): void {
+        this.newModel.id_brand = b.id;
+        this.newModelBrandSearchTerm = '';
+        this.showNewModelBrandDropdown = false;
+        this.showNewBrand = false;
+    }
+
+    clearNewModelBrand(): void {
+        this.newModel.id_brand = null;
+        this.newModelBrandSearchTerm = '';
+    }
+
+    closeNewModelBrandDropdown(): void {
+        setTimeout(() => this.showNewModelBrandDropdown = false, 200);
+    }
+
+    openAddBrandFromSearch(): void {
+        this.newBrand = { nom: this.newModelBrandSearchTerm.trim() };
+        this.newBrandContext = 'model';
+        this.showNewBrand = true;
+    }
+
     showNewModel = false;
-    newModel: { id_brand: number | null; nom: string; nom_commercial: string; code: string } = { id_brand: null, nom: '', nom_commercial: '', code: '' };
+    newModel: { id_brand: number | null; nom: string; nom_commercial: string; code: string; image?: string } = { id_brand: null, nom: '', nom_commercial: '', code: '', image: undefined };
+    newModelImageUploading = false;
+    newModelImageError = '';
+
+    openAddModelFromSearch(): void {
+        // Reuse the brand filter above, if one is set - no need to pick it again for the new model.
+        this.newModel = { id_brand: this.groupBrandFilterId, nom: this.modelSearchTerm.trim(), nom_commercial: '', code: '', image: undefined };
+        this.newModelBrandSearchTerm = '';
+        this.showNewModel = true;
+    }
+
+    onNewModelImageSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) return;
+
+        this.newModelImageError = '';
+        this.newModelImageUploading = true;
+        this.compatService.uploadModelImage(file).subscribe({
+            next: (res) => {
+                this.newModel.image = res.url;
+                this.newModelImageUploading = false;
+            },
+            error: (err) => {
+                this.newModelImageError = err.error?.message || 'COMPAT_GROUPS.ERR_IMAGE_UPLOAD';
+                this.newModelImageUploading = false;
+            }
+        });
+        input.value = '';
+    }
+
+    removeNewModelImage(): void {
+        this.newModel.image = undefined;
+    }
 
     constructor(
         private compatService: CompatService,
@@ -109,13 +254,19 @@ export class CompatGroupsComponent implements OnInit {
     }
 
     get filteredModels(): DeviceModel[] {
-        if (!this.modelSearchTerm) return this.models;
+        let pool = this.groupBrandFilterId ? this.models.filter(m => m.id_brand === this.groupBrandFilterId) : this.models;
+        if (!this.modelSearchTerm) return pool;
         const term = this.modelSearchTerm.toLowerCase();
-        return this.models.filter(m =>
+        return pool.filter(m =>
             m.nom.toLowerCase().includes(term) ||
             m.marque.toLowerCase().includes(term) ||
             (m.code || '').toLowerCase().includes(term)
         );
+    }
+
+    /** Search found nothing - offer to create it right here, instead of a separate manual button. */
+    get showAddModelPrompt(): boolean {
+        return this.modelSearchTerm.trim().length > 0 && this.filteredModels.length === 0 && !this.showNewModel;
     }
 
     clearMessages(): void {
@@ -123,10 +274,27 @@ export class CompatGroupsComponent implements OnInit {
         this.successMsg = '';
     }
 
+    private resetInlineCreateState(): void {
+        this.partTypeSearchTerm = '';
+        this.showPartTypeDropdown = false;
+        this.showNewPartType = false;
+        this.newPartType = { nom_fr: '', nom_en: '', nom_ar: '' };
+        this.showNewBrand = false;
+        this.newBrand = { nom: '' };
+        this.groupBrandFilterId = null;
+        this.groupBrandSearchTerm = '';
+        this.showGroupBrandDropdown = false;
+        this.newModelBrandSearchTerm = '';
+        this.showNewModelBrandDropdown = false;
+        this.showNewModel = false;
+        this.newModel = { id_brand: null, nom: '', nom_commercial: '', code: '', image: undefined };
+    }
+
     openAddForm(): void {
         this.editingId = null;
         this.form = this.emptyForm();
         this.modelSearchTerm = '';
+        this.resetInlineCreateState();
         this.showForm = true;
         this.clearMessages();
     }
@@ -138,6 +306,7 @@ export class CompatGroupsComponent implements OnInit {
                 this.editingId = detail.id;
                 this.form = { id_part_type: detail.id_part_type, modeleIds: [...detail.modeleIds], note: detail.note || '' };
                 this.modelSearchTerm = '';
+                this.resetInlineCreateState();
                 this.showForm = true;
             },
             error: (err) => { this.errorMsg = err.error?.message || 'COMPAT_GROUPS.ERR_LOAD'; }
@@ -220,7 +389,13 @@ export class CompatGroupsComponent implements OnInit {
         this.compatService.createBrand({ nom }).subscribe({
             next: (res) => {
                 this.brands = [...this.brands, { id: res.id, nom, logo: null }];
-                this.newModel.id_brand = res.id;
+                if (this.newBrandContext === 'group') {
+                    this.groupBrandFilterId = res.id;
+                    this.groupBrandSearchTerm = '';
+                } else {
+                    this.newModel.id_brand = res.id;
+                    this.newModelBrandSearchTerm = '';
+                }
                 this.newBrand = { nom: '' };
                 this.showNewBrand = false;
             },
@@ -235,12 +410,15 @@ export class CompatGroupsComponent implements OnInit {
         const nom = this.newModel.nom.trim();
         const nomCommercial = this.newModel.nom_commercial?.trim() || undefined;
         const code = this.newModel.code?.trim() || undefined;
-        this.compatService.createModel({ id_brand: idBrand, nom, nom_commercial: nomCommercial, code }).subscribe({
+        const image = this.newModel.image;
+        this.compatService.createModel({ id_brand: idBrand, nom, nom_commercial: nomCommercial, code, image }).subscribe({
             next: (res) => {
                 const brand = this.brands.find(b => b.id === idBrand);
-                this.models = [...this.models, { id: res.id, nom, nom_commercial: nomCommercial ?? null, code: code ?? null, id_brand: idBrand, marque: brand?.nom || '' }];
+                this.models = [...this.models, { id: res.id, nom, nom_commercial: nomCommercial ?? null, code: code ?? null, image: image ?? null, id_brand: idBrand, marque: brand?.nom || '' }];
                 this.form.modeleIds.push(res.id); // select it immediately, no wait on a refetch
-                this.newModel = { id_brand: idBrand, nom: '', nom_commercial: '', code: '' };
+                this.modelSearchTerm = '';
+                this.newModel = { id_brand: null, nom: '', nom_commercial: '', code: '', image: undefined };
+                this.newModelBrandSearchTerm = '';
                 this.showNewModel = false;
             },
             error: (err) => { this.errorMsg = err.error?.message || 'COMPAT_GROUPS.ERR_CREATE'; }
