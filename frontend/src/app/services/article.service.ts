@@ -17,6 +17,7 @@ export interface ArticleForm {
     qte_min?: number;
     description?: string;
     image?: string;
+    compat_group_id?: number | null;
 }
 
 export function articleImageUrl(image?: string | null): string | null {

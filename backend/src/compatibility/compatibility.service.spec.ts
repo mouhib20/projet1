@@ -181,6 +181,34 @@ describe('CompatibilityService', () => {
         });
     });
 
+    describe('resolveGroupeRecherche() — finds the existing group for a model+part-type combo, no editor check', () => {
+        it('returns the group id when one is registered', async () => {
+            dataSource.query.mockResolvedValue([{ id: 10 }]);
+            await expect(service.resolveGroupeRecherche(5, 2)).resolves.toEqual({ id_group: 10 });
+            const [sql, params] = dataSource.query.mock.calls[0];
+            expect(sql).toMatch(/WHERE cgm\.id_model = \$1 AND cg\.id_part_type = \$2/);
+            expect(params).toEqual([5, 2]);
+            expect(caisseService.acteurRequis).not.toHaveBeenCalled();
+        });
+
+        it('returns null when no group links that model to that part type', async () => {
+            dataSource.query.mockResolvedValue([]);
+            await expect(service.resolveGroupeRecherche(5, 2)).resolves.toBeNull();
+        });
+    });
+
+    describe('groupeInfoRecherche() — the group\'s part-type name, no editor check', () => {
+        it('returns the part-type names for the group', async () => {
+            dataSource.query.mockResolvedValue([{ id_part_type: 2, nom_fr: 'Vitre', nom_en: 'Glass', nom_ar: 'زجاج' }]);
+            await expect(service.groupeInfoRecherche(10)).resolves.toEqual({ id_part_type: 2, nom_fr: 'Vitre', nom_en: 'Glass', nom_ar: 'زجاج' });
+        });
+
+        it('returns null when the group does not exist', async () => {
+            dataSource.query.mockResolvedValue([]);
+            await expect(service.groupeInfoRecherche(999)).resolves.toBeNull();
+        });
+    });
+
     describe('obtenirGroupe() — editor-only, 404 when missing', () => {
         it('rejects a store admin', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });

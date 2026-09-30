@@ -104,6 +104,59 @@
 
         </div>
 
+        <!-- ─── Compat link (optional): connects this article to a registered compatible part ── -->
+        <div class="compat-link-section" *ngIf="canLinkCompat">
+            <label>{{ 'STOCK.COMPAT_LINK_LABEL' | translate }}</label>
+
+            <div class="compat-link-summary" *ngIf="linkedGroupInfo && !linkPickerOpen">
+                <span class="compat-link-badge">✓ {{ linkedGroupInfo.partTypeName }}</span>
+                <span class="compat-link-models">{{ linkedModelsSummary() }}</span>
+                <button type="button" class="btn-link-action" (click)="changeCompatLink()">{{ 'STOCK.COMPAT_LINK_CHANGE' | translate }}</button>
+                <button type="button" class="btn-link-action danger" (click)="unlinkCompatGroup()">{{ 'STOCK.COMPAT_LINK_UNLINK' | translate }}</button>
+            </div>
+
+            <button type="button" class="btn btn-secondary" *ngIf="!linkedGroupInfo && !linkPickerOpen" (click)="openLinkPicker()">
+                {{ 'STOCK.COMPAT_LINK_ADD' | translate }}
+            </button>
+
+            <div class="compat-link-picker" *ngIf="linkPickerOpen">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>{{ 'STOCK.COMPAT_LINK_TYPE' | translate }}</label>
+                        <select [(ngModel)]="linkPartTypeId">
+                            <option [ngValue]="null">{{ 'STOCK.SUBCAT_SELECT' | translate }}</option>
+                            <option *ngFor="let pt of linkPartTypes" [ngValue]="pt.id">{{ partTypeName(pt) }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>{{ 'STOCK.COMPAT_LINK_BRAND' | translate }}</label>
+                        <div class="combobox-wrap">
+                            <input type="text" [(ngModel)]="linkBrandSearchTerm"
+                                (focus)="showLinkBrandDropdown = true" (blur)="closeLinkBrandDropdown()"
+                                [placeholder]="'STOCK.COMPAT_LINK_BRAND_PLACEHOLDER' | translate" />
+                            <div class="combobox-dropdown" *ngIf="showLinkBrandDropdown">
+                                <div class="combobox-item" *ngFor="let b of filteredLinkBrands" (mousedown)="selectLinkBrand(b)">{{ b.nom }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>{{ 'STOCK.COMPAT_LINK_MODEL' | translate }}</label>
+                        <div class="combobox-wrap">
+                            <input type="text" [(ngModel)]="linkModelSearchTerm" [disabled]="!linkBrandId"
+                                (focus)="showLinkModelDropdown = true" (blur)="closeLinkModelDropdown()"
+                                [placeholder]="'STOCK.COMPAT_LINK_MODEL_PLACEHOLDER' | translate" />
+                            <div class="combobox-dropdown" *ngIf="showLinkModelDropdown">
+                                <div class="combobox-item" *ngFor="let m of filteredLinkModels" (mousedown)="selectLinkModel(m)">{{ m.nom }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <span class="text-muted" *ngIf="linkResolving">{{ 'STOCK.COMPAT_LINK_RESOLVING' | translate }}</span>
+                <span class="alert-error-inline" *ngIf="linkNotFound">{{ 'STOCK.COMPAT_LINK_NOT_FOUND' | translate }}</span>
+                <button type="button" class="btn-link-action" (click)="linkPickerOpen = false">{{ 'CANCEL' | translate }}</button>
+            </div>
+        </div>
+
         <div class="form-actions">
             <button class="btn btn-secondary" [disabled]="saving" (click)="cancelForm()">{{ 'CANCEL' | translate }}</button>
             <button class="btn btn-success" [disabled]="saving" (click)="saveProduct()">

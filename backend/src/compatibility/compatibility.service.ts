@@ -136,6 +136,30 @@ export class CompatibilityService {
         );
     }
 
+    /** The existing compat_group (if any) for a given model+part-type combo - used by the Stock
+     *  form to link a new article to an already-registered part instead of duplicating it. */
+    async resolveGroupeRecherche(idModel: number, idPartType: number): Promise<{ id_group: number } | null> {
+        const rows = await this.dataSource.query(
+            `SELECT cg.id FROM compat_group cg
+               JOIN compat_group_model cgm ON cgm.id_group = cg.id
+              WHERE cgm.id_model = $1 AND cg.id_part_type = $2
+              LIMIT 1`,
+            [idModel, idPartType],
+        );
+        return rows[0] ? { id_group: rows[0].id } : null;
+    }
+
+    /** A group's part-type name, for displaying "already linked to <type>" on an existing article. */
+    async groupeInfoRecherche(idGroup: number): Promise<{ id_part_type: number; nom_fr: string; nom_en: string; nom_ar: string } | null> {
+        const rows = await this.dataSource.query(
+            `SELECT pt.id AS id_part_type, pt.nom_fr, pt.nom_en, pt.nom_ar
+               FROM compat_group cg JOIN part_type pt ON pt.id = cg.id_part_type
+              WHERE cg.id = $1`,
+            [idGroup],
+        );
+        return rows[0] ?? null;
+    }
+
     // ── Reference data (brands, models, part types): editor-only, for building groups ──
 
     async listerMarques(authorization?: string): Promise<any[]> {

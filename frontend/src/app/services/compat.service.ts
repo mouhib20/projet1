@@ -42,6 +42,14 @@ export class CompatService {
         return this.http.get<DeviceModel[]>(`${this.apiUrl}/search/models`, { params: { id_brand: idBrand } });
     }
 
+    resolveGroup(idModel: number, idPartType: number): Observable<{ id_group: number } | null> {
+        return this.http.get<{ id_group: number } | null>(`${this.apiUrl}/search/resolve-group`, { params: { id_model: idModel, id_part_type: idPartType } });
+    }
+
+    getGroupInfoForSearch(idGroup: number): Observable<{ id_part_type: number; nom_fr: string; nom_en: string; nom_ar: string } | null> {
+        return this.http.get<{ id_part_type: number; nom_fr: string; nom_en: string; nom_ar: string } | null>(`${this.apiUrl}/search/groups/${idGroup}`);
+    }
+
     // ── Reference data (editor) ──
 
     getBrands(): Observable<Brand[]> {

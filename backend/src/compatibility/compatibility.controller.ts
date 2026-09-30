@@ -47,6 +47,18 @@ export class CompatibilityController {
         return this.service.listerModelesParMarqueRecherche(idBrand);
     }
 
+    @Get('search/resolve-group')
+    @RequirePermission('compatibilite', 'voir')
+    resolveGroupeRecherche(@Query('id_model', ParseIntPipe) idModel: number, @Query('id_part_type', ParseIntPipe) idPartType: number) {
+        return this.service.resolveGroupeRecherche(idModel, idPartType);
+    }
+
+    @Get('search/groups/:id')
+    @RequirePermission('compatibilite', 'voir')
+    groupeInfoRecherche(@Param('id', ParseIntPipe) id: number) {
+        return this.service.groupeInfoRecherche(id);
+    }
+
     @Post('suggestions')
     @RequirePermission('compatibilite', 'ajouter')
     creerSuggestion(

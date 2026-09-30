@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ArticleService, ArticleForm, articleImageUrl } from '../../services/article.service';
 import { ClientService } from '../../services/client.service';
 import { AuthService } from '../../services/auth.service';
+import { CompatService } from '../../services/compat.service';
+import { PartType, Brand, DeviceModel } from '../../models/compat.model';
 import { OfflineDbService } from '../../offline/offline-db.service';
 import { ConnectivityService } from '../../offline/connectivity.service';
 import { TranslatePipe, TranslateDirective, TranslateService } from '@ngx-translate/core';
@@ -66,6 +68,124 @@ export class StockComponent implements OnInit {
     imageError = '';
     saving = false;
 
+    // ── Compat link (optional): connects this article to an already-registered compatible part,
+    // so it shows as "stocked" on the Compatibility search page. Linking only - group creation
+    // stays a compat_editor-only action, done from the Compatibility editor panel. ──
+    get canLinkCompat(): boolean {
+        return this.auth.hasPermission('compatibilite', 'voir');
+    }
+    linkPartTypes: PartType[] = [];
+    linkBrands: Brand[] = [];
+    linkModels: DeviceModel[] = [];
+    linkPartTypeId: number | null = null;
+    linkBrandId: number | null = null;
+    linkBrandSearchTerm = '';
+    showLinkBrandDropdown = false;
+    linkModelSearchTerm = '';
+    showLinkModelDropdown = false;
+    linkResolving = false;
+    linkNotFound = false;
+    linkPickerOpen = false;
+    linkedGroupInfo: { partTypeName: string; models: DeviceModel[] } | null = null;
+
+    get filteredLinkBrands(): Brand[] {
+        if (!this.linkBrandSearchTerm.trim()) return this.linkBrands;
+        const t = this.linkBrandSearchTerm.toLowerCase();
+        return this.linkBrands.filter(b => b.nom.toLowerCase().includes(t));
+    }
+
+    get filteredLinkModels(): DeviceModel[] {
+        if (!this.linkModelSearchTerm.trim()) return this.linkModels;
+        const t = this.linkModelSearchTerm.toLowerCase();
+        return this.linkModels.filter(m => m.nom.toLowerCase().includes(t) || (m.code || '').toLowerCase().includes(t));
+    }
+
+    partTypeName(pt: { nom_fr: string; nom_en: string; nom_ar: string }): string {
+        const lang = this.translate.currentLang();
+        if (lang === 'en') return pt.nom_en;
+        if (lang === 'ar') return pt.nom_ar;
+        return pt.nom_fr;
+    }
+
+    openLinkPicker(): void {
+        if (!this.linkPartTypes.length) this.compatService.getPartTypesForSearch().subscribe(list => this.linkPartTypes = list);
+        if (!this.linkBrands.length) this.compatService.getBrandsForSearch().subscribe(list => this.linkBrands = list);
+        this.linkNotFound = false;
+        this.linkPickerOpen = true;
+    }
+
+    selectLinkBrand(b: Brand): void {
+        this.linkBrandId = b.id;
+        this.linkBrandSearchTerm = b.nom;
+        this.showLinkBrandDropdown = false;
+        this.linkModelSearchTerm = '';
+        this.linkModels = [];
+        this.compatService.getModelsForSearch(b.id).subscribe(list => this.linkModels = list);
+    }
+
+    closeLinkBrandDropdown(): void {
+        setTimeout(() => this.showLinkBrandDropdown = false, 200);
+    }
+
+    closeLinkModelDropdown(): void {
+        setTimeout(() => this.showLinkModelDropdown = false, 200);
+    }
+
+    selectLinkModel(m: DeviceModel): void {
+        this.linkModelSearchTerm = `${m.marque} ${m.nom}`;
+        this.showLinkModelDropdown = false;
+        if (!this.linkPartTypeId) return;
+        this.linkResolving = true;
+        this.linkNotFound = false;
+        this.compatService.resolveGroup(m.id, this.linkPartTypeId).subscribe({
+            next: (res) => {
+                this.linkResolving = false;
+                if (res) {
+                    this.form.compat_group_id = res.id_group;
+                    this.loadLinkedGroupSummary(res.id_group);
+                    this.linkPickerOpen = false;
+                } else {
+                    this.linkNotFound = true;
+                }
+            },
+            error: () => { this.linkResolving = false; this.linkNotFound = true; }
+        });
+    }
+
+    linkedModelsSummary(): string {
+        if (!this.linkedGroupInfo?.models.length) return '';
+        return this.linkedGroupInfo.models.map(m => `${m.marque} ${m.nom}`).join(', ');
+    }
+
+    private loadLinkedGroupSummary(idGroup: number): void {
+        this.compatService.getGroupInfoForSearch(idGroup).subscribe(info => {
+            if (!info) { this.linkedGroupInfo = null; return; }
+            this.compatService.getModelsForGroup(idGroup).subscribe(models => {
+                this.linkedGroupInfo = { partTypeName: this.partTypeName(info), models };
+            });
+        });
+    }
+
+    changeCompatLink(): void {
+        this.openLinkPicker();
+    }
+
+    unlinkCompatGroup(): void {
+        this.form.compat_group_id = null;
+        this.linkedGroupInfo = null;
+        this.resetLinkPickerState();
+    }
+
+    private resetLinkPickerState(): void {
+        this.linkPartTypeId = null;
+        this.linkBrandId = null;
+        this.linkBrandSearchTerm = '';
+        this.linkModelSearchTerm = '';
+        this.linkModels = [];
+        this.linkNotFound = false;
+        this.linkPickerOpen = false;
+    }
+
     /** Display-only label for a stored sous_categorie value (e.g. 'Glace' -> "Glass") - the stored
      *  value itself never changes, so existing articles keep matching correctly. */
     categoryLabel(raw?: string | null): string {
@@ -83,6 +203,7 @@ export class StockComponent implements OnInit {
         private clientService: ClientService,
         private translate: TranslateService,
         public auth: AuthService,
+        private compatService: CompatService,
         private offlineDb: OfflineDbService,
         public connectivity: ConnectivityService,
     ) { }
@@ -113,7 +234,8 @@ export class StockComponent implements OnInit {
             type: 'part',
             sous_categorie: '',
             qte_min: 3,
-            description: ''
+            description: '',
+            compat_group_id: null
         };
     }
 
@@ -349,6 +471,8 @@ export class StockComponent implements OnInit {
         this.form = this.emptyForm();
         this.showForm = true;
         this.saving = false;
+        this.linkedGroupInfo = null;
+        this.resetLinkPickerState();
         this.clearMessages();
     }
 
@@ -358,6 +482,9 @@ export class StockComponent implements OnInit {
         this.form = { ...product };
         this.showForm = true;
         this.saving = false;
+        this.linkedGroupInfo = null;
+        this.resetLinkPickerState();
+        if (product.compat_group_id) this.loadLinkedGroupSummary(product.compat_group_id);
         this.clearMessages();
     }
 
@@ -390,6 +517,8 @@ export class StockComponent implements OnInit {
         this.form = this.emptyForm();
         this.editingId = null;
         this.isEditing = false;
+        this.linkedGroupInfo = null;
+        this.resetLinkPickerState();
     }
 
     saveProduct(): void {
