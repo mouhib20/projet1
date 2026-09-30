@@ -300,14 +300,17 @@ export class CompatibilityService {
     async listerGroupes(authorization?: string): Promise<any[]> {
         await this.editeurRequis(authorization);
         return this.dataSource.query(
-            `SELECT cg.id, cg.note, cg.image, cg.date_creation,
+            `SELECT cg.id, cg.note, cg.image, cg.date_creation, cg.id_base_model,
+                    base.nom AS base_nom, baseBrand.nom AS base_marque,
                     pt.id AS id_part_type, pt.nom_fr, pt.nom_en, pt.nom_ar,
                     COALESCE(array_agg(dm.nom ORDER BY dm.nom) FILTER (WHERE dm.nom IS NOT NULL), '{}') AS modeles
                FROM compat_group cg
                JOIN part_type pt ON pt.id = cg.id_part_type
+               LEFT JOIN device_model base ON base.id = cg.id_base_model
+               LEFT JOIN brand baseBrand ON baseBrand.id = base.id_brand
                LEFT JOIN compat_group_model cgm ON cgm.id_group = cg.id
                LEFT JOIN device_model dm ON dm.id = cgm.id_model
-              GROUP BY cg.id, pt.id
+              GROUP BY cg.id, pt.id, base.nom, baseBrand.nom
               ORDER BY cg.date_creation DESC`,
         );
     }
@@ -316,7 +319,7 @@ export class CompatibilityService {
     async obtenirGroupe(id: number, authorization?: string): Promise<any> {
         await this.editeurRequis(authorization);
         const [groupe] = await this.dataSource.query(
-            `SELECT cg.id, cg.note, cg.image, cg.id_part_type FROM compat_group cg WHERE cg.id = $1`,
+            `SELECT cg.id, cg.note, cg.image, cg.id_part_type, cg.id_base_model FROM compat_group cg WHERE cg.id = $1`,
             [id],
         );
         if (!groupe) throw new NotFoundException(`Groupe de compatibilité #${id} introuvable`);
@@ -329,21 +332,23 @@ export class CompatibilityService {
 
 
 
+    /** modeleIds is the "also fits" list - the base model is always added to compat_group_model
+     *  too (so every existing read - search, stock status, the customer-facing device grid - keeps
+     *  working unchanged off group membership alone), but it never needs to be in modeleIds itself. */
     async creerGroupe(
-        dto: { id_part_type: number; modeleIds: number[]; note?: string; image?: string },
+        dto: { id_part_type: number; id_base_model: number; modeleIds: number[]; note?: string; image?: string },
         authorization?: string,
     ): Promise<{ id: number }> {
         const acteur = await this.editeurRequis(authorization);
         if (!dto.id_part_type) throw new BadRequestException('Le type de pièce est obligatoire.');
-        if (!dto.modeleIds || dto.modeleIds.length === 0) {
-            throw new BadRequestException('Au moins un modèle compatible est obligatoire.');
-        }
+        if (!dto.id_base_model) throw new BadRequestException("Le téléphone original de la pièce est obligatoire.");
+        const modeles = [...new Set([dto.id_base_model, ...(dto.modeleIds || [])])];
         return this.dataSource.transaction(async (m) => {
             const [row] = await m.query(
-                `INSERT INTO compat_group (id_part_type, note, image, cree_par) VALUES ($1, $2, $3, $4) RETURNING id`,
-                [dto.id_part_type, dto.note?.trim() || null, dto.image || null, acteur.id],
+                `INSERT INTO compat_group (id_part_type, id_base_model, note, image, cree_par) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+                [dto.id_part_type, dto.id_base_model, dto.note?.trim() || null, dto.image || null, acteur.id],
             );
-            for (const idModel of dto.modeleIds) {
+            for (const idModel of modeles) {
                 await m.query(
                     `INSERT INTO compat_group_model (id_group, id_model) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
                     [row.id, idModel],
@@ -355,27 +360,30 @@ export class CompatibilityService {
 
     async modifierGroupe(
         id: number,
-        dto: { id_part_type?: number; modeleIds?: number[]; note?: string; image?: string },
+        dto: { id_part_type?: number; id_base_model?: number; modeleIds?: number[]; note?: string; image?: string },
         authorization?: string,
     ): Promise<void> {
         await this.editeurRequis(authorization);
-        const [existant] = await this.dataSource.query(`SELECT id FROM compat_group WHERE id = $1`, [id]);
+        const [existant] = await this.dataSource.query(`SELECT id, id_base_model FROM compat_group WHERE id = $1`, [id]);
         if (!existant) throw new NotFoundException(`Groupe de compatibilité #${id} introuvable`);
 
         await this.dataSource.transaction(async (m) => {
-            if (dto.id_part_type !== undefined || dto.note !== undefined || dto.image !== undefined) {
+            if (dto.id_part_type !== undefined || dto.id_base_model !== undefined || dto.note !== undefined || dto.image !== undefined) {
                 await m.query(
                     `UPDATE compat_group SET
                         id_part_type = COALESCE($2, id_part_type),
-                        note = COALESCE($3, note),
-                        image = COALESCE($4, image)
+                        id_base_model = COALESCE($3, id_base_model),
+                        note = COALESCE($4, note),
+                        image = COALESCE($5, image)
                      WHERE id = $1`,
-                    [id, dto.id_part_type ?? null, dto.note?.trim() ?? null, dto.image ?? null],
+                    [id, dto.id_part_type ?? null, dto.id_base_model ?? null, dto.note?.trim() ?? null, dto.image ?? null],
                 );
             }
             if (dto.modeleIds) {
+                const idBase = dto.id_base_model ?? existant.id_base_model;
+                const modeles = [...new Set([idBase, ...dto.modeleIds].filter((v): v is number => v != null))];
                 await m.query(`DELETE FROM compat_group_model WHERE id_group = $1`, [id]);
-                for (const idModel of dto.modeleIds) {
+                for (const idModel of modeles) {
                     await m.query(
                         `INSERT INTO compat_group_model (id_group, id_model) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
                         [id, idModel],

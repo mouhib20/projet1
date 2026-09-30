@@ -149,7 +149,7 @@ export class CompatibilityController {
 
     @Post('groups')
     creerGroupe(
-        @Body() body: { id_part_type: number; modeleIds: number[]; note?: string; image?: string },
+        @Body() body: { id_part_type: number; id_base_model: number; modeleIds: number[]; note?: string; image?: string },
         @Headers('authorization') auth?: string,
     ) {
         return this.service.creerGroupe(body, auth);
@@ -158,7 +158,7 @@ export class CompatibilityController {
     @Put('groups/:id')
     modifierGroupe(
         @Param('id', ParseIntPipe) id: number,
-        @Body() body: { id_part_type?: number; modeleIds?: number[]; note?: string; image?: string },
+        @Body() body: { id_part_type?: number; id_base_model?: number; modeleIds?: number[]; note?: string; image?: string },
         @Headers('authorization') auth?: string,
     ) {
         return this.service.modifierGroupe(id, body, auth);

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CompatibilityService } from './compatibility.service';
 import { Utilisateur } from '../users/user.entity';
 import { CaisseService } from '../caisse/caisse.service';
@@ -75,7 +75,7 @@ describe('CompatibilityService', () => {
         it('rejects a regular store admin', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
             await expect(
-                service.creerGroupe({ id_part_type: 1, modeleIds: [1] }, 'Bearer x'),
+                service.creerGroupe({ id_part_type: 1, id_base_model: 1, modeleIds: [2] }, 'Bearer x'),
             ).rejects.toBeInstanceOf(ForbiddenException);
         });
 
@@ -83,7 +83,7 @@ describe('CompatibilityService', () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
             dataSource.transaction.mockImplementation(async (cb) => cb({ query: jest.fn().mockResolvedValue([{ id: 42 }]) }));
             await expect(
-                service.creerGroupe({ id_part_type: 1, modeleIds: [1, 2] }, 'Bearer x'),
+                service.creerGroupe({ id_part_type: 1, id_base_model: 1, modeleIds: [2] }, 'Bearer x'),
             ).resolves.toEqual({ id: 42 });
         });
 
@@ -91,8 +91,29 @@ describe('CompatibilityService', () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'SA', role: 'super_admin' });
             dataSource.transaction.mockImplementation(async (cb) => cb({ query: jest.fn().mockResolvedValue([{ id: 43 }]) }));
             await expect(
-                service.creerGroupe({ id_part_type: 1, modeleIds: [1] }, 'Bearer x'),
+                service.creerGroupe({ id_part_type: 1, id_base_model: 1, modeleIds: [] }, 'Bearer x'),
             ).resolves.toEqual({ id: 43 });
+        });
+
+        it('rejects when id_base_model is missing', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            await expect(
+                service.creerGroupe({ id_part_type: 1, id_base_model: 0, modeleIds: [] }, 'Bearer x'),
+            ).rejects.toBeInstanceOf(BadRequestException);
+        });
+
+        it('always includes the base model in compat_group_model, even if omitted from modeleIds', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            const insertedModelIds: number[] = [];
+            dataSource.transaction.mockImplementation(async (cb) => cb({
+                query: jest.fn().mockImplementation((sql: string, params: any[]) => {
+                    if (sql.includes('INSERT INTO compat_group (')) return Promise.resolve([{ id: 42 }]);
+                    if (sql.includes('INSERT INTO compat_group_model')) insertedModelIds.push(params[1]);
+                    return Promise.resolve(undefined);
+                }),
+            }));
+            await service.creerGroupe({ id_part_type: 1, id_base_model: 5, modeleIds: [6, 5, 7] }, 'Bearer x');
+            expect(insertedModelIds.sort()).toEqual([5, 6, 7]); // deduped, base included exactly once
         });
     });
 
@@ -317,14 +338,30 @@ describe('CompatibilityService', () => {
             await expect(service.obtenirGroupe(999, 'Bearer x')).rejects.toBeInstanceOf(NotFoundException);
         });
 
-        it('returns the group with its linked model ids', async () => {
+        it('returns the group with its base model and linked model ids', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
             dataSource.query
-                .mockResolvedValueOnce([{ id: 1, note: null, image: null, id_part_type: 2 }])
+                .mockResolvedValueOnce([{ id: 1, note: null, image: null, id_part_type: 2, id_base_model: 10 }])
                 .mockResolvedValueOnce([{ id_model: 10 }, { id_model: 11 }]);
             await expect(service.obtenirGroupe(1, 'Bearer x')).resolves.toEqual({
-                id: 1, note: null, image: null, id_part_type: 2, modeleIds: [10, 11],
+                id: 1, note: null, image: null, id_part_type: 2, id_base_model: 10, modeleIds: [10, 11],
             });
+        });
+    });
+
+    describe('modifierGroupe() — keeps the base model in compat_group_model even when not resent', () => {
+        it('re-inserts the existing base model when modeleIds is updated without a new id_base_model', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValueOnce([{ id: 1, id_base_model: 5 }]); // the existant-check SELECT
+            const insertedModelIds: number[] = [];
+            dataSource.transaction.mockImplementation(async (cb) => cb({
+                query: jest.fn().mockImplementation((sql: string, params: any[]) => {
+                    if (sql.includes('INSERT INTO compat_group_model')) insertedModelIds.push(params[1]);
+                    return Promise.resolve(undefined);
+                }),
+            }));
+            await service.modifierGroupe(1, { modeleIds: [6, 7] }, 'Bearer x');
+            expect(insertedModelIds.sort()).toEqual([5, 6, 7]); // base (5) kept even though the caller only sent [6, 7]
         });
     });
 

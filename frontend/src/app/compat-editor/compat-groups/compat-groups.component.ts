@@ -28,92 +28,30 @@ export class CompatGroupsComponent implements OnInit {
     showForm = false;
     editingId: number | null = null;
     saving = false;
-    form: { id_part_type: number | null; modeleIds: number[]; note: string } = this.emptyForm();
-    modelSearchTerm = '';
+    /** modeleIds here is the "also fits" list only - the base model is tracked separately and
+     *  never duplicated into it (the backend adds it to compat_group_model on save either way). */
+    form: { id_part_type: number | null; id_base_model: number | null; modeleIds: number[]; note: string } = this.emptyForm();
 
-    // ── Part type: search box + dropdown, auto-offers to create when nothing matches ──
-    partTypeSearchTerm = '';
-    showPartTypeDropdown = false;
+    // ── Part type: a row of pills (one tap to pick), "+" opens the same add-new-type mini form ──
     showNewPartType = false;
     newPartType = { nom_fr: '', nom_en: '', nom_ar: '' };
-
-    get filteredPartTypes(): PartType[] {
-        if (!this.partTypeSearchTerm.trim()) return this.partTypes;
-        const term = this.partTypeSearchTerm.toLowerCase();
-        return this.partTypes.filter(t => this.partTypeName(t).toLowerCase().includes(term));
-    }
 
     get selectedPartType(): PartType | undefined {
         return this.partTypes.find(t => t.id === this.form.id_part_type);
     }
 
-    selectPartType(pt: PartType): void {
+    selectPartTypePill(pt: PartType): void {
         this.form.id_part_type = pt.id;
-        this.partTypeSearchTerm = '';
-        this.showPartTypeDropdown = false;
-        this.showNewPartType = false;
     }
 
-    clearPartType(): void {
-        this.form.id_part_type = null;
-        this.partTypeSearchTerm = '';
-    }
-
-    /** Delayed so a (mousedown) selection inside the dropdown still registers before it closes. */
-    closePartTypeDropdown(): void {
-        setTimeout(() => this.showPartTypeDropdown = false, 200);
-    }
-
-    openAddPartTypeFromSearch(): void {
-        this.newPartType = { nom_fr: this.partTypeSearchTerm.trim(), nom_en: '', nom_ar: '' };
+    openAddPartType(): void {
+        this.newPartType = { nom_fr: '', nom_en: '', nom_ar: '' };
         this.showNewPartType = true;
     }
 
+    // ── Brand: search-or-create, used only while adding a brand-new model (base or compatible) ──
     showNewBrand = false;
     newBrand = { nom: '' };
-
-    // ── Brand: a dedicated search box that also narrows the model list below it ──
-    groupBrandFilterId: number | null = null;
-    groupBrandSearchTerm = '';
-    showGroupBrandDropdown = false;
-
-    get filteredBrandsForGroupFilter(): Brand[] {
-        if (!this.groupBrandSearchTerm.trim()) return this.brands;
-        const term = this.groupBrandSearchTerm.toLowerCase();
-        return this.brands.filter(b => b.nom.toLowerCase().includes(term));
-    }
-
-    get selectedGroupBrandFilter(): Brand | undefined {
-        return this.brands.find(b => b.id === this.groupBrandFilterId);
-    }
-
-    selectGroupBrandFilter(b: Brand): void {
-        this.groupBrandFilterId = b.id;
-        this.groupBrandSearchTerm = '';
-        this.showGroupBrandDropdown = false;
-        this.showNewBrand = false;
-    }
-
-    clearGroupBrandFilter(): void {
-        this.groupBrandFilterId = null;
-        this.groupBrandSearchTerm = '';
-    }
-
-    closeGroupBrandDropdown(): void {
-        setTimeout(() => this.showGroupBrandDropdown = false, 200);
-    }
-
-    /** Which combobox opened the "add brand" mini-form - decides where addBrand() assigns the result. */
-    newBrandContext: 'group' | 'model' = 'group';
-
-    openAddBrandFromGroupFilter(): void {
-        this.newBrand = { nom: this.groupBrandSearchTerm.trim() };
-        this.newBrandContext = 'group';
-        this.showNewBrand = true;
-    }
-
-    // ── Brand nested inside "add model": same search-or-create pattern, used only when no
-    // brand filter is selected above (otherwise the filter's brand is reused automatically) ──
     newModelBrandSearchTerm = '';
     showNewModelBrandDropdown = false;
 
@@ -145,29 +83,31 @@ export class CompatGroupsComponent implements OnInit {
 
     openAddBrandFromSearch(): void {
         this.newBrand = { nom: this.newModelBrandSearchTerm.trim() };
-        this.newBrandContext = 'model';
         this.showNewBrand = true;
     }
 
+    addBrand(): void {
+        if (!this.newBrand.nom.trim()) { this.errorMsg = 'COMPAT_GROUPS.ERR_BRAND_NAME_REQUIRED'; return; }
+        const nom = this.newBrand.nom.trim();
+        this.compatService.createBrand({ nom }).subscribe({
+            next: (res) => {
+                this.brands = [...this.brands, { id: res.id, nom, logo: null }];
+                this.newModel.id_brand = res.id;
+                this.newModelBrandSearchTerm = '';
+                this.newBrand = { nom: '' };
+                this.showNewBrand = false;
+            },
+            error: (err) => { this.errorMsg = err.error?.message || 'COMPAT_GROUPS.ERR_CREATE'; }
+        });
+    }
+
+    // ── New model mini-form: shared by both the base-model picker and the compatible-models
+    // search - newModelContext decides where the created model ends up. ──
     showNewModel = false;
+    newModelContext: 'base' | 'compatible' = 'compatible';
     newModel: { id_brand: number | null; nom: string; nom_commercial: string; code: string; image?: string } = { id_brand: null, nom: '', nom_commercial: '', code: '', image: undefined };
     newModelImageUploading = false;
     newModelImageError = '';
-
-    openAddModelFromSearch(): void {
-        // Reuse the brand filter above, if one is set - no need to pick it again for the new model.
-        this.newModel = { id_brand: this.groupBrandFilterId, nom: this.modelSearchTerm.trim(), nom_commercial: '', code: '', image: undefined };
-        this.newModelBrandSearchTerm = '';
-        this.showNewModel = true;
-    }
-
-    /** Same "search found nothing - offer to add it" prompt, but for the Compatible models
-     *  section's own independent filter. */
-    openAddModelFromChecklistFilter(): void {
-        this.newModel = { id_brand: this.groupBrandFilterId, nom: this.compatModelsFilterTerm.trim(), nom_commercial: '', code: '', image: undefined };
-        this.newModelBrandSearchTerm = '';
-        this.showNewModel = true;
-    }
 
     onNewModelImageSelected(event: Event): void {
         const input = event.target as HTMLInputElement;
@@ -193,43 +133,130 @@ export class CompatGroupsComponent implements OnInit {
         this.newModel.image = undefined;
     }
 
-    constructor(
-        private compatService: CompatService,
-        public auth: AuthService,
-        private translate: TranslateService,
-        private router: Router,
-    ) { }
-
-    ngOnInit(): void {
-        this.loadAll();
-    }
-
-    emptyForm() {
-        return { id_part_type: null as number | null, modeleIds: [] as number[], note: '' };
-    }
-
-    loadAll(): void {
-        this.loading = true;
-        this.compatService.getGroups().subscribe({
-            next: (data) => { this.groups = data; this.loading = false; },
-            error: () => { this.errorMsg = 'COMPAT_GROUPS.ERR_LOAD'; this.loading = false; }
+    addModel(): void {
+        if (!this.newModel.id_brand) { this.errorMsg = 'COMPAT_GROUPS.ERR_MODEL_BRAND_REQUIRED'; return; }
+        if (!this.newModel.nom.trim()) { this.errorMsg = 'COMPAT_GROUPS.ERR_MODEL_NAME_REQUIRED'; return; }
+        const idBrand = this.newModel.id_brand;
+        const nom = this.newModel.nom.trim();
+        const nomCommercial = this.newModel.nom_commercial?.trim() || undefined;
+        const code = this.newModel.code?.trim() || undefined;
+        const image = this.newModel.image;
+        const context = this.newModelContext;
+        this.compatService.createModel({ id_brand: idBrand, nom, nom_commercial: nomCommercial, code, image }).subscribe({
+            next: (res) => {
+                const brand = this.brands.find(b => b.id === idBrand);
+                this.models = [...this.models, { id: res.id, nom, nom_commercial: nomCommercial ?? null, code: code ?? null, image: image ?? null, id_brand: idBrand, marque: brand?.nom || '' }];
+                if (context === 'base') {
+                    this.selectBaseModel({ id: res.id } as DeviceModel);
+                } else {
+                    this.addCompatibleModel({ id: res.id } as DeviceModel);
+                }
+                this.modelSearchTerm = '';
+                this.baseModelSearchTerm = '';
+                this.newModel = { id_brand: null, nom: '', nom_commercial: '', code: '', image: undefined };
+                this.newModelBrandSearchTerm = '';
+                this.showNewModel = false;
+            },
+            error: (err) => { this.errorMsg = err.error?.message || 'COMPAT_GROUPS.ERR_CREATE'; }
         });
-        this.compatService.getPartTypes().subscribe({ next: (d) => this.partTypes = d });
-        this.compatService.getBrands().subscribe({ next: (d) => this.brands = d });
-        this.compatService.getModels().subscribe({ next: (d) => this.models = d });
     }
 
-    partTypeName(pt: { nom_fr: string; nom_en: string; nom_ar: string }): string {
-        const lang = this.translate.currentLang();
-        if (lang === 'en') return pt.nom_en;
-        if (lang === 'ar') return pt.nom_ar;
-        return pt.nom_fr;
+    // ── Base model ("the part's original device"): single pick, shown as a card once chosen ──
+    baseModelSearchTerm = '';
+    showBaseModelDropdown = false;
+
+    get selectedBaseModelObj(): DeviceModel | undefined {
+        return this.models.find(m => m.id === this.form.id_base_model);
     }
 
-    imageUrl(image?: string | null): string | null {
-        return articleImageUrl(image);
+    get filteredModelsForBase(): DeviceModel[] {
+        if (!this.baseModelSearchTerm.trim()) return [];
+        const term = this.baseModelSearchTerm.toLowerCase();
+        return this.models.filter(m =>
+            m.nom.toLowerCase().includes(term) ||
+            m.marque.toLowerCase().includes(term) ||
+            (m.code || '').toLowerCase().includes(term)
+        );
     }
 
+    get showAddBaseModelPrompt(): boolean {
+        return this.baseModelSearchTerm.trim().length > 0 && this.filteredModelsForBase.length === 0 && !this.showNewModel;
+    }
+
+    openBaseModelPicker(): void {
+        this.baseModelSearchTerm = '';
+        this.showBaseModelDropdown = true;
+    }
+
+    closeBaseModelDropdown(): void {
+        setTimeout(() => this.showBaseModelDropdown = false, 200);
+    }
+
+    selectBaseModel(m: DeviceModel): void {
+        this.form.id_base_model = m.id;
+        // The base can't also sit in the "also fits" list.
+        const idx = this.form.modeleIds.indexOf(m.id);
+        if (idx >= 0) this.form.modeleIds.splice(idx, 1);
+        this.baseModelSearchTerm = '';
+        this.showBaseModelDropdown = false;
+    }
+
+    openAddModelForBase(): void {
+        this.newModel = { id_brand: null, nom: this.baseModelSearchTerm.trim(), nom_commercial: '', code: '', image: undefined };
+        this.newModelContext = 'base';
+        this.newModelBrandSearchTerm = '';
+        this.showNewModel = true;
+    }
+
+    // ── Compatible models ("also fits on"): search-to-add, shown as removable chips ──
+    modelSearchTerm = '';
+    showModelSearchDropdown = false;
+
+    /** Excludes the base model (can't also be "compatible") and anything already added. */
+    get filteredModelsForCompatible(): DeviceModel[] {
+        if (!this.modelSearchTerm.trim()) return [];
+        const term = this.modelSearchTerm.toLowerCase();
+        return this.models.filter(m =>
+            m.id !== this.form.id_base_model &&
+            !this.form.modeleIds.includes(m.id) &&
+            (m.nom.toLowerCase().includes(term) || m.marque.toLowerCase().includes(term) || (m.code || '').toLowerCase().includes(term))
+        );
+    }
+
+    get showAddModelPrompt(): boolean {
+        return this.modelSearchTerm.trim().length > 0 && this.filteredModelsForCompatible.length === 0 && !this.showNewModel;
+    }
+
+    closeModelSearchDropdown(): void {
+        setTimeout(() => this.showModelSearchDropdown = false, 200);
+    }
+
+    addCompatibleModel(m: DeviceModel): void {
+        if (m.id === this.form.id_base_model) return;
+        if (!this.form.modeleIds.includes(m.id)) this.form.modeleIds.push(m.id);
+        this.modelSearchTerm = '';
+        this.showModelSearchDropdown = false;
+    }
+
+    removeCompatibleModel(id: number): void {
+        const idx = this.form.modeleIds.indexOf(id);
+        if (idx >= 0) this.form.modeleIds.splice(idx, 1);
+    }
+
+    openAddModelFromSearch(): void {
+        this.newModel = { id_brand: null, nom: this.modelSearchTerm.trim(), nom_commercial: '', code: '', image: undefined };
+        this.newModelContext = 'compatible';
+        this.newModelBrandSearchTerm = '';
+        this.showNewModel = true;
+    }
+
+    modelLabel(id: number): string {
+        const m = this.models.find(x => x.id === id);
+        if (!m) return '';
+        return m.code ? `${m.marque} ${m.nom} · ${m.code}` : `${m.marque} ${m.nom}`;
+    }
+
+    // ── Per-model photo upload, offered on each search result row ──
     modelImageUploadingId: number | null = null;
     modelImageError = '';
 
@@ -261,40 +288,41 @@ export class CompatGroupsComponent implements OnInit {
         input.value = '';
     }
 
-    /** Deliberately NOT filtered by groupBrandFilterId - a group can (and often does) link models
-     *  across different brands (e.g. a glass that fits several manufacturers' phones). The brand
-     *  field above is only a convenience default for the "add new model" form below. */
-    get filteredModels(): DeviceModel[] {
-        if (!this.modelSearchTerm) return this.models;
-        const term = this.modelSearchTerm.toLowerCase();
-        return this.models.filter(m =>
-            m.nom.toLowerCase().includes(term) ||
-            m.marque.toLowerCase().includes(term) ||
-            (m.code || '').toLowerCase().includes(term)
-        );
+    constructor(
+        private compatService: CompatService,
+        public auth: AuthService,
+        private translate: TranslateService,
+        private router: Router,
+    ) { }
+
+    ngOnInit(): void {
+        this.loadAll();
     }
 
-    /** Search found nothing - offer to create it right here, instead of a separate manual button. */
-    get showAddModelPrompt(): boolean {
-        return this.modelSearchTerm.trim().length > 0 && this.filteredModels.length === 0 && !this.showNewModel;
+    emptyForm() {
+        return { id_part_type: null as number | null, id_base_model: null as number | null, modeleIds: [] as number[], note: '' };
     }
 
-    /** A second, independent filter inside "Compatible models" itself - narrows the checklist
-     *  further without touching the "Model" search above or its add-new-model prompt. */
-    compatModelsFilterTerm = '';
-
-    get filteredModelsForChecklist(): DeviceModel[] {
-        if (!this.compatModelsFilterTerm.trim()) return this.filteredModels;
-        const term = this.compatModelsFilterTerm.toLowerCase();
-        return this.filteredModels.filter(m =>
-            m.nom.toLowerCase().includes(term) ||
-            m.marque.toLowerCase().includes(term) ||
-            (m.code || '').toLowerCase().includes(term)
-        );
+    loadAll(): void {
+        this.loading = true;
+        this.compatService.getGroups().subscribe({
+            next: (data) => { this.groups = data; this.loading = false; },
+            error: () => { this.errorMsg = 'COMPAT_GROUPS.ERR_LOAD'; this.loading = false; }
+        });
+        this.compatService.getPartTypes().subscribe({ next: (d) => this.partTypes = d });
+        this.compatService.getBrands().subscribe({ next: (d) => this.brands = d });
+        this.compatService.getModels().subscribe({ next: (d) => this.models = d });
     }
 
-    get showAddModelPromptInChecklist(): boolean {
-        return this.compatModelsFilterTerm.trim().length > 0 && this.filteredModelsForChecklist.length === 0 && !this.showNewModel;
+    partTypeName(pt: { nom_fr: string; nom_en: string; nom_ar: string }): string {
+        const lang = this.translate.currentLang();
+        if (lang === 'en') return pt.nom_en;
+        if (lang === 'ar') return pt.nom_ar;
+        return pt.nom_fr;
+    }
+
+    imageUrl(image?: string | null): string | null {
+        return articleImageUrl(image);
     }
 
     clearMessages(): void {
@@ -303,26 +331,23 @@ export class CompatGroupsComponent implements OnInit {
     }
 
     private resetInlineCreateState(): void {
-        this.partTypeSearchTerm = '';
-        this.showPartTypeDropdown = false;
         this.showNewPartType = false;
         this.newPartType = { nom_fr: '', nom_en: '', nom_ar: '' };
         this.showNewBrand = false;
         this.newBrand = { nom: '' };
-        this.groupBrandFilterId = null;
-        this.groupBrandSearchTerm = '';
-        this.showGroupBrandDropdown = false;
-        this.compatModelsFilterTerm = '';
         this.newModelBrandSearchTerm = '';
         this.showNewModelBrandDropdown = false;
         this.showNewModel = false;
         this.newModel = { id_brand: null, nom: '', nom_commercial: '', code: '', image: undefined };
+        this.baseModelSearchTerm = '';
+        this.showBaseModelDropdown = false;
+        this.modelSearchTerm = '';
+        this.showModelSearchDropdown = false;
     }
 
     openAddForm(): void {
         this.editingId = null;
         this.form = this.emptyForm();
-        this.modelSearchTerm = '';
         this.resetInlineCreateState();
         this.showForm = true;
         this.clearMessages();
@@ -333,8 +358,8 @@ export class CompatGroupsComponent implements OnInit {
         this.compatService.getGroup(group.id).subscribe({
             next: (detail) => {
                 this.editingId = detail.id;
-                this.form = { id_part_type: detail.id_part_type, modeleIds: [...detail.modeleIds], note: detail.note || '' };
-                this.modelSearchTerm = '';
+                const modeleIds = detail.modeleIds.filter(id => id !== detail.id_base_model);
+                this.form = { id_part_type: detail.id_part_type, id_base_model: detail.id_base_model, modeleIds, note: detail.note || '' };
                 this.resetInlineCreateState();
                 this.showForm = true;
             },
@@ -346,24 +371,19 @@ export class CompatGroupsComponent implements OnInit {
         this.showForm = false;
     }
 
-    isModelSelected(id: number): boolean {
-        return this.form.modeleIds.includes(id);
-    }
-
-    toggleModel(id: number): void {
-        const idx = this.form.modeleIds.indexOf(id);
-        if (idx >= 0) this.form.modeleIds.splice(idx, 1);
-        else this.form.modeleIds.push(id);
-    }
-
     save(): void {
         if (this.saving) return;
         if (!this.form.id_part_type) { this.errorMsg = 'COMPAT_GROUPS.ERR_PART_TYPE_REQUIRED'; return; }
-        if (this.form.modeleIds.length === 0) { this.errorMsg = 'COMPAT_GROUPS.ERR_MODELS_REQUIRED'; return; }
+        if (!this.form.id_base_model) { this.errorMsg = 'COMPAT_GROUPS.ERR_BASE_MODEL_REQUIRED'; return; }
 
         this.clearMessages();
         this.saving = true;
-        const dto = { id_part_type: this.form.id_part_type, modeleIds: this.form.modeleIds, note: this.form.note?.trim() || undefined };
+        const dto = {
+            id_part_type: this.form.id_part_type,
+            id_base_model: this.form.id_base_model,
+            modeleIds: this.form.modeleIds,
+            note: this.form.note?.trim() || undefined,
+        };
 
         const onDone = (): void => {
             this.saving = false;
@@ -407,49 +427,6 @@ export class CompatGroupsComponent implements OnInit {
                 this.form.id_part_type = res.id;
                 this.newPartType = { nom_fr: '', nom_en: '', nom_ar: '' };
                 this.showNewPartType = false;
-            },
-            error: (err) => { this.errorMsg = err.error?.message || 'COMPAT_GROUPS.ERR_CREATE'; }
-        });
-    }
-
-    addBrand(): void {
-        if (!this.newBrand.nom.trim()) { this.errorMsg = 'COMPAT_GROUPS.ERR_BRAND_NAME_REQUIRED'; return; }
-        const nom = this.newBrand.nom.trim();
-        this.compatService.createBrand({ nom }).subscribe({
-            next: (res) => {
-                this.brands = [...this.brands, { id: res.id, nom, logo: null }];
-                if (this.newBrandContext === 'group') {
-                    this.groupBrandFilterId = res.id;
-                    this.groupBrandSearchTerm = '';
-                } else {
-                    this.newModel.id_brand = res.id;
-                    this.newModelBrandSearchTerm = '';
-                }
-                this.newBrand = { nom: '' };
-                this.showNewBrand = false;
-            },
-            error: (err) => { this.errorMsg = err.error?.message || 'COMPAT_GROUPS.ERR_CREATE'; }
-        });
-    }
-
-    addModel(): void {
-        if (!this.newModel.id_brand) { this.errorMsg = 'COMPAT_GROUPS.ERR_MODEL_BRAND_REQUIRED'; return; }
-        if (!this.newModel.nom.trim()) { this.errorMsg = 'COMPAT_GROUPS.ERR_MODEL_NAME_REQUIRED'; return; }
-        const idBrand = this.newModel.id_brand;
-        const nom = this.newModel.nom.trim();
-        const nomCommercial = this.newModel.nom_commercial?.trim() || undefined;
-        const code = this.newModel.code?.trim() || undefined;
-        const image = this.newModel.image;
-        this.compatService.createModel({ id_brand: idBrand, nom, nom_commercial: nomCommercial, code, image }).subscribe({
-            next: (res) => {
-                const brand = this.brands.find(b => b.id === idBrand);
-                this.models = [...this.models, { id: res.id, nom, nom_commercial: nomCommercial ?? null, code: code ?? null, image: image ?? null, id_brand: idBrand, marque: brand?.nom || '' }];
-                this.form.modeleIds.push(res.id); // select it immediately, no wait on a refetch
-                this.modelSearchTerm = '';
-                this.compatModelsFilterTerm = '';
-                this.newModel = { id_brand: null, nom: '', nom_commercial: '', code: '', image: undefined };
-                this.newModelBrandSearchTerm = '';
-                this.showNewModel = false;
             },
             error: (err) => { this.errorMsg = err.error?.message || 'COMPAT_GROUPS.ERR_CREATE'; }
         });

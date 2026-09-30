@@ -189,12 +189,6 @@ select:focus {
     position: relative;
 }
 
-.field-hint {
-    color: #8b949e;
-    font-size: 0.76rem;
-    margin-bottom: 4px;
-}
-
 .combobox-chosen {
     display: flex;
     align-items: center;
@@ -275,6 +269,152 @@ select:focus {
     background: #1a1f30;
 }
 
+/* ─── Part type pills ──────────────────────────────────────────────── */
+.pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pill {
+    background: #0f1117;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pill:hover {
+    border-color: #6366f1;
+}
+
+.pill.selected {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-color: transparent;
+    color: #fff;
+    font-weight: 600;
+}
+
+.pill-add {
+    font-weight: 700;
+    color: #a5b4fc;
+}
+
+/* ─── Base model card ──────────────────────────────────────────────── */
+.base-model-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #0f1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.base-model-photo,
+.base-model-photo-placeholder {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    flex-shrink: 0;
+}
+
+.base-model-photo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #161b27;
+    font-size: 1.2rem;
+}
+
+.base-model-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.base-model-brand {
+    color: #8b949e;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.base-model-name {
+    color: #e1e4e8;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.base-model-code {
+    color: #8b949e;
+    font-weight: 400;
+    font-size: 0.82rem;
+}
+
+/* ─── Compatible models: chips + search result rows ──────────────────── */
+.count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 0.75rem;
+    margin-inline-start: 4px;
+}
+
+.chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #86efac;
+    border-radius: 20px;
+    padding: 0.35rem 0.4rem 0.35rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.chip-remove {
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 0.75rem;
+    opacity: 0.7;
+    padding: 2px;
+}
+
+.chip-remove:hover {
+    opacity: 1;
+}
+
+.model-result-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-right: 8px;
+}
+
+.model-result-label {
+    flex: 1;
+    min-width: 0;
+}
+
 /* ─── Image upload (new model) ────────────────────────────────────── */
 .image-upload-row {
     display: flex;
@@ -309,49 +449,6 @@ select:focus {
     font-size: 0.82rem;
 }
 
-.models-list {
-    max-height: 220px;
-    overflow-y: auto;
-    background: #0f1117;
-    border: 1px solid #30363d;
-    border-radius: 8px;
-    padding: 8px;
-}
-
-.model-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.model-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 4px;
-    text-transform: none;
-    letter-spacing: normal;
-    font-weight: 400;
-    color: #c9d1d9;
-    cursor: pointer;
-    flex: 1;
-    min-width: 0;
-}
-
-.model-checkbox input {
-    width: auto;
-}
-
-.model-thumb {
-    width: 26px;
-    height: 26px;
-    object-fit: cover;
-    border-radius: 5px;
-    border: 1px solid #30363d;
-    flex-shrink: 0;
-}
-
 .model-code {
     color: #8b949e;
     font-size: 0.8rem;
@@ -377,18 +474,6 @@ select:focus {
     inset: 0;
     opacity: 0;
     cursor: pointer;
-}
-
-.selected-count {
-    font-size: 0.78rem;
-    color: #a5b4fc;
-    margin-top: 4px;
-}
-
-.empty-hint {
-    color: #8b949e;
-    font-size: 0.85rem;
-    padding: 8px 4px;
 }
 
 .form-actions {

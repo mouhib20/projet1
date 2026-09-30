@@ -39,6 +39,9 @@ export interface CompatGroupListItem {
     nom_fr: string;
     nom_en: string;
     nom_ar: string;
+    id_base_model: number | null;
+    base_nom: string | null;
+    base_marque: string | null;
     modeles: string[];
 }
 
@@ -47,11 +50,13 @@ export interface CompatGroupDetail {
     note: string | null;
     image: string | null;
     id_part_type: number;
+    id_base_model: number | null;
     modeleIds: number[];
 }
 
 export interface CompatGroupSave {
     id_part_type: number;
+    id_base_model: number;
     modeleIds: number[];
     note?: string;
     image?: string;

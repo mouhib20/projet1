@@ -248,6 +248,13 @@ async function migrer(): Promise<void> {
             )
         `);
         await client.query(`DO $$ BEGIN ALTER TABLE "compat_group" ADD CONSTRAINT "compat_group_id_part_type_fkey" FOREIGN KEY (id_part_type) REFERENCES part_type(id); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        // The device the physical part was originally made for - required for every NEW group
+        // (enforced in the service, not NOT NULL here so existing groups made before this column
+        // don't break). Lets the editor express asymmetric fits: "A12 can use Smart7's part" is
+        // one group (base=Smart7, compatible=[A12]) without implying the reverse - that would need
+        // its own, separate group instead of adding Smart7 as a member of A12's own part group.
+        await client.query(`ALTER TABLE "compat_group" ADD COLUMN IF NOT EXISTS "id_base_model" integer`);
+        await client.query(`DO $$ BEGIN ALTER TABLE "compat_group" ADD CONSTRAINT "compat_group_id_base_model_fkey" FOREIGN KEY (id_base_model) REFERENCES device_model(id); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
         await client.query(`
             CREATE TABLE IF NOT EXISTS "compat_group_model" (
                 "id_group" integer NOT NULL,
