@@ -2,7 +2,7 @@ import { Injectable, effect, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { OfflineDbService, OutboxEntry } from './offline-db.service';
+import { OfflineDbService, OfflineReparationActive, OutboxEntry } from './offline-db.service';
 import { ConnectivityService } from './connectivity.service';
 import { AuthService } from '../services/auth.service';
 
@@ -50,7 +50,7 @@ export class SyncService {
 
     async pullReferenceData(): Promise<void> {
         if (!this.connectivity.isOnline()) return;
-        await Promise.all([this.pullArticles(), this.pullClients(), this.pullPickupReady()]);
+        await Promise.all([this.pullArticles(), this.pullClients(), this.pullPickupReady(), this.pullReparationsActive()]);
     }
 
     private async pullArticles(): Promise<void> {
@@ -94,6 +94,23 @@ export class SyncService {
         if (rows.length) await this.db.setMeta('reparations_since', rows[rows.length - 1].updated_at);
     }
 
+    private async pullReparationsActive(): Promise<void> {
+        const since = await this.db.getMeta<string>('reparations_active_since');
+        const rows = await firstValueFrom(
+            this.http.get<OfflineReparationActive[]>(`${this.apiUrl}/reparations/active-sync`, { params: since ? { since } : {} }),
+        ).catch(() => null);
+        if (!rows) return;
+        for (const row of rows) {
+            // No longer in progress (moved on from another device) -> drop it locally too.
+            if (row.statut !== 'En attente' && row.statut !== 'En cours') {
+                await this.db.reparationsActive.delete(row.id_reparation);
+            } else {
+                await this.db.reparationsActive.put(row);
+            }
+        }
+        if (rows.length) await this.db.setMeta('reparations_active_since', rows[rows.length - 1].updated_at);
+    }
+
     // ── Outbox ──
 
     /** Queues an offline sale. Returns the client_id (used as the temporary local reference). */
@@ -104,6 +121,18 @@ export class SyncService {
     /** Queues an offline client creation (POS quick-add modal only). */
     async enqueueClientCreate(payload: { nom: string; telephone?: string }): Promise<string> {
         return this.enqueue('client_create', payload);
+    }
+
+    /** Queues an offline repair-ticket intake (client + device + optional parts/acompte). */
+    async enqueueReparationCreate(payload: any): Promise<string> {
+        return this.enqueue('reparation_create', payload);
+    }
+
+    /** Queues a simple offline status change - only for a ticket whose id is already real (from
+     *  the reparationsActive cache), and only the "maintenance terminée" no-parts-missing case;
+     *  see ReparationComponent.peutMarquerPretHorsLigne. */
+    async enqueueReparationStatus(payload: { id_reparation: number; statut: string }): Promise<string> {
+        return this.enqueue('reparation_status', payload);
     }
 
     private async enqueue(type: OutboxEntry['type'], payload: any): Promise<string> {
@@ -138,6 +167,21 @@ export class SyncService {
                             status: 'synced',
                             result: { id_client: client.id_client },
                         });
+                    } else if (entry.type === 'reparation_create') {
+                        const rep = await firstValueFrom(
+                            this.http.post<any>(`${this.apiUrl}/reparations`, { ...entry.payload, client_id: entry.client_id }),
+                        );
+                        const avertissements: string[] = rep.avertissements || [];
+                        await this.db.outbox.update(entry.client_id, {
+                            status: 'synced',
+                            result: { id_reparation: rep.id_reparation, avertissements },
+                        });
+                        if (avertissements.length) warnings.push({ client_id: entry.client_id, messages: avertissements });
+                    } else if (entry.type === 'reparation_status') {
+                        await firstValueFrom(
+                            this.http.patch<any>(`${this.apiUrl}/reparations/${entry.payload.id_reparation}/statut`, { statut: entry.payload.statut }),
+                        );
+                        await this.db.outbox.update(entry.client_id, { status: 'synced', result: {} });
                     } else {
                         const res = await firstValueFrom(
                             this.http.post<any[]>(`${this.apiUrl}/ventes/checkout`, { ...entry.payload, client_id: entry.client_id }, { observe: 'response' }),

@@ -38,14 +38,39 @@ export interface OfflinePickupReparation {
     updated_at: string;
 }
 
+/** One part attached to an in-progress ticket - just enough to decide, offline, whether the
+ *  ticket already has every part it needs (see ReparationComponent.peutMarquerPretHorsLigne). */
+export interface OfflineReparationItem {
+    id_article: number;
+    qte: number;
+    prix: number;
+    sous_categorie: string | null;
+}
+
+/** Mirrors ReparationsService.activeSync(). */
+export interface OfflineReparationActive {
+    id_reparation: number;
+    appareil: string | null;
+    description: string | null;
+    statut: string;
+    id_client: number | null;
+    client_nom: string | null;
+    prix: number;
+    date_reception: string | null;
+    items: OfflineReparationItem[];
+    updated_at: string;
+}
+
 export type OutboxStatus = 'pending' | 'syncing' | 'failed' | 'synced';
 
 /** One queued offline operation, keyed by a device-generated client_id (the idempotency key the
- *  server uses too for 'vente_checkout' - see VentesService.checkout; 'client_create' relies on
- *  ClientsService.create's own name+phone dedup instead, so no server-side client_id is needed). */
+ *  server uses too for 'vente_checkout'/'reparation_create' - see VentesService.checkout /
+ *  ReparationsService.create; 'client_create' relies on ClientsService.create's own name+phone
+ *  dedup instead, and 'reparation_status' on updateStatus's natural idempotency - neither needs a
+ *  server-side client_id, though one is still generated as the outbox's own local key). */
 export interface OutboxEntry {
     client_id: string;
-    type: 'vente_checkout' | 'client_create';
+    type: 'vente_checkout' | 'client_create' | 'reparation_create' | 'reparation_status';
     payload: any;
     status: OutboxStatus;
     created_at: number;
@@ -53,7 +78,7 @@ export interface OutboxEntry {
     retry_count: number;
     last_error?: string;
     /** Filled in once synced: the server's response. */
-    result?: { venteIds?: number[]; avertissements?: string[]; id_client?: number };
+    result?: { venteIds?: number[]; avertissements?: string[]; id_client?: number; id_reparation?: number };
 }
 
 export interface MetaEntry {
@@ -69,6 +94,7 @@ export class OfflineDbService extends Dexie {
     articles!: Table<OfflineArticle, number>;
     clients!: Table<OfflineClient, number>;
     reparationsPickup!: Table<OfflinePickupReparation, number>;
+    reparationsActive!: Table<OfflineReparationActive, number>;
     outbox!: Table<OutboxEntry, string>;
     meta!: Table<MetaEntry, string>;
 
@@ -78,6 +104,15 @@ export class OfflineDbService extends Dexie {
             articles: 'id_article, barcode, updated_at',
             clients: 'id_client, updated_at',
             reparationsPickup: 'id_reparation, updated_at',
+            outbox: 'client_id, status, created_at',
+            meta: 'key',
+        });
+        // v2: adds the in-progress reparation cache for offline ticket creation/status change (phase 3).
+        this.version(2).stores({
+            articles: 'id_article, barcode, updated_at',
+            clients: 'id_client, updated_at',
+            reparationsPickup: 'id_reparation, updated_at',
+            reparationsActive: 'id_reparation, updated_at',
             outbox: 'client_id, status, created_at',
             meta: 'key',
         });
@@ -98,6 +133,7 @@ export class OfflineDbService extends Dexie {
             this.articles.clear(),
             this.clients.clear(),
             this.reparationsPickup.clear(),
+            this.reparationsActive.clear(),
             this.outbox.clear(),
             this.meta.clear(),
         ]);

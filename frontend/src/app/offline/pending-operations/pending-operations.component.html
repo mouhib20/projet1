@@ -30,6 +30,8 @@
             </div>
             <div class="entry-meta" *ngIf="e.type === 'vente_checkout'">{{ e.payload.items?.length }} {{ 'OFFLINE.ITEMS_SUFFIX' | translate }}</div>
             <div class="entry-meta" *ngIf="e.type === 'client_create'">{{ 'OFFLINE.TYPE_CLIENT' | translate }} — {{ e.payload.nom }}<ng-container *ngIf="e.payload.telephone">, {{ e.payload.telephone }}</ng-container></div>
+            <div class="entry-meta" *ngIf="e.type === 'reparation_create'">{{ 'OFFLINE.TYPE_REPARATION_CREATE' | translate }} — {{ e.payload.appareil }}</div>
+            <div class="entry-meta" *ngIf="e.type === 'reparation_status'">{{ 'OFFLINE.TYPE_REPARATION_STATUS' | translate }} — #{{ e.payload.id_reparation }} → {{ e.payload.statut }}</div>
             <div class="entry-error" *ngIf="e.status === 'failed' && e.last_error">⚠️ {{ e.last_error }}</div>
             <div class="entry-actions" *ngIf="e.status === 'failed'">
                 <button class="btn-outline" (click)="retry(e)">↻ {{ 'OFFLINE.RETRY' | translate }}</button>

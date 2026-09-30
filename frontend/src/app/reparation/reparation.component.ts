@@ -2,18 +2,23 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ReparationService, CreateReparationDto } from '../services/reparation.service';
 import { ClientService } from '../services/client.service';
 import { ArticleService, ArticleForm } from '../services/article.service';
 import { FournisseurService } from '../services/fournisseur.service';
 import { PosBridgeService } from '../services/pos-bridge.service';
 import { AuthService } from '../services/auth.service';
+import { OfflineDbService } from '../offline/offline-db.service';
+import { ConnectivityService } from '../offline/connectivity.service';
+import { SyncService } from '../offline/sync.service';
+import { OfflineSessionService } from '../offline/offline-session.service';
+import { ConnectivityBadgeComponent } from '../offline/connectivity-badge/connectivity-badge.component';
 
 @Component({
     selector: 'app-reparation',
     standalone: true,
-    imports: [CommonModule, FormsModule, TranslatePipe],
+    imports: [CommonModule, FormsModule, TranslatePipe, ConnectivityBadgeComponent],
     templateUrl: './reparation.component.html',
     styleUrls: ['./reparation.component.css']
 })
@@ -253,14 +258,49 @@ export class ReparationComponent implements OnInit {
         private fournisseurService: FournisseurService,
         private posBridge: PosBridgeService,
         private router: Router,
-        public auth: AuthService
+        public auth: AuthService,
+        private offlineDb: OfflineDbService,
+        public connectivity: ConnectivityService,
+        private syncService: SyncService,
+        private offlineSession: OfflineSessionService,
+        private translate: TranslateService,
     ) { }
 
-    ngOnInit() {
-        if (this.auth.hasPermission('reparation', 'voir')) this.loadReparations();
-        this.loadClients();
-        this.loadArticles();
-        this.loadFournisseurs();
+    async ngOnInit() {
+        if (this.auth.hasPermission('reparation', 'voir')) {
+            if (this.connectivity.isOnline()) {
+                this.loadReparations();
+            } else {
+                this.reparations = (await this.offlineDb.reparationsActive.toArray()).map(r => this.reparationOffline(r));
+            }
+        }
+        if (this.connectivity.isOnline()) {
+            this.loadClients();
+            this.loadArticles();
+            this.loadFournisseurs();
+            // Keeps this page's own offline caches (articles/clients/reparationsActive) warm,
+            // independent of whether the user has visited Stock/Operations first.
+            await this.syncService.pullReferenceData();
+        } else {
+            this.clients = await this.offlineDb.clients.toArray() as any;
+            this.articles = await this.offlineDb.articles.toArray() as any;
+            this.stockParts = this.articles.filter(a => a.type === 'part' || a.type === 'accessory');
+        }
+    }
+
+    /** Maps a cached OfflineReparationActive row into the shape the existing template already
+     *  renders (client.nom, items[].article.sous_categorie) so no template change is needed. */
+    private reparationOffline(r: any): any {
+        return {
+            id_reparation: r.id_reparation,
+            appareil: r.appareil,
+            description: r.description,
+            statut: r.statut,
+            prix: r.prix,
+            date_reception: r.date_reception,
+            client: { id_client: r.id_client, nom: r.client_nom },
+            items: (r.items || []).map((it: any) => ({ ...it, article: { sous_categorie: it.sous_categorie } })),
+        };
     }
 
     goHome() {
@@ -269,14 +309,15 @@ export class ReparationComponent implements OnInit {
 
     setTab(tab: 'tickets' | 'retours' | 'stock') {
         this.activeTab = tab;
-        if (tab === 'retours') this.loadRetours();
+        // The "retours" tab always needs a live server - nothing to show from the offline cache.
+        if (tab === 'retours' && this.connectivity.isOnline()) this.loadRetours();
     }
 
     loadReparations() {
         this.reparationService.getAllReparations().subscribe(data => {
             this.reparations = data;
         });
-        this.loadRetours();
+        if (this.connectivity.isOnline()) this.loadRetours();
     }
 
     loadRetours() {
@@ -416,6 +457,7 @@ export class ReparationComponent implements OnInit {
     loadClients() {
         this.clientService.getClients().subscribe(data => {
             this.clients = data;
+            this.offlineDb.clients.bulkPut(data as any).catch(() => undefined);
         });
     }
 
@@ -423,6 +465,7 @@ export class ReparationComponent implements OnInit {
         this.articleService.getArticles().subscribe(data => {
             this.articles = data;
             this.stockParts = this.articles.filter(a => a.type === 'part' || a.type === 'accessory');
+            this.offlineDb.articles.bulkPut(data as any).catch(() => undefined);
         });
     }
 
@@ -488,6 +531,10 @@ export class ReparationComponent implements OnInit {
             alert('Le nom est obligatoire');
             return;
         }
+        if (!this.connectivity.isOnline()) {
+            this.saveClientHorsLigne();
+            return;
+        }
         this.savingClient = true;
         this.clientService.createClient(this.newClient).subscribe({
             next: (res) => {
@@ -501,6 +548,18 @@ export class ReparationComponent implements OnInit {
                 alert(err.error?.message || "Erreur lors de l'enregistrement du client.");
             }
         });
+    }
+
+    /** Queues the new client for sync - like the POS quick-add modal, it only becomes selectable
+     *  (usable on a ticket) once it has actually synced, so it is not pre-selected here. */
+    private async saveClientHorsLigne(): Promise<void> {
+        if (!this.offlineSession.isOfflineCapable()) {
+            alert(this.translate.instant('OFFLINE.OFFLINE_SESSION_EXPIRED'));
+            return;
+        }
+        await this.syncService.enqueueClientCreate({ nom: this.newClient.nom, telephone: this.newClient.telephone });
+        this.closeClientModal();
+        alert(this.translate.instant('OPERATIONS.OFFLINE_CLIENT_QUEUED'));
     }
 
     // --- TICKET MODAL --- //
@@ -753,6 +812,10 @@ export class ReparationComponent implements OnInit {
         };
 
         this.savingTicket = true;
+        if (!this.connectivity.isOnline()) {
+            this.saveTicketHorsLigne(payload);
+            return;
+        }
         this.reparationService.createReparation(payload).subscribe({
             next: () => {
                 this.savingTicket = false;
@@ -765,6 +828,25 @@ export class ReparationComponent implements OnInit {
                 alert(err.error?.message || 'Erreur création ticket');
             }
         });
+    }
+
+    /** Queues an offline ticket intake (client + device + optional parts/acompte), mirroring
+     *  OperationsComponent.posCheckoutHorsLigne: optimistic local stock decrement, then enqueue. */
+    private async saveTicketHorsLigne(payload: CreateReparationDto): Promise<void> {
+        if (!this.offlineSession.isOfflineCapable()) {
+            this.savingTicket = false;
+            alert(this.translate.instant('OFFLINE.OFFLINE_SESSION_EXPIRED'));
+            return;
+        }
+        for (const item of payload.items || []) {
+            const article = this.articles.find(a => a.id_article === item.id_article);
+            if (article) article.quantite = (article.quantite ?? 0) - item.qte;
+            await this.offlineDb.articles.where('id_article').equals(item.id_article).modify((a: any) => { a.quantite -= item.qte; });
+        }
+        await this.syncService.enqueueReparationCreate(payload);
+        this.savingTicket = false;
+        this.closeTicketModal();
+        alert(this.translate.instant('REPARATION.OFFLINE_TICKET_QUEUED'));
     }
 
     updateStatut(id: number, statut: string) {
@@ -802,7 +884,44 @@ export class ReparationComponent implements OnInit {
      * If the problem type(s) were already chosen at ticket creation, those are reused instead
      * of asking again — several can apply to the same ticket.
      */
+    /** True once every problem on the ticket already has a matching part (or none needs one) -
+     *  the only case simple enough to skip the finalization wizard and go offline. Deliberately
+     *  independent of the wizard's own typesRestants/finaliserTypesSelected (interactive-only
+     *  state) - it re-derives the same check directly from the ticket's own cached data. */
+    peutMarquerPretHorsLigne(rep: any): boolean {
+        const tousProblemes: string[] = (rep.description || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const problemes = tousProblemes.filter(p => !p.startsWith(ReparationComponent.PROBLEME_TECHNIQUE));
+        const items: any[] = rep.items || [];
+        if (items.length === 0) return tousProblemes.length > 0 && problemes.length === 0;
+        return problemes.every(p => {
+            const cat = ReparationComponent.TYPE_TO_CATEGORY[p];
+            return items.some(it => ReparationComponent.matchesCategory(it.article?.sous_categorie, cat));
+        });
+    }
+
+    marquantPret = false;
+
+    /** Simple offline status change for the eligible case above - a plain PATCH, no wizard,
+     *  no stock/money side effects (see plan: "صيانة منتهية" for the simple cases only). */
+    async marquerPretHorsLigne(rep: any): Promise<void> {
+        if (this.marquantPret) return;
+        this.marquantPret = true;
+        await this.syncService.enqueueReparationStatus({ id_reparation: rep.id_reparation, statut: 'Livraison et réception' });
+        this.reparations = this.reparations.filter(r => r.id_reparation !== rep.id_reparation);
+        await this.offlineDb.reparationsActive.delete(rep.id_reparation);
+        this.marquantPret = false;
+        alert(this.translate.instant('REPARATION.OFFLINE_STATUS_QUEUED'));
+    }
+
     ouvrirFinalisation(rep: any) {
+        if (!this.connectivity.isOnline()) {
+            if (this.peutMarquerPretHorsLigne(rep)) {
+                this.marquerPretHorsLigne(rep);
+            } else {
+                alert(this.translate.instant('REPARATION.OFFLINE_NEEDS_PARTS_ONLINE'));
+            }
+            return;
+        }
         // Parts were already picked at ticket creation (via "Pièces de rechange") — nothing
         // left to ask, go straight to "Livraison et réception".
         // ...but only if every selected problem already has its part. If e.g. the screen was

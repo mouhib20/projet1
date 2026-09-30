@@ -650,7 +650,10 @@
         "OR_USED_PART": "أو، قطعة مستعملة",
         "ALREADY_ENTERED": "تم إدخاله مسبقًا",
         "CONTINUE": "متابعة",
-        "NO_PART_LABOR_ONLY": "لا توجد قطعة (يد عاملة فقط)"
+        "NO_PART_LABOR_ONLY": "لا توجد قطعة (يد عاملة فقط)",
+        "OFFLINE_TICKET_QUEUED": "تم حفظ التذكرة محليًا. ستتم مزامنتها فور عودة الاتصال.",
+        "OFFLINE_STATUS_QUEUED": "تم حفظ تغيير الحالة محليًا. سيتم مزامنته فور عودة الاتصال.",
+        "OFFLINE_NEEDS_PARTS_ONLINE": "هذه التذكرة لا تزال تحتاج اختيار قطعة: يلزم اتصال بالإنترنت لهذه الخطوة."
     },
     "STATS": {
         "TITLE": "إحصائيات المبيعات",
@@ -1025,6 +1028,8 @@
         "RELOAD": "إعادة التحميل",
         "OFFLINE_SESSION_EXPIRED": "انتهت صلاحية جلسة العمل دون اتصال. يرجى الاتصال بالإنترنت للمتابعة.",
         "SYNC_WARNINGS_TITLE": "تحذيرات المزامنة",
-        "TYPE_CLIENT": "زبون جديد"
+        "TYPE_CLIENT": "زبون جديد",
+        "TYPE_REPARATION_CREATE": "تذكرة صيانة جديدة",
+        "TYPE_REPARATION_STATUS": "تغيير حالة"
     }
 }

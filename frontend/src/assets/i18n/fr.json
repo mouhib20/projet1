@@ -650,7 +650,10 @@
         "OR_USED_PART": "Ou, pièce d'occasion",
         "ALREADY_ENTERED": "déjà saisi",
         "CONTINUE": "Continuer",
-        "NO_PART_LABOR_ONLY": "Aucune pièce (main d'œuvre seulement)"
+        "NO_PART_LABOR_ONLY": "Aucune pièce (main d'œuvre seulement)",
+        "OFFLINE_TICKET_QUEUED": "Ticket enregistré hors ligne. Il sera synchronisé dès le retour de la connexion.",
+        "OFFLINE_STATUS_QUEUED": "Changement de statut enregistré hors ligne. Il sera synchronisé dès le retour de la connexion.",
+        "OFFLINE_NEEDS_PARTS_ONLINE": "Ce ticket nécessite encore le choix d'une pièce : une connexion est requise pour cette étape."
     },
     "STATS": {
         "TITLE": "Statistiques des Ventes",
@@ -1025,6 +1028,8 @@
         "RELOAD": "Recharger",
         "OFFLINE_SESSION_EXPIRED": "Votre session hors ligne a expiré. Veuillez vous connecter à l'internet pour continuer.",
         "SYNC_WARNINGS_TITLE": "Avertissements de synchronisation",
-        "TYPE_CLIENT": "Nouveau client"
+        "TYPE_CLIENT": "Nouveau client",
+        "TYPE_REPARATION_CREATE": "Nouveau ticket de réparation",
+        "TYPE_REPARATION_STATUS": "Changement de statut"
     }
 }

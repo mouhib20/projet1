@@ -45,6 +45,33 @@ export class ReparationsService {
         );
     }
 
+    /** Tickets still in progress (not yet ready for pickup) - the offline reparation page's local
+     *  cache, used both to render the ticket list offline and to decide which tickets are eligible
+     *  for the offline "maintenance terminée" status change (see
+     *  ReparationComponent.peutMarquerPretHorsLigne). Includes client_nom/prix/date_reception, same
+     *  as pickupReady(), so the offline list renders identically to the live one. Items are
+     *  aggregated in SQL to keep the payload lean, same spirit as findRetours()'s manual joins. */
+    async activeSync(since?: string): Promise<any[]> {
+        const id_magasin = this.storeContext.requireMagasinId();
+        return this.dataSource.query(
+            `SELECT r.id_reparation, r.appareil, r.description, r.statut, r.id_client, r.updated_at,
+                    r.prix, r.date_reception, c.nom AS client_nom,
+                    COALESCE(json_agg(json_build_object(
+                        'id_article', ri.id_article, 'qte', ri.qte, 'prix', ri.prix,
+                        'sous_categorie', a.sous_categorie
+                    )) FILTER (WHERE ri.id_article IS NOT NULL), '[]') AS items
+               FROM reparation r
+               LEFT JOIN client c ON c.id_client = r.id_client
+               LEFT JOIN reparation_item ri ON ri.id_reparation = r.id_reparation
+               LEFT JOIN article a ON a.id_article = ri.id_article
+              WHERE r.id_magasin = $1 AND r.statut IN ('En attente', 'En cours')
+                ${since ? 'AND r.updated_at > $2' : ''}
+              GROUP BY r.id_reparation, c.nom
+              ORDER BY r.updated_at ASC`,
+            since ? [id_magasin, since] : [id_magasin],
+        );
+    }
+
     private static readonly TYPE_TO_CATEGORIE: Record<string, string> = {
         'Écran': 'afficheur',
         'Batterie': 'batterie',
@@ -108,13 +135,29 @@ export class ReparationsService {
         return reparation;
     }
 
-    async create(data: CreateReparationDto, authorization?: string): Promise<Reparation> {
+    /** Present only when this create is being replayed from an offline device's outbox - makes
+     *  the call idempotent and allows stock to go negative instead of being rejected, exactly
+     *  like VentesService.checkout(). See that method for the fuller rationale. */
+    async create(data: CreateReparationDto, authorization?: string): Promise<Reparation & { avertissements?: string[] }> {
         const id_magasin = this.storeContext.requireMagasinId();
+
+        if (data.client_id) {
+            const [existant] = await this.dataSource.query(
+                `SELECT resultat FROM sync_operation_log WHERE client_id = $1 AND id_magasin = $2`,
+                [data.client_id, id_magasin],
+            );
+            if (existant) {
+                const reparation = await this.findOne(existant.resultat?.id_reparation);
+                return { ...reparation, avertissements: existant.resultat?.avertissements || [] };
+            }
+        }
+
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
 
         try {
+            const avertissements: string[] = [];
             const client = await queryRunner.manager.findOne(Client, {
                 where: { id_client: data.id_client, id_magasin }
             });
@@ -132,7 +175,14 @@ export class ReparationsService {
                     if (!article) throw new NotFoundException(`Article #${itemDto.id_article} introuvable`);
 
                     if (article.quantite < itemDto.qte) {
-                        throw new BadRequestException(`Stock insuffisant pour "${article.designation}". Disponible: ${article.quantite}, demandé: ${itemDto.qte}`);
+                        if (!data.client_id) {
+                            throw new BadRequestException(`Stock insuffisant pour "${article.designation}". Disponible: ${article.quantite}, demandé: ${itemDto.qte}`);
+                        }
+                        // Offline ticket being replayed: the part was already physically taken -
+                        // honour it and let the stock go negative, but flag it for the store owner.
+                        avertissements.push(
+                            `Stock devenu négatif pour "${article.designation}" après synchronisation (disponible : ${article.quantite}, utilisé : ${itemDto.qte}).`
+                        );
                     }
 
                     // Decrement stock
@@ -195,6 +245,15 @@ export class ReparationsService {
                 await queryRunner.manager.save(venteAcompte);
             }
 
+            if (data.client_id) {
+                const acteur = await this.caisseService.acteurOuSysteme(authorization);
+                await queryRunner.query(
+                    `INSERT INTO sync_operation_log (client_id, id_magasin, id_utilisateur, type, resultat, avertissement)
+                     VALUES ($1, $2, $3, 'reparation_create', $4, $5)`,
+                    [data.client_id, id_magasin, acteur.id, JSON.stringify({ id_reparation: savedReparation.id_reparation, avertissements }), avertissements.join(' ') || null],
+                );
+            }
+
             await queryRunner.commitTransaction();
 
             if (acompte > 0) {
@@ -207,9 +266,16 @@ export class ReparationsService {
                     reference: 'reparation:' + savedReparation.id_reparation,
                 });
             }
-            return this.findOne(savedReparation.id_reparation);
+            const reparationComplete = await this.findOne(savedReparation.id_reparation);
+            return { ...reparationComplete, avertissements };
         } catch (err) {
             await queryRunner.rollbackTransaction();
+            // Two near-simultaneous sync retries of the same offline ticket raced each other; the
+            // other one won and already recorded it (unique client_id) - return its result instead
+            // of surfacing a spurious error for what is, from the client's point of view, a success.
+            if (data.client_id && (err as any)?.code === '23505') {
+                return this.create(data, authorization);
+            }
             throw err;
         } finally {
             await queryRunner.release();

@@ -61,4 +61,10 @@ export class CreateReparationDto {
     @ValidateNested({ each: true })
     @Type(() => CreateReparationItemDto)
     items: CreateReparationItemDto[];
+
+    /** Present only when this create is being replayed from an offline device's outbox - see
+     *  VentesService.checkout for the identical pattern. */
+    @IsOptional()
+    @IsString()
+    client_id?: string;
 }

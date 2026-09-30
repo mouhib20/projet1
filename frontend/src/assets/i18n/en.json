@@ -650,7 +650,10 @@
         "OR_USED_PART": "Or, a used part",
         "ALREADY_ENTERED": "already entered",
         "CONTINUE": "Continue",
-        "NO_PART_LABOR_ONLY": "No part (labor only)"
+        "NO_PART_LABOR_ONLY": "No part (labor only)",
+        "OFFLINE_TICKET_QUEUED": "Ticket saved offline. It will sync as soon as the connection is back.",
+        "OFFLINE_STATUS_QUEUED": "Status change saved offline. It will sync as soon as the connection is back.",
+        "OFFLINE_NEEDS_PARTS_ONLINE": "This ticket still needs a part chosen: a connection is required for this step."
     },
     "STATS": {
         "TITLE": "Sales Statistics",
@@ -1025,6 +1028,8 @@
         "RELOAD": "Reload",
         "OFFLINE_SESSION_EXPIRED": "Your offline session has expired. Please connect to the internet to continue.",
         "SYNC_WARNINGS_TITLE": "Sync warnings",
-        "TYPE_CLIENT": "New client"
+        "TYPE_CLIENT": "New client",
+        "TYPE_REPARATION_CREATE": "New repair ticket",
+        "TYPE_REPARATION_STATUS": "Status change"
     }
 }

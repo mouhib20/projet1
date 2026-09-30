@@ -27,6 +27,14 @@ export class ReparationsController {
         return this.reparationsService.pickupReady(since);
     }
 
+    /** Offline mode: incremental pull of tickets still in progress, for the reparation page's
+     *  local cache. */
+    @Get('active-sync')
+    @RequirePermission('reparation', 'voir')
+    activeSync(@Query('since') since?: string) {
+        return this.reparationsService.activeSync(since);
+    }
+
     @Get(':id')
     @RequirePermission('reparation', 'voir')
     @ScopedByStore('reparation', 'id_reparation')
