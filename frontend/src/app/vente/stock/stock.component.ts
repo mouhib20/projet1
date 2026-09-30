@@ -578,6 +578,27 @@ export class StockComponent implements OnInit {
         this.clearMessages();
         this.saving = true;
 
+        // One last best-effort auto-link attempt right before persisting, using whatever is in
+        // the fields now - covers the case where the user typed fast and hit Save before a field
+        // blur/change ever fired tryAutoLinkCompat().
+        const marque = (this.form.marque || '').trim();
+        const modele = (this.form.modele || '').trim();
+        const sousCategorie = (this.form.sous_categorie || '').trim();
+        if (this.canLinkCompat && !this.form.compat_group_id && marque && modele && sousCategorie) {
+            const terms = [...new Set([sousCategorie, this.categoryLabel(sousCategorie)])];
+            this.compatService.autoResolveGroup(terms, marque, modele).subscribe({
+                next: (res) => {
+                    if ('id_group' in res) this.form.compat_group_id = res.id_group;
+                    this.persistProduct();
+                },
+                error: () => this.persistProduct()
+            });
+        } else {
+            this.persistProduct();
+        }
+    }
+
+    private persistProduct(): void {
         if (this.isEditing && this.editingId !== null) {
             this.articleService.updateArticle(this.editingId, this.form as any).subscribe({
                 next: () => {
