@@ -62,12 +62,55 @@ describe('CompatibilityService', () => {
 
     describe('piecesPourModele() — stock/price scoped to the caller\'s own store only', () => {
         it('filters the store inside the LEFT JOIN, not a WHERE (so a never-stocked group still appears)', async () => {
-            dataSource.query.mockResolvedValue([]);
+            dataSource.query.mockResolvedValue([]); // no groups found -> autoLierArticlesOrphelins is a no-op
             await service.piecesPourModele(5);
-            const [sql, params] = dataSource.query.mock.calls[0];
+            const mainCall = dataSource.query.mock.calls.find(([sql]) => sql.includes('LEFT JOIN article'));
+            expect(mainCall).toBeDefined();
+            const [sql, params] = mainCall!;
             expect(sql).toMatch(/LEFT JOIN article a ON a\.compat_group_id = cg\.id AND a\.id_magasin = \$2/i);
             expect(params).toEqual([5, 1]); // id_modele, id_magasin from StoreContextService
             expect(storeContext.requireMagasinId).toHaveBeenCalled();
+        });
+
+        it('self-heals: links an unlinked article whose own text matches a group member + part type, before reading results', async () => {
+            const calls: { sql: string; params: any[] }[] = [];
+            dataSource.query.mockImplementation((sql: string, params: any[]) => {
+                calls.push({ sql, params });
+                if (sql.includes('SELECT cg.id AS id_group')) return Promise.resolve([{ id_group: 11, nom_fr: 'Vitre', nom_en: 'Glass', nom_ar: 'زجاج' }]);
+                if (sql.includes('SELECT dm.nom, b.nom AS marque')) return Promise.resolve([{ nom: 'A12', marque: 'Samsung' }]);
+                return Promise.resolve([]);
+            });
+            await service.piecesPourModele(12);
+            const update = calls.find(c => c.sql.includes('UPDATE article SET compat_group_id'));
+            expect(update).toBeDefined();
+            expect(update!.params).toEqual([11, 1, 'samsung', 'a12', 'a12', ['vitre', 'glass', 'زجاج', 'glace']]);
+            // The self-heal runs BEFORE the main read.
+            const updateIdx = calls.findIndex(c => c.sql.includes('UPDATE article SET compat_group_id'));
+            const mainIdx = calls.findIndex(c => c.sql.includes('LEFT JOIN article'));
+            expect(updateIdx).toBeLessThan(mainIdx);
+        });
+
+        it('self-heal matching accepts "glace" for a part type literally named "glass" (and vice versa)', async () => {
+            const calls: { sql: string; params: any[] }[] = [];
+            dataSource.query.mockImplementation((sql: string, params: any[]) => {
+                calls.push({ sql, params });
+                if (sql.includes('SELECT cg.id AS id_group')) return Promise.resolve([{ id_group: 11, nom_fr: 'glass', nom_en: 'glass', nom_ar: 'GLASS' }]);
+                if (sql.includes('SELECT dm.nom, b.nom AS marque')) return Promise.resolve([{ nom: 'A12', marque: 'Samsung' }]);
+                return Promise.resolve([]);
+            });
+            await service.piecesPourModele(12);
+            const update = calls.find(c => c.sql.includes('UPDATE article SET compat_group_id'));
+            expect(update!.params[5]).toEqual(expect.arrayContaining(['glass', 'glace']));
+        });
+
+        it('does nothing extra when the model belongs to no group', async () => {
+            dataSource.query.mockImplementation((sql: string) => {
+                if (sql.includes('SELECT cg.id AS id_group')) return Promise.resolve([]);
+                return Promise.resolve([]);
+            });
+            await service.piecesPourModele(999);
+            const updateCalls = dataSource.query.mock.calls.filter(([sql]) => sql.includes('UPDATE article'));
+            expect(updateCalls).toHaveLength(0);
         });
     });
 

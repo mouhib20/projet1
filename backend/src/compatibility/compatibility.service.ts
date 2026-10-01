@@ -85,10 +85,12 @@ export class CompatibilityService {
      * Parts (compat groups) for a device model, with THIS store's own stock/price if it has
      * stocked one - never another store's. The store filter sits inside the LEFT JOIN's ON
      * clause (not a WHERE), so a group the caller's store never stocked still appears, just
-     * without article fields.
+     * without article fields. Self-heals unlinked stock first (see autoLierArticlesOrphelins),
+     * so a part added to Stock before ever being opened/saved there still shows up here.
      */
     async piecesPourModele(idModele: number): Promise<any[]> {
         const id_magasin = this.storeContext.requireMagasinId();
+        await this.autoLierArticlesOrphelins(idModele, id_magasin);
         return this.dataSource.query(
             `SELECT cg.id AS id_group, pt.id AS id_part_type, pt.nom_fr, pt.nom_en, pt.nom_ar,
                     cg.note, cg.image, cg.statut,
@@ -100,6 +102,53 @@ export class CompatibilityService {
               WHERE cgm.id_model = $1`,
             [idModele, id_magasin],
         );
+    }
+
+    /** Closes the "stock article never got auto-linked" gap from the search side, not just the
+     *  Stock form's own save-time auto-link: for every group idModele belongs to, looks at this
+     *  store's own still-unlinked articles (compat_group_id IS NULL) and links any whose own
+     *  marque/modele/sous_categorie text-matches one of that group's members + its part type -
+     *  same exact-match rules as autoResolveGroupeRecherche (case-insensitive, trimmed, plus a
+     *  whitespace-compact fallback for the model name), never fuzzy. Only ever sets a link that
+     *  was never set before; it doesn't touch articles already linked to a different group. */
+    private async autoLierArticlesOrphelins(idModele: number, idMagasin: number): Promise<void> {
+        const groupes = await this.dataSource.query(
+            `SELECT cg.id AS id_group, pt.nom_fr, pt.nom_en, pt.nom_ar
+               FROM compat_group_model cgm
+               JOIN compat_group cg ON cg.id = cgm.id_group
+               JOIN part_type pt ON pt.id = cg.id_part_type
+              WHERE cgm.id_model = $1`,
+            [idModele],
+        );
+        for (const groupe of groupes) {
+            const termesType = [...new Set([groupe.nom_fr, groupe.nom_en, groupe.nom_ar].map((t: string) => t.trim().toLowerCase()))];
+            // Stock's sous_categorie uses its own raw keys (e.g. 'Glace'), display-renamed to
+            // "Glass" only in the UI - the part_type's own names never literally say "Glace", so
+            // without this the two sides can never text-match for that one known rename.
+            if (termesType.includes('glass') && !termesType.includes('glace')) termesType.push('glace');
+            if (termesType.includes('glace') && !termesType.includes('glass')) termesType.push('glass');
+            const membres = await this.dataSource.query(
+                `SELECT dm.nom, b.nom AS marque
+                   FROM compat_group_model cgm
+                   JOIN device_model dm ON dm.id = cgm.id_model
+                   JOIN brand b ON b.id = dm.id_brand
+                  WHERE cgm.id_group = $1`,
+                [groupe.id_group],
+            );
+            for (const membre of membres) {
+                const marqueNorm = membre.marque.trim().toLowerCase();
+                const modeleNorm = membre.nom.trim().toLowerCase();
+                const modeleCompact = modeleNorm.replace(/\s+/g, '');
+                await this.dataSource.query(
+                    `UPDATE article SET compat_group_id = $1
+                      WHERE id_magasin = $2 AND compat_group_id IS NULL
+                        AND LOWER(TRIM(marque)) = $3
+                        AND (LOWER(TRIM(modele)) = $4 OR REPLACE(LOWER(modele), ' ', '') = $5)
+                        AND LOWER(TRIM(sous_categorie)) = ANY($6::text[])`,
+                    [groupe.id_group, idMagasin, marqueNorm, modeleNorm, modeleCompact, termesType],
+                );
+            }
+        }
     }
 
     // ── Reference data for the search page's type→brand→model pickers (same access as search
