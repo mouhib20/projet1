@@ -77,7 +77,20 @@
         <div class="loading-icon">⟳</div>
     </div>
 
+    <div class="stock-summary-card" [class.summary-empty]="modelsInStock === 0" *ngIf="!partsLoading && searched && matchedParts.length">
+        <ng-container *ngIf="modelsInStock > 0">
+            ✅ {{ 'COMPATIBILITE.SUMMARY_IN_STOCK' | translate:{ qty: totalInStock, models: modelsInStock } }}
+        </ng-container>
+        <ng-container *ngIf="modelsInStock === 0">
+            ⚠️ {{ 'COMPATIBILITE.SUMMARY_NONE_IN_STOCK' | translate }}
+        </ng-container>
+    </div>
+
     <div class="result-card" *ngIf="!partsLoading && searched && matchedParts.length">
+        <label class="available-only-toggle">
+            <input type="checkbox" [(ngModel)]="availableOnly" />
+            {{ 'COMPATIBILITE.AVAILABLE_ONLY' | translate }}
+        </label>
         <table class="parts-table">
             <thead>
                 <tr>
@@ -90,7 +103,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr *ngFor="let matchedPart of matchedParts">
+                <tr *ngFor="let matchedPart of visibleParts">
                     <td class="fw-bold">{{ matchedPart.marque || selectedBrand?.nom }}</td>
                     <td class="fw-bold">{{ matchedPart.modele || selectedModel?.nom }}</td>
                     <td>
@@ -106,6 +119,9 @@
                 </tr>
             </tbody>
         </table>
+        <div class="empty-state small" *ngIf="!visibleParts.length">
+            <strong>{{ 'COMPATIBILITE.NO_STOCKED_RESULTS' | translate }}</strong>
+        </div>
     </div>
 
     <div class="devices-section" *ngIf="!partsLoading && searched && matchedParts.length">

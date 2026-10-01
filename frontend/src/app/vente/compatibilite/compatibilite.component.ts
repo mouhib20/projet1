@@ -110,6 +110,19 @@ export class CompatibiliteComponent implements OnInit {
     devicesLoading = false;
     compatibleDevices: DeviceModel[] = [];
     searched = false;
+    availableOnly = false;
+
+    get visibleParts(): PartRow[] {
+        return this.availableOnly ? this.matchedParts.filter(p => p.id_article) : this.matchedParts;
+    }
+
+    get totalInStock(): number {
+        return this.matchedParts.filter(p => p.id_article).reduce((sum, p) => sum + (p.quantite ?? 0), 0);
+    }
+
+    get modelsInStock(): number {
+        return this.matchedParts.filter(p => p.id_article).length;
+    }
 
     showSuggestForm = false;
     suggestionText = '';
@@ -180,7 +193,14 @@ export class CompatibiliteComponent implements OnInit {
         this.partsLoading = true;
         this.compatService.partsForModel(this.selectedModelId).subscribe({
             next: (data: PartRow[]) => {
-                this.matchedParts = data.filter(p => p.id_part_type === this.selectedPartTypeId);
+                this.matchedParts = data
+                    .filter(p => p.id_part_type === this.selectedPartTypeId)
+                    // Stocked first (most qty first among those), so what's actually usable right
+                    // now doesn't get buried under "Not stocked" rows.
+                    .sort((a, b) => {
+                        if (!!a.id_article !== !!b.id_article) return a.id_article ? -1 : 1;
+                        return (b.quantite ?? 0) - (a.quantite ?? 0);
+                    });
                 this.partsLoading = false;
                 if (this.matchedParts.length) this.loadCompatibleDevices(this.matchedParts.map(p => p.id_group));
             },
@@ -218,6 +238,7 @@ export class CompatibiliteComponent implements OnInit {
         this.matchedParts = [];
         this.compatibleDevices = [];
         this.searched = false;
+        this.availableOnly = false;
         this.showSuggestForm = false;
         this.suggestSuccess = false;
     }
