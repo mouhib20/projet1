@@ -372,7 +372,6 @@
         "STATUS_LABEL": "Statut de compatibilité",
         "STATUS_CONFIRMED": "Compatibilité confirmée",
         "STATUS_NEEDS_TEST": "À tester",
-        "OVERLAP_WARNING": "{{device}} appartient déjà à un autre groupe du même type, avec : {{models}}. Vouliez-vous plutôt ajouter des appareils à ce groupe-là ?",
         "SEARCH_MODELS_PLACEHOLDER": "Chercher un modèle…",
         "ADD_MODEL_PROMPT": "Ajouter « {{term}} » comme nouveau modèle",
         "SEARCH_BRAND_PLACEHOLDER": "Chercher une marque…",
@@ -413,10 +412,6 @@
         "SUCCESS_DELETE": "Groupe supprimé avec succès.",
         "ERR_SAVE": "Erreur lors de l'enregistrement.",
         "ERR_DELETE": "Erreur lors de la suppression.",
-        "MERGE_INTO_THIS": "Fusionner dans ce groupe",
-        "CONFIRM_MERGE": "Fusionner ce groupe dans l'autre ? Tous ses appareils y seront déplacés et ce groupe sera supprimé.",
-        "SUCCESS_MERGE": "Groupes fusionnés avec succès.",
-        "ERR_MERGE": "Erreur lors de la fusion des groupes.",
         "SUGGESTIONS_LINK": "Suggestions des magasins"
     },
     "COMPATIBILITE": {

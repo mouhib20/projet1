@@ -96,40 +96,6 @@
     color: #86efac;
 }
 
-.alert-warning {
-    background: #2b2311;
-    border: 1px solid #7c5e1d;
-    color: #fcd34d;
-}
-
-.overlap-warning {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.btn-link-action {
-    background: transparent;
-    border: 1px solid rgba(252, 211, 77, 0.4);
-    border-radius: 6px;
-    color: #fcd34d;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 600;
-    padding: 4px 10px;
-    white-space: nowrap;
-}
-
-.btn-link-action:hover {
-    background: rgba(252, 211, 77, 0.1);
-}
-
-.btn-link-action:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
 
 .status-badge {
     display: inline-block;

@@ -372,7 +372,6 @@
         "STATUS_LABEL": "Compatibility status",
         "STATUS_CONFIRMED": "Confirmed match",
         "STATUS_NEEDS_TEST": "Needs testing",
-        "OVERLAP_WARNING": "{{device}} already belongs to another group of the same type, with: {{models}}. Did you mean to add devices to that group instead?",
         "SEARCH_MODELS_PLACEHOLDER": "Search a model…",
         "ADD_MODEL_PROMPT": "Add \"{{term}}\" as a new model",
         "SEARCH_BRAND_PLACEHOLDER": "Search a brand…",
@@ -413,10 +412,6 @@
         "SUCCESS_DELETE": "Group deleted successfully.",
         "ERR_SAVE": "Error saving.",
         "ERR_DELETE": "Error deleting.",
-        "MERGE_INTO_THIS": "Merge into this group",
-        "CONFIRM_MERGE": "Merge this group into the other one? All its devices move there and this group is removed.",
-        "SUCCESS_MERGE": "Groups merged successfully.",
-        "ERR_MERGE": "Error merging the groups.",
         "SUGGESTIONS_LINK": "Store suggestions"
     },
     "COMPATIBILITE": {

@@ -98,12 +98,6 @@ export class CompatService {
 
     // ── Groups (editor) ──
 
-    checkGroupOverlap(idModel: number, idPartType: number, excludeGroupId?: number): Observable<{ id_group: number; modeles: string[] }[]> {
-        const params: any = { id_model: idModel, id_part_type: idPartType };
-        if (excludeGroupId != null) params.exclude_group_id = excludeGroupId;
-        return this.http.get<{ id_group: number; modeles: string[] }[]>(`${this.apiUrl}/groups/check-overlap`, { params });
-    }
-
     getGroups(): Observable<CompatGroupListItem[]> {
         return this.http.get<CompatGroupListItem[]>(`${this.apiUrl}/groups`);
     }
@@ -122,10 +116,6 @@ export class CompatService {
 
     deleteGroup(id: number): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/groups/${id}`);
-    }
-
-    mergeGroups(idSource: number, idCible: number): Observable<void> {
-        return this.http.post<void>(`${this.apiUrl}/groups/${idSource}/merge`, { id_cible: idCible });
     }
 
     // ── Suggestions review (editor) ──

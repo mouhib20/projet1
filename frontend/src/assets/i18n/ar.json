@@ -372,7 +372,6 @@
         "STATUS_LABEL": "حالة التوافق",
         "STATUS_CONFIRMED": "توافق مؤكد",
         "STATUS_NEEDS_TEST": "يحتاج تجربة",
-        "OVERLAP_WARNING": "{{device}} ينتمي بالفعل إلى مجموعة أخرى من نفس النوع، مع: {{models}}. هل تريد إضافة الأجهزة إلى تلك المجموعة بدلًا من ذلك؟",
         "SEARCH_MODELS_PLACEHOLDER": "ابحث عن موديل…",
         "ADD_MODEL_PROMPT": "إضافة \"{{term}}\" كموديل جديد",
         "SEARCH_BRAND_PLACEHOLDER": "ابحث عن ماركة…",
@@ -413,10 +412,6 @@
         "SUCCESS_DELETE": "تم حذف المجموعة بنجاح.",
         "ERR_SAVE": "خطأ أثناء الحفظ.",
         "ERR_DELETE": "خطأ أثناء الحذف.",
-        "MERGE_INTO_THIS": "دمج في هذه المجموعة",
-        "CONFIRM_MERGE": "دمج هذه المجموعة في الأخرى؟ ستُنقل كل أجهزتها إلى هناك وستُحذف هذه المجموعة.",
-        "SUCCESS_MERGE": "تم دمج المجموعتين بنجاح.",
-        "ERR_MERGE": "خطأ أثناء دمج المجموعتين.",
         "SUGGESTIONS_LINK": "اقتراحات المحلات"
     },
     "COMPATIBILITE": {
