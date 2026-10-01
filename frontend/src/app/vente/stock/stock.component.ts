@@ -69,10 +69,13 @@ export class StockComponent implements OnInit {
     saving = false;
 
     // ── Compat link (optional): connects this article to an already-registered compatible part,
-    // so it shows as "stocked" on the Compatibility search page. Linking only - group creation
-    // stays a compat_editor-only action, done from the Compatibility editor panel. ──
+    // so it shows as "stocked" on the Compatibility search page. No store-facing UI for it at all
+    // (by explicit request) - every role that can reach this page is store-scoped and must never
+    // see the shared catalogue's internals here. Linking still happens fully automatically via the
+    // backend self-heal (autoLierArticlesOrphelins) whenever the Compatibility search page is used,
+    // this flag just permanently disables the manual UI below. ──
     get canLinkCompat(): boolean {
-        return this.auth.hasPermission('compatibilite', 'voir');
+        return false;
     }
     linkPartTypes: PartType[] = [];
     linkBrands: Brand[] = [];
