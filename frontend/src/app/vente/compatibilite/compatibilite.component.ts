@@ -124,7 +124,10 @@ export class CompatibiliteComponent implements OnInit {
     devicesLoading = false;
     compatibleDevices: CompatibleDevice[] = [];
     searched = false;
-    availableOnly = false;
+    // Defaults to on: a part type shared by many devices can carry a long tail of sold-out units
+    // (kept in Stock for reordering) alongside the few that are actually usable right now - showing
+    // only those by default keeps the first look useful, with the full list one click away.
+    availableOnly = true;
 
     /** A linked article record (id_article set) can still have zero quantity - e.g. a battery that
      *  sold out but was kept in Stock for reordering. That's not "in stock" by any useful
@@ -319,7 +322,7 @@ export class CompatibiliteComponent implements OnInit {
         this.matchedParts = [];
         this.compatibleDevices = [];
         this.searched = false;
-        this.availableOnly = false;
+        this.availableOnly = true;
         this.showSuggestForm = false;
         this.suggestSuccess = false;
     }
