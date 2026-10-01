@@ -6,7 +6,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CompatService } from '../../services/compat.service';
 import { AuthService } from '../../services/auth.service';
 import { articleImageUrl } from '../../services/article.service';
-import { Brand, DeviceModel, PartType, CompatGroupListItem } from '../../models/compat.model';
+import { Brand, DeviceModel, PartType, CompatGroupListItem, CompatGroupStatut } from '../../models/compat.model';
 
 @Component({
     selector: 'app-compat-groups',
@@ -30,7 +30,7 @@ export class CompatGroupsComponent implements OnInit {
     saving = false;
     /** modeleIds here is the "also fits" list only - the base model is tracked separately and
      *  never duplicated into it (the backend adds it to compat_group_model on save either way). */
-    form: { id_part_type: number | null; id_base_model: number | null; modeleIds: number[]; note: string } = this.emptyForm();
+    form: { id_part_type: number | null; id_base_model: number | null; modeleIds: number[]; note: string; statut: CompatGroupStatut } = this.emptyForm();
 
     // ── Part type: a row of pills (one tap to pick), "+" opens the same add-new-type mini form ──
     showNewPartType = false;
@@ -335,7 +335,7 @@ export class CompatGroupsComponent implements OnInit {
     }
 
     emptyForm() {
-        return { id_part_type: null as number | null, id_base_model: null as number | null, modeleIds: [] as number[], note: '' };
+        return { id_part_type: null as number | null, id_base_model: null as number | null, modeleIds: [] as number[], note: '', statut: 'confirmed' as CompatGroupStatut };
     }
 
     loadAll(): void {
@@ -395,7 +395,7 @@ export class CompatGroupsComponent implements OnInit {
             next: (detail) => {
                 this.editingId = detail.id;
                 const modeleIds = detail.modeleIds.filter(id => id !== detail.id_base_model);
-                this.form = { id_part_type: detail.id_part_type, id_base_model: detail.id_base_model, modeleIds, note: detail.note || '' };
+                this.form = { id_part_type: detail.id_part_type, id_base_model: detail.id_base_model, modeleIds, note: detail.note || '', statut: detail.statut || 'confirmed' };
                 this.resetInlineCreateState();
                 this.showForm = true;
                 this.refreshOverlapWarnings();
@@ -420,6 +420,7 @@ export class CompatGroupsComponent implements OnInit {
             id_base_model: this.form.id_base_model,
             modeleIds: this.form.modeleIds,
             note: this.form.note?.trim() || undefined,
+            statut: this.form.statut,
         };
 
         const onDone = (): void => {

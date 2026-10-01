@@ -102,6 +102,24 @@
     color: #fcd34d;
 }
 
+.status-badge {
+    display: inline-block;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.status-confirmed {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+}
+
+.status-needs-test {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fcd34d;
+}
+
 .form-card {
     background: #161b27;
     border: 1px solid #21263a;

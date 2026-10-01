@@ -91,7 +91,7 @@ export class CompatibilityService {
         const id_magasin = this.storeContext.requireMagasinId();
         return this.dataSource.query(
             `SELECT cg.id AS id_group, pt.id AS id_part_type, pt.nom_fr, pt.nom_en, pt.nom_ar,
-                    cg.note, cg.image,
+                    cg.note, cg.image, cg.statut,
                     a.id_article, a.designation, a.quantite, a.prix_vente, a.marque, a.modele
                FROM compat_group_model cgm
                JOIN compat_group cg ON cg.id = cgm.id_group
@@ -329,7 +329,7 @@ export class CompatibilityService {
     async listerGroupes(authorization?: string): Promise<any[]> {
         await this.editeurRequis(authorization);
         return this.dataSource.query(
-            `SELECT cg.id, cg.note, cg.image, cg.date_creation, cg.id_base_model,
+            `SELECT cg.id, cg.note, cg.image, cg.date_creation, cg.id_base_model, cg.statut,
                     base.nom AS base_nom, baseBrand.nom AS base_marque,
                     pt.id AS id_part_type, pt.nom_fr, pt.nom_en, pt.nom_ar,
                     COALESCE(array_agg(dm.nom ORDER BY dm.nom) FILTER (WHERE dm.nom IS NOT NULL), '{}') AS modeles
@@ -348,7 +348,7 @@ export class CompatibilityService {
     async obtenirGroupe(id: number, authorization?: string): Promise<any> {
         await this.editeurRequis(authorization);
         const [groupe] = await this.dataSource.query(
-            `SELECT cg.id, cg.note, cg.image, cg.id_part_type, cg.id_base_model FROM compat_group cg WHERE cg.id = $1`,
+            `SELECT cg.id, cg.note, cg.image, cg.id_part_type, cg.id_base_model, cg.statut FROM compat_group cg WHERE cg.id = $1`,
             [id],
         );
         if (!groupe) throw new NotFoundException(`Groupe de compatibilité #${id} introuvable`);
@@ -365,17 +365,18 @@ export class CompatibilityService {
      *  too (so every existing read - search, stock status, the customer-facing device grid - keeps
      *  working unchanged off group membership alone), but it never needs to be in modeleIds itself. */
     async creerGroupe(
-        dto: { id_part_type: number; id_base_model: number; modeleIds: number[]; note?: string; image?: string },
+        dto: { id_part_type: number; id_base_model: number; modeleIds: number[]; note?: string; image?: string; statut?: string },
         authorization?: string,
     ): Promise<{ id: number }> {
         const acteur = await this.editeurRequis(authorization);
         if (!dto.id_part_type) throw new BadRequestException('Le type de pièce est obligatoire.');
         if (!dto.id_base_model) throw new BadRequestException("Le téléphone original de la pièce est obligatoire.");
+        const statut = dto.statut === 'needs_test' ? 'needs_test' : 'confirmed';
         const modeles = [...new Set([dto.id_base_model, ...(dto.modeleIds || [])])];
         return this.dataSource.transaction(async (m) => {
             const [row] = await m.query(
-                `INSERT INTO compat_group (id_part_type, id_base_model, note, image, cree_par) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-                [dto.id_part_type, dto.id_base_model, dto.note?.trim() || null, dto.image || null, acteur.id],
+                `INSERT INTO compat_group (id_part_type, id_base_model, note, image, statut, cree_par) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+                [dto.id_part_type, dto.id_base_model, dto.note?.trim() || null, dto.image || null, statut, acteur.id],
             );
             for (const idModel of modeles) {
                 await m.query(
@@ -389,23 +390,25 @@ export class CompatibilityService {
 
     async modifierGroupe(
         id: number,
-        dto: { id_part_type?: number; id_base_model?: number; modeleIds?: number[]; note?: string; image?: string },
+        dto: { id_part_type?: number; id_base_model?: number; modeleIds?: number[]; note?: string; image?: string; statut?: string },
         authorization?: string,
     ): Promise<void> {
         await this.editeurRequis(authorization);
         const [existant] = await this.dataSource.query(`SELECT id, id_base_model FROM compat_group WHERE id = $1`, [id]);
         if (!existant) throw new NotFoundException(`Groupe de compatibilité #${id} introuvable`);
+        const statut = dto.statut === undefined ? undefined : (dto.statut === 'needs_test' ? 'needs_test' : 'confirmed');
 
         await this.dataSource.transaction(async (m) => {
-            if (dto.id_part_type !== undefined || dto.id_base_model !== undefined || dto.note !== undefined || dto.image !== undefined) {
+            if (dto.id_part_type !== undefined || dto.id_base_model !== undefined || dto.note !== undefined || dto.image !== undefined || statut !== undefined) {
                 await m.query(
                     `UPDATE compat_group SET
                         id_part_type = COALESCE($2, id_part_type),
                         id_base_model = COALESCE($3, id_base_model),
                         note = COALESCE($4, note),
-                        image = COALESCE($5, image)
+                        image = COALESCE($5, image),
+                        statut = COALESCE($6, statut)
                      WHERE id = $1`,
-                    [id, dto.id_part_type ?? null, dto.id_base_model ?? null, dto.note?.trim() ?? null, dto.image ?? null],
+                    [id, dto.id_part_type ?? null, dto.id_base_model ?? null, dto.note?.trim() ?? null, dto.image ?? null, statut ?? null],
                 );
             }
             if (dto.modeleIds) {

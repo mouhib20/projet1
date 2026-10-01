@@ -255,6 +255,9 @@ async function migrer(): Promise<void> {
         // its own, separate group instead of adding Smart7 as a member of A12's own part group.
         await client.query(`ALTER TABLE "compat_group" ADD COLUMN IF NOT EXISTS "id_base_model" integer`);
         await client.query(`DO $$ BEGIN ALTER TABLE "compat_group" ADD CONSTRAINT "compat_group_id_base_model_fkey" FOREIGN KEY (id_base_model) REFERENCES device_model(id); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
+        // 'confirmed' | 'needs_test' - defaults to 'confirmed' so every group made before this
+        // column existed keeps behaving exactly as it did (no silent downgrade in trust).
+        await client.query(`ALTER TABLE "compat_group" ADD COLUMN IF NOT EXISTS "statut" character varying(20) NOT NULL DEFAULT 'confirmed'`);
         await client.query(`
             CREATE TABLE IF NOT EXISTS "compat_group_model" (
                 "id_group" integer NOT NULL,

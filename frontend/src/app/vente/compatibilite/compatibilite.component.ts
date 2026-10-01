@@ -5,7 +5,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CompatService } from '../../services/compat.service';
 import { AuthService } from '../../services/auth.service';
 import { articleImageUrl } from '../../services/article.service';
-import { Brand, DeviceModel, PartType } from '../../models/compat.model';
+import { Brand, DeviceModel, PartType, CompatGroupStatut } from '../../models/compat.model';
 
 interface PartRow {
     id_group: number;
@@ -21,6 +21,7 @@ interface PartRow {
     prix_vente: number | null;
     marque: string | null;
     modele: string | null;
+    statut: CompatGroupStatut;
 }
 
 @Component({

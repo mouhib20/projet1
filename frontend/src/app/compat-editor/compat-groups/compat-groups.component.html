@@ -142,6 +142,19 @@
             </div>
         </div>
 
+        <!-- Status: confirmed vs needs-testing -->
+        <div class="form-group">
+            <label>{{ 'COMPAT_GROUPS.STATUS_LABEL' | translate }}</label>
+            <div class="pill-row">
+                <button type="button" class="pill" [class.selected]="form.statut === 'confirmed'" (click)="form.statut = 'confirmed'">
+                    {{ 'COMPAT_GROUPS.STATUS_CONFIRMED' | translate }}
+                </button>
+                <button type="button" class="pill" [class.selected]="form.statut === 'needs_test'" (click)="form.statut = 'needs_test'">
+                    {{ 'COMPAT_GROUPS.STATUS_NEEDS_TEST' | translate }}
+                </button>
+            </div>
+        </div>
+
         <!-- Note -->
         <div class="form-group">
             <label>{{ 'COMPAT_GROUPS.NOTE_LABEL' | translate }}</label>
@@ -173,6 +186,7 @@
                     <th>{{ 'COMPAT_GROUPS.COL_PART_TYPE' | translate }}</th>
                     <th>{{ 'COMPAT_GROUPS.COL_BASE_MODEL' | translate }}</th>
                     <th>{{ 'COMPAT_GROUPS.COL_MODELS' | translate }}</th>
+                    <th>{{ 'COMPAT_GROUPS.COL_STATUS' | translate }}</th>
                     <th>{{ 'COMPAT_GROUPS.COL_NOTE' | translate }}</th>
                     <th class="text-center">{{ 'COMPAT_GROUPS.COL_ACTIONS' | translate }}</th>
                 </tr>
@@ -182,6 +196,10 @@
                     <td class="fw-bold">{{ partTypeName(g) }}</td>
                     <td>{{ g.base_marque }} {{ g.base_nom }}</td>
                     <td>{{ g.modeles.join(', ') || '—' }}</td>
+                    <td>
+                        <span class="status-badge status-confirmed" *ngIf="g.statut !== 'needs_test'">{{ 'COMPAT_GROUPS.STATUS_CONFIRMED' | translate }}</span>
+                        <span class="status-badge status-needs-test" *ngIf="g.statut === 'needs_test'">{{ 'COMPAT_GROUPS.STATUS_NEEDS_TEST' | translate }}</span>
+                    </td>
                     <td>{{ g.note || '—' }}</td>
                     <td class="text-center">
                         <button class="btn-outline btn-sm" (click)="openEditForm(g)">✏️ {{ 'COMPAT_GROUPS.BTN_EDIT' | translate }}</button>

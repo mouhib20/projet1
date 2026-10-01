@@ -83,6 +83,7 @@
                 <tr>
                     <th>{{ 'COMPATIBILITE.COL_BRAND' | translate }}</th>
                     <th>{{ 'COMPATIBILITE.COL_MODEL' | translate }}</th>
+                    <th>{{ 'COMPATIBILITE.COL_COMPATIBILITY' | translate }}</th>
                     <th>{{ 'COMPATIBILITE.COL_STATUS' | translate }}</th>
                     <th class="text-center">{{ 'COMPATIBILITE.COL_QTY' | translate }}</th>
                     <th class="text-center">{{ 'COMPATIBILITE.COL_PRICE' | translate }}</th>
@@ -92,6 +93,10 @@
                 <tr *ngFor="let matchedPart of matchedParts">
                     <td class="fw-bold">{{ matchedPart.marque || selectedBrand?.nom }}</td>
                     <td class="fw-bold">{{ matchedPart.modele || selectedModel?.nom }}</td>
+                    <td>
+                        <span class="badge-ok" *ngIf="matchedPart.statut !== 'needs_test'">{{ 'COMPATIBILITE.COMPAT_CONFIRMED' | translate }}</span>
+                        <span class="badge-needs-test" *ngIf="matchedPart.statut === 'needs_test'">{{ 'COMPATIBILITE.COMPAT_NEEDS_TEST' | translate }}</span>
+                    </td>
                     <td>
                         <span class="badge-ok" *ngIf="matchedPart.id_article">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }}</span>
                         <span class="badge-out" *ngIf="!matchedPart.id_article">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>

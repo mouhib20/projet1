@@ -115,6 +115,45 @@ describe('CompatibilityService', () => {
             await service.creerGroupe({ id_part_type: 1, id_base_model: 5, modeleIds: [6, 5, 7] }, 'Bearer x');
             expect(insertedModelIds.sort()).toEqual([5, 6, 7]); // deduped, base included exactly once
         });
+
+        it('creerGroupe defaults statut to "confirmed" when not given', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            let insertedStatut: string | undefined;
+            dataSource.transaction.mockImplementation(async (cb) => cb({
+                query: jest.fn().mockImplementation((sql: string, params: any[]) => {
+                    if (sql.includes('INSERT INTO compat_group (')) { insertedStatut = params[4]; return Promise.resolve([{ id: 42 }]); }
+                    return Promise.resolve(undefined);
+                }),
+            }));
+            await service.creerGroupe({ id_part_type: 1, id_base_model: 5, modeleIds: [] }, 'Bearer x');
+            expect(insertedStatut).toBe('confirmed');
+        });
+
+        it('creerGroupe rejects any statut value other than "needs_test" by falling back to "confirmed"', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            let insertedStatut: string | undefined;
+            dataSource.transaction.mockImplementation(async (cb) => cb({
+                query: jest.fn().mockImplementation((sql: string, params: any[]) => {
+                    if (sql.includes('INSERT INTO compat_group (')) { insertedStatut = params[4]; return Promise.resolve([{ id: 42 }]); }
+                    return Promise.resolve(undefined);
+                }),
+            }));
+            await service.creerGroupe({ id_part_type: 1, id_base_model: 5, modeleIds: [], statut: 'bogus' as any }, 'Bearer x');
+            expect(insertedStatut).toBe('confirmed');
+        });
+
+        it('creerGroupe accepts "needs_test"', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            let insertedStatut: string | undefined;
+            dataSource.transaction.mockImplementation(async (cb) => cb({
+                query: jest.fn().mockImplementation((sql: string, params: any[]) => {
+                    if (sql.includes('INSERT INTO compat_group (')) { insertedStatut = params[4]; return Promise.resolve([{ id: 42 }]); }
+                    return Promise.resolve(undefined);
+                }),
+            }));
+            await service.creerGroupe({ id_part_type: 1, id_base_model: 5, modeleIds: [], statut: 'needs_test' }, 'Bearer x');
+            expect(insertedStatut).toBe('needs_test');
+        });
     });
 
     describe('superAdminRequis (via supprimerGroupe/creerEditeur) — super_admin only, not compat_editor', () => {
@@ -405,6 +444,34 @@ describe('CompatibilityService', () => {
             }));
             await service.modifierGroupe(1, { modeleIds: [6, 7] }, 'Bearer x');
             expect(insertedModelIds.sort()).toEqual([5, 6, 7]); // base (5) kept even though the caller only sent [6, 7]
+        });
+
+        it('updates statut when given, normalizing any non-"needs_test" value to "confirmed"', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValueOnce([{ id: 1, id_base_model: 5 }]);
+            let updateParams: any[] | undefined;
+            dataSource.transaction.mockImplementation(async (cb) => cb({
+                query: jest.fn().mockImplementation((sql: string, params: any[]) => {
+                    if (sql.includes('UPDATE compat_group SET')) updateParams = params;
+                    return Promise.resolve(undefined);
+                }),
+            }));
+            await service.modifierGroupe(1, { statut: 'needs_test' }, 'Bearer x');
+            expect(updateParams![5]).toBe('needs_test');
+        });
+
+        it('leaves statut untouched when not provided in the update', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValueOnce([{ id: 1, id_base_model: 5 }]);
+            let updateParams: any[] | undefined;
+            dataSource.transaction.mockImplementation(async (cb) => cb({
+                query: jest.fn().mockImplementation((sql: string, params: any[]) => {
+                    if (sql.includes('UPDATE compat_group SET')) updateParams = params;
+                    return Promise.resolve(undefined);
+                }),
+            }));
+            await service.modifierGroupe(1, { note: 'x' }, 'Bearer x');
+            expect(updateParams![5]).toBeNull(); // COALESCE($6, statut) with null $6 keeps the existing value
         });
     });
 

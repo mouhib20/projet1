@@ -30,6 +30,8 @@ export interface PartType {
     categorie: 'part' | 'accessory';
 }
 
+export type CompatGroupStatut = 'confirmed' | 'needs_test';
+
 export interface CompatGroupListItem {
     id: number;
     note: string | null;
@@ -42,6 +44,7 @@ export interface CompatGroupListItem {
     id_base_model: number | null;
     base_nom: string | null;
     base_marque: string | null;
+    statut: CompatGroupStatut;
     modeles: string[];
 }
 
@@ -51,6 +54,7 @@ export interface CompatGroupDetail {
     image: string | null;
     id_part_type: number;
     id_base_model: number | null;
+    statut: CompatGroupStatut;
     modeleIds: number[];
 }
 
@@ -60,6 +64,7 @@ export interface CompatGroupSave {
     modeleIds: number[];
     note?: string;
     image?: string;
+    statut?: CompatGroupStatut;
 }
 
 export interface CompatSuggestion {
