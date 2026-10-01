@@ -126,20 +126,28 @@ export class CompatibiliteComponent implements OnInit {
     searched = false;
     availableOnly = false;
 
+    /** A linked article record (id_article set) can still have zero quantity - e.g. a battery that
+     *  sold out but was kept in Stock for reordering. That's not "in stock" by any useful
+     *  definition, so every stocked/not-stocked decision on this page goes through this one check
+     *  instead of just testing id_article's presence. */
+    enStock(item: { id_article: number | null; quantite: number | null }): boolean {
+        return !!item.id_article && (item.quantite ?? 0) > 0;
+    }
+
     get visibleParts(): PartRow[] {
-        return this.availableOnly ? this.matchedParts.filter(p => p.id_article) : this.matchedParts;
+        return this.availableOnly ? this.matchedParts.filter(p => this.enStock(p)) : this.matchedParts;
     }
 
     get visibleDevices(): CompatibleDevice[] {
-        return this.availableOnly ? this.compatibleDevices.filter(d => d.id_article) : this.compatibleDevices;
+        return this.availableOnly ? this.compatibleDevices.filter(d => this.enStock(d)) : this.compatibleDevices;
     }
 
     get totalInStock(): number {
-        return this.matchedParts.filter(p => p.id_article).reduce((sum, p) => sum + (p.quantite ?? 0), 0);
+        return this.matchedParts.filter(p => this.enStock(p)).reduce((sum, p) => sum + (p.quantite ?? 0), 0);
     }
 
     get modelsInStock(): number {
-        return this.matchedParts.filter(p => p.id_article).length;
+        return this.matchedParts.filter(p => this.enStock(p)).length;
     }
 
     showSuggestForm = false;
@@ -160,17 +168,17 @@ export class CompatibiliteComponent implements OnInit {
      *  to resolve it against its own already-loaded article list once there - only the id travels,
      *  so a stale/short-lived copy of the article never gets added. Shared by the main parts table
      *  and the compatible-devices grid, so it takes the article id directly rather than a PartRow. */
-    addToSale(item: { id_article: number | null }): void {
-        if (!item.id_article) return;
-        this.posBridge.sendArticleToSale(item.id_article);
+    addToSale(item: { id_article: number | null; quantite: number | null }): void {
+        if (!this.enStock(item)) return;
+        this.posBridge.sendArticleToSale(item.id_article!);
         this.router.navigate(['/vente/operations']);
     }
 
     /** "Use in repair": same handoff, but Reparation opens a fresh ticket with the part already
      *  added, leaving client selection to the user. */
-    useInRepair(item: { id_article: number | null }): void {
-        if (!item.id_article) return;
-        this.posBridge.sendArticleToRepair(item.id_article);
+    useInRepair(item: { id_article: number | null; quantite: number | null }): void {
+        if (!this.enStock(item)) return;
+        this.posBridge.sendArticleToRepair(item.id_article!);
         this.router.navigate(['/reparation']);
     }
 
@@ -236,7 +244,7 @@ export class CompatibiliteComponent implements OnInit {
                     // Stocked first (most qty first among those), so what's actually usable right
                     // now doesn't get buried under "Not stocked" rows.
                     .sort((a, b) => {
-                        if (!!a.id_article !== !!b.id_article) return a.id_article ? -1 : 1;
+                        if (this.enStock(a) !== this.enStock(b)) return this.enStock(a) ? -1 : 1;
                         return (b.quantite ?? 0) - (a.quantite ?? 0);
                     });
                 this.partsLoading = false;
@@ -302,7 +310,7 @@ export class CompatibiliteComponent implements OnInit {
         }
         if (!added.length) return;
         this.matchedParts = [...this.matchedParts, ...added].sort((a, b) => {
-            if (!!a.id_article !== !!b.id_article) return a.id_article ? -1 : 1;
+            if (this.enStock(a) !== this.enStock(b)) return this.enStock(a) ? -1 : 1;
             return (b.quantite ?? 0) - (a.quantite ?? 0);
         });
     }

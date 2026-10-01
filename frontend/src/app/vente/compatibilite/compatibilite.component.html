@@ -112,13 +112,13 @@
                         <span class="badge-needs-test" *ngIf="matchedPart.statut === 'needs_test'">{{ 'COMPATIBILITE.COMPAT_NEEDS_TEST' | translate }}</span>
                     </td>
                     <td>
-                        <span class="badge-ok" *ngIf="matchedPart.id_article">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }}</span>
-                        <span class="badge-out" *ngIf="!matchedPart.id_article">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>
+                        <span class="badge-ok" *ngIf="enStock(matchedPart)">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }}</span>
+                        <span class="badge-out" *ngIf="!enStock(matchedPart)">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>
                     </td>
                     <td class="text-center">{{ matchedPart.id_article ? matchedPart.quantite : '—' }}</td>
                     <td class="text-center">{{ matchedPart.id_article ? ((matchedPart.prix_vente | number:'1.3-3') + ' ' + ('CURRENCY' | translate)) : '—' }}</td>
                     <td class="text-center quick-actions" *ngIf="auth.hasPermission('ventes', 'ajouter') || auth.hasPermission('reparation', 'ajouter')">
-                        <ng-container *ngIf="matchedPart.id_article">
+                        <ng-container *ngIf="enStock(matchedPart)">
                             <button type="button" class="btn-quick-action" *ngIf="auth.hasPermission('ventes', 'ajouter')" (click)="addToSale(matchedPart)">
                                 🛒 {{ 'COMPATIBILITE.ADD_TO_SALE' | translate }}
                             </button>
@@ -126,7 +126,7 @@
                                 🔧 {{ 'COMPATIBILITE.USE_IN_REPAIR' | translate }}
                             </button>
                         </ng-container>
-                        <span *ngIf="!matchedPart.id_article">—</span>
+                        <span *ngIf="!enStock(matchedPart)">—</span>
                     </td>
                 </tr>
             </tbody>
@@ -148,9 +148,9 @@
                 <span *ngIf="!imageUrl(d.image)" class="picker-card-placeholder">📱</span>
                 <div class="device-card-brand">{{ d.marque }}</div>
                 <div class="device-card-name">{{ d.nom }}</div>
-                <span class="badge-ok device-card-stock" *ngIf="d.id_article">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }} · {{ d.quantite }}</span>
-                <span class="badge-out device-card-stock" *ngIf="!d.id_article">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>
-                <div class="device-card-actions" *ngIf="d.id_article && (auth.hasPermission('ventes', 'ajouter') || auth.hasPermission('reparation', 'ajouter'))">
+                <span class="badge-ok device-card-stock" *ngIf="enStock(d)">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }} · {{ d.quantite }}</span>
+                <span class="badge-out device-card-stock" *ngIf="!enStock(d)">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>
+                <div class="device-card-actions" *ngIf="enStock(d) && (auth.hasPermission('ventes', 'ajouter') || auth.hasPermission('reparation', 'ajouter'))">
                     <button type="button" class="btn-quick-action" *ngIf="auth.hasPermission('ventes', 'ajouter')" (click)="addToSale(d)">
                         🛒 {{ 'COMPATIBILITE.ADD_TO_SALE' | translate }}
                     </button>
