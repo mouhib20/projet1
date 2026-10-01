@@ -185,10 +185,17 @@ export class CompatibilityService {
         );
     }
 
-    /** Every device model that shares the same compat_group (part) as the one just matched -
-     *  the "confirmed compatible devices" list shown once a type+brand+model search resolves. */
+    /** Every device model that shares the same compat_group (part) as the one just matched - the
+     *  "confirmed compatible devices" list shown once a type+brand+model search resolves. Each
+     *  device also carries ITS OWN stock, if any - not necessarily from this same group, since a
+     *  device can be a member of more than one group of the same part type (its own native part,
+     *  plus another device's part it also happens to accept): picks whichever of that device's
+     *  OWN groups (same part type) has the most stock, so "this device also has its own part in
+     *  stock" is visible right in the device grid instead of only when searching it directly. */
     async modelesPourGroupe(idGroup: number): Promise<any[]> {
-        return this.dataSource.query(
+        const id_magasin = this.storeContext.requireMagasinId();
+        const [groupe] = await this.dataSource.query(`SELECT id_part_type FROM compat_group WHERE id = $1`, [idGroup]);
+        const devices = await this.dataSource.query(
             `SELECT dm.id, dm.nom, dm.nom_commercial, dm.code, dm.image, dm.id_brand, b.nom AS marque
                FROM compat_group_model cgm
                JOIN device_model dm ON dm.id = cgm.id_model
@@ -197,6 +204,24 @@ export class CompatibilityService {
               ORDER BY b.nom, dm.nom`,
             [idGroup],
         );
+        if (!groupe) return devices;
+        for (const d of devices) {
+            await this.autoLierArticlesOrphelins(d.id, id_magasin);
+            const [stock] = await this.dataSource.query(
+                `SELECT a.id_article, a.quantite, a.prix_vente
+                   FROM compat_group_model cgm
+                   JOIN compat_group cg ON cg.id = cgm.id_group AND cg.id_part_type = $3
+                   JOIN article a ON a.compat_group_id = cg.id AND a.id_magasin = $2
+                  WHERE cgm.id_model = $1
+                  ORDER BY a.quantite DESC
+                  LIMIT 1`,
+                [d.id, id_magasin, groupe.id_part_type],
+            );
+            d.id_article = stock?.id_article ?? null;
+            d.quantite = stock?.quantite ?? null;
+            d.prix_vente = stock?.prix_vente ?? null;
+        }
+        return devices;
     }
 
     /** The existing compat_group (if any) for a given model+part-type combo - used by the Stock

@@ -512,6 +512,10 @@
     border-radius: 8px;
 }
 
+.device-card-stock {
+    margin-top: 2px;
+}
+
 .confirmed-badge {
     position: absolute;
     top: 8px;

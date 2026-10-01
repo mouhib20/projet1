@@ -26,6 +26,15 @@ interface PartRow {
     statut: CompatGroupStatut;
 }
 
+/** A device in the "compatible devices" grid, with its OWN stock - which may come from a
+ *  DIFFERENT group than the one being displayed, since a device can be a member of more than one
+ *  group of the same part type (its own native part, plus another device's part it also accepts). */
+interface CompatibleDevice extends DeviceModel {
+    id_article: number | null;
+    quantite: number | null;
+    prix_vente: number | null;
+}
+
 @Component({
     selector: 'app-compatibilite',
     standalone: true,
@@ -110,7 +119,7 @@ export class CompatibiliteComponent implements OnInit {
     partsLoading = false;
     matchedParts: PartRow[] = [];
     devicesLoading = false;
-    compatibleDevices: DeviceModel[] = [];
+    compatibleDevices: CompatibleDevice[] = [];
     searched = false;
     availableOnly = false;
 
@@ -237,11 +246,14 @@ export class CompatibiliteComponent implements OnInit {
     private loadCompatibleDevices(idGroups: number[]): void {
         this.devicesLoading = true;
         let remaining = idGroups.length;
-        const parDevice = new Map<number, DeviceModel>();
+        const parDevice = new Map<number, CompatibleDevice>();
         idGroups.forEach((idGroup) => {
             this.compatService.getModelsForGroup(idGroup).subscribe({
                 next: (data) => {
-                    data.forEach((d) => parDevice.set(d.id, d));
+                    // Backend now always includes id_article/quantite/prix_vente for this
+                    // endpoint - DeviceModel itself doesn't declare them since stock.component's
+                    // own use of this same call doesn't need them.
+                    (data as CompatibleDevice[]).forEach((d) => parDevice.set(d.id, d));
                     if (--remaining === 0) {
                         this.compatibleDevices = [...parDevice.values()];
                         this.devicesLoading = false;

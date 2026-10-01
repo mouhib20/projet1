@@ -148,6 +148,8 @@
                 <span *ngIf="!imageUrl(d.image)" class="picker-card-placeholder">📱</span>
                 <div class="device-card-brand">{{ d.marque }}</div>
                 <div class="device-card-name">{{ d.nom }}</div>
+                <span class="badge-ok device-card-stock" *ngIf="d.id_article">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }} · {{ d.quantite }}</span>
+                <span class="badge-out device-card-stock" *ngIf="!d.id_article">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>
             </div>
         </div>
     </div>

@@ -399,13 +399,37 @@ describe('CompatibilityService', () => {
     });
 
     describe('modelesPourGroupe() — the "confirmed compatible devices" list, no editor check (matches piecesPourModele)', () => {
-        it('joins compat_group_model/device_model/brand filtered by the group id', async () => {
-            dataSource.query.mockResolvedValue([]);
+        it('joins compat_group_model/device_model/brand filtered by the group id, scoped to the caller\'s own store', async () => {
+            dataSource.query.mockResolvedValue([]); // no groupe found -> returns the (empty) devices list as-is
             await service.modelesPourGroupe(10);
-            const [sql, params] = dataSource.query.mock.calls[0];
-            expect(sql).toMatch(/WHERE cgm\.id_group = \$1/);
-            expect(params).toEqual([10]);
+            const devicesCall = dataSource.query.mock.calls.find(([sql]) => sql.includes('WHERE cgm.id_group = $1'));
+            expect(devicesCall).toBeDefined();
+            expect(devicesCall![0]).toMatch(/WHERE cgm\.id_group = \$1/);
+            expect(devicesCall![1]).toEqual([10]);
             expect(caisseService.acteurRequis).not.toHaveBeenCalled();
+            expect(storeContext.requireMagasinId).toHaveBeenCalled();
+        });
+
+        it('enriches each device with its OWN stock (possibly from a different group of the same part type)', async () => {
+            dataSource.query.mockImplementation((sql: string) => {
+                if (sql.includes('SELECT id_part_type FROM compat_group')) return Promise.resolve([{ id_part_type: 11 }]);
+                if (sql.includes('WHERE cgm.id_group = $1')) return Promise.resolve([{ id: 5, nom: 'A12', marque: 'Samsung' }]);
+                if (sql.includes('SELECT cg.id AS id_group')) return Promise.resolve([]); // autoLierArticlesOrphelins: no groups to self-heal in this mock
+                if (sql.includes('a.quantite DESC')) return Promise.resolve([{ id_article: 247, quantite: 10, prix_vente: '10.00' }]);
+                return Promise.resolve([]);
+            });
+            const result = await service.modelesPourGroupe(16);
+            expect(result).toEqual([{ id: 5, nom: 'A12', marque: 'Samsung', id_article: 247, quantite: 10, prix_vente: '10.00' }]);
+        });
+
+        it('leaves a device\'s stock fields null when it has none', async () => {
+            dataSource.query.mockImplementation((sql: string) => {
+                if (sql.includes('SELECT id_part_type FROM compat_group')) return Promise.resolve([{ id_part_type: 11 }]);
+                if (sql.includes('WHERE cgm.id_group = $1')) return Promise.resolve([{ id: 6, nom: '17', marque: 'iphone' }]);
+                return Promise.resolve([]);
+            });
+            const result = await service.modelesPourGroupe(11);
+            expect(result).toEqual([{ id: 6, nom: '17', marque: 'iphone', id_article: null, quantite: null, prix_vente: null }]);
         });
     });
 
