@@ -179,6 +179,63 @@ describe('CompatibilityService', () => {
         });
     });
 
+    describe('fusionnerGroupes() — compat_editor or super_admin (consolidation, not an arbitrary delete)', () => {
+        it('rejects a store admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
+            await expect(service.fusionnerGroupes(1, 2, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('allows compat_editor (unlike supprimerGroupe, which is super_admin-only)', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 1 }]) // source exists
+                .mockResolvedValueOnce([{ id: 2 }]); // target exists
+            dataSource.transaction.mockImplementation(async (cb) => cb({ query: jest.fn().mockResolvedValue([]) }));
+            await expect(service.fusionnerGroupes(1, 2, 'Bearer x')).resolves.toBeUndefined();
+        });
+
+        it('rejects merging a group into itself', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            await expect(service.fusionnerGroupes(5, 5, 'Bearer x')).rejects.toBeInstanceOf(BadRequestException);
+        });
+
+        it('404s when the source group does not exist', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValueOnce([]); // source lookup empty
+            await expect(service.fusionnerGroupes(999, 2, 'Bearer x')).rejects.toBeInstanceOf(NotFoundException);
+        });
+
+        it('404s when the target group does not exist', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 1 }]) // source exists
+                .mockResolvedValueOnce([]); // target lookup empty
+            await expect(service.fusionnerGroupes(1, 999, 'Bearer x')).rejects.toBeInstanceOf(NotFoundException);
+        });
+
+        it('moves every source member into the target, re-points linked articles, and deletes the source', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 1 }])
+                .mockResolvedValueOnce([{ id: 2 }]);
+            const calls: { sql: string; params: any[] }[] = [];
+            dataSource.transaction.mockImplementation(async (cb) => cb({
+                query: jest.fn().mockImplementation((sql: string, params: any[]) => {
+                    calls.push({ sql, params });
+                    if (sql.includes('SELECT id_model FROM compat_group_model')) return Promise.resolve([{ id_model: 10 }, { id_model: 11 }]);
+                    return Promise.resolve([]);
+                }),
+            }));
+            await service.fusionnerGroupes(1, 2, 'Bearer x');
+            const inserts = calls.filter(c => c.sql.includes('INSERT INTO compat_group_model'));
+            expect(inserts.map(c => c.params)).toEqual([[2, 10], [2, 11]]);
+            const articleUpdate = calls.find(c => c.sql.includes('UPDATE article SET compat_group_id'));
+            expect(articleUpdate?.params).toEqual([2, 1]);
+            const deleteCall = calls.find(c => c.sql.includes('DELETE FROM compat_group WHERE id = $1'));
+            expect(deleteCall?.params).toEqual([1]);
+        });
+    });
+
     describe('creerSuggestion() — any store user, scoped to their own store', () => {
         it('records the caller\'s own id_magasin, never a client-supplied one', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 2, nom: 'Employe', role: 'vendeur' });

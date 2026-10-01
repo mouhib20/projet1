@@ -257,8 +257,11 @@ export class CompatGroupsComponent implements OnInit {
 
     // ── Overlap warning: a selected device (base or compatible) already sits in another group of
     // the same part type - never blocks saving, just surfaces it so the editor can decide whether
-    // to add devices to that existing group instead of fragmenting the catalogue further. ──
-    overlapWarnings: string[] = [];
+    // to add devices to that existing group instead of fragmenting the catalogue further. Each
+    // warning carries the other group's id so it can offer a one-click merge, when editing an
+    // already-saved group (a brand-new, unsaved group has no id yet to merge INTO the other one). ──
+    overlapWarnings: { message: string; idGroup: number }[] = [];
+    merging = false;
 
     private refreshOverlapWarnings(): void {
         this.overlapWarnings = [];
@@ -271,10 +274,32 @@ export class CompatGroupsComponent implements OnInit {
                     const device = this.models.find(m => m.id === idModel);
                     const label = device ? `${device.marque} ${device.nom}` : '';
                     groups.forEach((g) => {
-                        this.overlapWarnings.push(this.translate.instant('COMPAT_GROUPS.OVERLAP_WARNING', { device: label, models: g.modeles.join(', ') }));
+                        this.overlapWarnings.push({
+                            idGroup: g.id_group,
+                            message: this.translate.instant('COMPAT_GROUPS.OVERLAP_WARNING', { device: label, models: g.modeles.join(', ') }),
+                        });
                     });
                 }
             });
+        });
+    }
+
+    /** The guided fix for an overlap warning: moves everything from the group being edited INTO
+     *  the other group named in the warning, then removes the now-empty duplicate. Only possible
+     *  while editing an already-saved group (editingId) - a brand-new, unsaved one has nothing to
+     *  merge from yet. */
+    mergeIntoGroup(idCible: number): void {
+        if (!this.editingId || this.merging) return;
+        if (!confirm(this.translate.instant('COMPAT_GROUPS.CONFIRM_MERGE'))) return;
+        this.merging = true;
+        this.compatService.mergeGroups(this.editingId, idCible).subscribe({
+            next: () => {
+                this.merging = false;
+                this.successMsg = 'COMPAT_GROUPS.SUCCESS_MERGE';
+                this.showForm = false;
+                this.loadAll();
+            },
+            error: (err) => { this.merging = false; this.errorMsg = err.error?.message || 'COMPAT_GROUPS.ERR_MERGE'; }
         });
     }
 

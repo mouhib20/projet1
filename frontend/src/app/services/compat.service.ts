@@ -124,6 +124,10 @@ export class CompatService {
         return this.http.delete<void>(`${this.apiUrl}/groups/${id}`);
     }
 
+    mergeGroups(idSource: number, idCible: number): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/groups/${idSource}/merge`, { id_cible: idCible });
+    }
+
     // ── Suggestions review (editor) ──
 
     getSuggestions(): Observable<CompatSuggestion[]> {

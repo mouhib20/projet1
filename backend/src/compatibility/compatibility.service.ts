@@ -432,6 +432,31 @@ export class CompatibilityService {
         if (!affected) throw new NotFoundException(`Groupe de compatibilité #${id} introuvable`);
     }
 
+    /** The guided fix for the overlap warning: moves idSource's members into idCible (deduped),
+     *  re-points any article already linked to idSource so its stock isn't orphaned, then deletes
+     *  idSource. editeurRequis (not super_admin-only like a bare delete) - nothing is lost, it's
+     *  consolidation of the editor's own duplicate, not an arbitrary destructive action. */
+    async fusionnerGroupes(idSource: number, idCible: number, authorization?: string): Promise<void> {
+        await this.editeurRequis(authorization);
+        if (idSource === idCible) throw new BadRequestException('Impossible de fusionner un groupe avec lui-même.');
+        const [source] = await this.dataSource.query(`SELECT id FROM compat_group WHERE id = $1`, [idSource]);
+        if (!source) throw new NotFoundException(`Groupe de compatibilité #${idSource} introuvable`);
+        const [cible] = await this.dataSource.query(`SELECT id FROM compat_group WHERE id = $1`, [idCible]);
+        if (!cible) throw new NotFoundException(`Groupe de compatibilité #${idCible} introuvable`);
+
+        await this.dataSource.transaction(async (m) => {
+            const membres = await m.query(`SELECT id_model FROM compat_group_model WHERE id_group = $1`, [idSource]);
+            for (const { id_model } of membres) {
+                await m.query(
+                    `INSERT INTO compat_group_model (id_group, id_model) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+                    [idCible, id_model],
+                );
+            }
+            await m.query(`UPDATE article SET compat_group_id = $1 WHERE compat_group_id = $2`, [idCible, idSource]);
+            await m.query(`DELETE FROM compat_group WHERE id = $1`, [idSource]);
+        });
+    }
+
     // ── Suggestions ──────────────────────────────────────────────
 
     async creerSuggestion(

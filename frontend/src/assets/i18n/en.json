@@ -413,6 +413,10 @@
         "SUCCESS_DELETE": "Group deleted successfully.",
         "ERR_SAVE": "Error saving.",
         "ERR_DELETE": "Error deleting.",
+        "MERGE_INTO_THIS": "Merge into this group",
+        "CONFIRM_MERGE": "Merge this group into the other one? All its devices move there and this group is removed.",
+        "SUCCESS_MERGE": "Groups merged successfully.",
+        "ERR_MERGE": "Error merging the groups.",
         "SUGGESTIONS_LINK": "Store suggestions"
     },
     "COMPATIBILITE": {

@@ -413,6 +413,10 @@
         "SUCCESS_DELETE": "Groupe supprimé avec succès.",
         "ERR_SAVE": "Erreur lors de l'enregistrement.",
         "ERR_DELETE": "Erreur lors de la suppression.",
+        "MERGE_INTO_THIS": "Fusionner dans ce groupe",
+        "CONFIRM_MERGE": "Fusionner ce groupe dans l'autre ? Tous ses appareils y seront déplacés et ce groupe sera supprimé.",
+        "SUCCESS_MERGE": "Groupes fusionnés avec succès.",
+        "ERR_MERGE": "Erreur lors de la fusion des groupes.",
         "SUGGESTIONS_LINK": "Suggestions des magasins"
     },
     "COMPATIBILITE": {

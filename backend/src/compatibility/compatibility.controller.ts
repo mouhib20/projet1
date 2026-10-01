@@ -179,6 +179,15 @@ export class CompatibilityController {
         return this.service.supprimerGroupe(id, auth);
     }
 
+    @Post('groups/:id/merge')
+    fusionnerGroupes(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: { id_cible: number },
+        @Headers('authorization') auth?: string,
+    ) {
+        return this.service.fusionnerGroupes(id, Number(body.id_cible), auth);
+    }
+
     // ── Suggestions review: compat_editor / super_admin ──
 
     @Get('suggestions')

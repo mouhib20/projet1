@@ -65,7 +65,12 @@
             </div>
         </div>
 
-        <div class="alert alert-warning" *ngFor="let w of overlapWarnings">⚠️ {{ w }}</div>
+        <div class="alert alert-warning overlap-warning" *ngFor="let w of overlapWarnings">
+            <span>⚠️ {{ w.message }}</span>
+            <button type="button" class="btn-link-action" *ngIf="editingId" [disabled]="merging" (click)="mergeIntoGroup(w.idGroup)">
+                {{ 'COMPAT_GROUPS.MERGE_INTO_THIS' | translate }}
+            </button>
+        </div>
 
         <!-- 3. Compatible models: search-to-add, shown as removable chips -->
         <div class="form-group full">
