@@ -33,6 +33,9 @@ interface CompatibleDevice extends DeviceModel {
     id_article: number | null;
     quantite: number | null;
     prix_vente: number | null;
+    /** The matched group this device's own stock was resolved from - lets the merge into the main
+     *  results table below borrow that group's part-type labels/status instead of guessing. */
+    id_group: number;
 }
 
 @Component({
@@ -258,9 +261,10 @@ export class CompatibiliteComponent implements OnInit {
                     // Backend now always includes id_article/quantite/prix_vente for this
                     // endpoint - DeviceModel itself doesn't declare them since stock.component's
                     // own use of this same call doesn't need them.
-                    (data as CompatibleDevice[]).forEach((d) => parDevice.set(d.id, d));
+                    (data as Omit<CompatibleDevice, 'id_group'>[]).forEach((d) => parDevice.set(d.id, { ...d, id_group: idGroup }));
                     if (--remaining === 0) {
                         this.compatibleDevices = [...parDevice.values()];
+                        this.mergeDeviceStockIntoMatchedParts();
                         this.devicesLoading = false;
                     }
                 },
@@ -269,6 +273,37 @@ export class CompatibiliteComponent implements OnInit {
                     this.errorMsg = err.error?.message || 'COMPATIBILITE.ERR_LOAD_PARTS';
                 }
             });
+        });
+    }
+
+    /** The main table only ever held one row per MATCHED GROUP (the searched device's own groups),
+     *  so another device's own stock - reached through the SAME group, e.g. iPhone 17's glass when
+     *  searching ticno spark 6's - only ever showed in the devices grid below, never as an
+     *  actionable row up top. Add one row per such device here, borrowing its origin group's
+     *  labels/status, skipping anything already represented (same article, or the searched device's
+     *  own row). */
+    private mergeDeviceStockIntoMatchedParts(): void {
+        const alreadyShown = new Set(this.matchedParts.map(p => p.id_article).filter((id): id is number => id != null));
+        const added: PartRow[] = [];
+        for (const device of this.compatibleDevices) {
+            if (!device.id_article || alreadyShown.has(device.id_article)) continue;
+            const sourceRow = this.matchedParts.find(p => p.id_group === device.id_group);
+            if (!sourceRow) continue;
+            added.push({
+                ...sourceRow,
+                id_article: device.id_article,
+                designation: null,
+                quantite: device.quantite,
+                prix_vente: device.prix_vente,
+                marque: device.marque,
+                modele: device.nom,
+            });
+            alreadyShown.add(device.id_article);
+        }
+        if (!added.length) return;
+        this.matchedParts = [...this.matchedParts, ...added].sort((a, b) => {
+            if (!!a.id_article !== !!b.id_article) return a.id_article ? -1 : 1;
+            return (b.quantite ?? 0) - (a.quantite ?? 0);
         });
     }
 
