@@ -103,6 +103,20 @@ describe('CompatibilityService', () => {
             expect(update!.params[5]).toEqual(expect.arrayContaining(['glass', 'glace']));
         });
 
+        it('the UPDATE also re-points an article whose current group no longer lists its own device (a stale link), not just NULL ones', async () => {
+            const calls: { sql: string; params: any[] }[] = [];
+            dataSource.query.mockImplementation((sql: string, params: any[]) => {
+                calls.push({ sql, params });
+                if (sql.includes('SELECT cg.id AS id_group')) return Promise.resolve([{ id_group: 17, nom_fr: 'Vitre', nom_en: 'Glass', nom_ar: 'زجاج' }]);
+                if (sql.includes('SELECT dm.nom, b.nom AS marque')) return Promise.resolve([{ nom: 'spark 6', marque: 'ticno' }]);
+                return Promise.resolve([]);
+            });
+            await service.piecesPourModele(99);
+            const update = calls.find(c => c.sql.includes('UPDATE article SET compat_group_id'));
+            expect(update!.sql).toMatch(/compat_group_id IS NULL\s*\n\s*OR NOT EXISTS/);
+            expect(update!.sql).toMatch(/WHERE cgm2\.id_group = article\.compat_group_id/);
+        });
+
         it('does nothing extra when the model belongs to no group', async () => {
             dataSource.query.mockImplementation((sql: string) => {
                 if (sql.includes('SELECT cg.id AS id_group')) return Promise.resolve([]);

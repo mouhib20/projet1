@@ -104,13 +104,16 @@ export class CompatibilityService {
         );
     }
 
-    /** Closes the "stock article never got auto-linked" gap from the search side, not just the
-     *  Stock form's own save-time auto-link: for every group idModele belongs to, looks at this
-     *  store's own still-unlinked articles (compat_group_id IS NULL) and links any whose own
-     *  marque/modele/sous_categorie text-matches one of that group's members + its part type -
-     *  same exact-match rules as autoResolveGroupeRecherche (case-insensitive, trimmed, plus a
-     *  whitespace-compact fallback for the model name), never fuzzy. Only ever sets a link that
-     *  was never set before; it doesn't touch articles already linked to a different group. */
+    /** Closes two related gaps from the search side, not just the Stock form's own save-time
+     *  auto-link: (1) an article that was never linked at all, and (2) an article whose link has
+     *  gone STALE - it was linked to a group that, since then, had its membership edited (a device
+     *  removed, split into a separate group, etc.) so the group no longer even lists the article's
+     *  own device. (2) only fires when the current link is verifiably inconsistent with the
+     *  article's own marque/modele - it never moves an article between two groups that both
+     *  legitimately list its device (that ambiguity, e.g. a model split across two intentionally
+     *  separate parts, is left alone on purpose). Matching is exact (case-insensitive, trimmed,
+     *  plus a whitespace-compact fallback for the model name, same as autoResolveGroupeRecherche
+     *  and the Glace/Glass synonym below), never fuzzy. */
     private async autoLierArticlesOrphelins(idModele: number, idMagasin: number): Promise<void> {
         const groupes = await this.dataSource.query(
             `SELECT cg.id AS id_group, pt.nom_fr, pt.nom_en, pt.nom_ar
@@ -141,10 +144,21 @@ export class CompatibilityService {
                 const modeleCompact = modeleNorm.replace(/\s+/g, '');
                 await this.dataSource.query(
                     `UPDATE article SET compat_group_id = $1
-                      WHERE id_magasin = $2 AND compat_group_id IS NULL
+                      WHERE id_magasin = $2
                         AND LOWER(TRIM(marque)) = $3
                         AND (LOWER(TRIM(modele)) = $4 OR REPLACE(LOWER(modele), ' ', '') = $5)
-                        AND LOWER(TRIM(sous_categorie)) = ANY($6::text[])`,
+                        AND LOWER(TRIM(sous_categorie)) = ANY($6::text[])
+                        AND (
+                          compat_group_id IS NULL
+                          OR NOT EXISTS (
+                            SELECT 1 FROM compat_group_model cgm2
+                            JOIN device_model dm2 ON dm2.id = cgm2.id_model
+                            JOIN brand b2 ON b2.id = dm2.id_brand
+                            WHERE cgm2.id_group = article.compat_group_id
+                              AND LOWER(TRIM(b2.nom)) = LOWER(TRIM(article.marque))
+                              AND LOWER(TRIM(dm2.nom)) = LOWER(TRIM(article.modele))
+                          )
+                        )`,
                     [groupe.id_group, idMagasin, marqueNorm, modeleNorm, modeleCompact, termesType],
                 );
             }
