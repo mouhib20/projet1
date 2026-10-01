@@ -142,6 +142,16 @@ export class CompatibilityController {
         return this.service.listerGroupes(auth);
     }
 
+    @Get('groups/check-overlap')
+    verifierChevauchementGroupe(
+        @Query('id_model', ParseIntPipe) idModel: number,
+        @Query('id_part_type', ParseIntPipe) idPartType: number,
+        @Query('exclude_group_id') excludeGroupId: string | undefined,
+        @Headers('authorization') auth?: string,
+    ) {
+        return this.service.verifierChevauchementGroupe(idModel, idPartType, excludeGroupId ? Number(excludeGroupId) : undefined, auth);
+    }
+
     @Get('groups/:id')
     obtenirGroupe(@Param('id', ParseIntPipe) id: number, @Headers('authorization') auth?: string) {
         return this.service.obtenirGroupe(id, auth);

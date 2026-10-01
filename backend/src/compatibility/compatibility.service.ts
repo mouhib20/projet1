@@ -296,6 +296,27 @@ export class CompatibilityService {
 
     // ── Groups (write: compat_editor/super_admin; delete: super_admin only) ────
 
+    /** Warns (never blocks) when a model being added to a group - as base or as compatible -
+     *  already sits in a DIFFERENT group of the same part type. That's how a device ends up
+     *  split across two "glass" groups with different stock status: nothing stopped an editor
+     *  from creating a second group instead of adding to the existing one. excludeGroupId is the
+     *  group currently being edited, so editing a group never warns about itself. */
+    async verifierChevauchementGroupe(idModel: number, idPartType: number, excludeGroupId: number | undefined, authorization?: string): Promise<{ id_group: number; modeles: string[] }[]> {
+        await this.editeurRequis(authorization);
+        return this.dataSource.query(
+            `SELECT cg.id AS id_group,
+                    COALESCE(array_agg(b.nom || ' ' || dm.nom ORDER BY dm.nom) FILTER (WHERE dm.id IS NOT NULL), '{}') AS modeles
+               FROM compat_group cg
+               JOIN compat_group_model mine ON mine.id_group = cg.id AND mine.id_model = $1
+               LEFT JOIN compat_group_model cgm ON cgm.id_group = cg.id
+               LEFT JOIN device_model dm ON dm.id = cgm.id_model
+               LEFT JOIN brand b ON b.id = dm.id_brand
+              WHERE cg.id_part_type = $2 AND ($3::int IS NULL OR cg.id != $3)
+              GROUP BY cg.id`,
+            [idModel, idPartType, excludeGroupId ?? null],
+        );
+    }
+
     /** All groups, for the editor's management table. */
     async listerGroupes(authorization?: string): Promise<any[]> {
         await this.editeurRequis(authorization);

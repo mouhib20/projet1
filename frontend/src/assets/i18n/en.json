@@ -369,6 +369,7 @@
         "BASE_MODEL_LABEL": "Part's original phone *",
         "CHANGE_BASE": "Change",
         "COMPATIBLE_LABEL": "Compatible phones",
+        "OVERLAP_WARNING": "{{device}} already belongs to another group of the same type, with: {{models}}. Did you mean to add devices to that group instead?",
         "SEARCH_MODELS_PLACEHOLDER": "Search a model…",
         "ADD_MODEL_PROMPT": "Add \"{{term}}\" as a new model",
         "SEARCH_BRAND_PLACEHOLDER": "Search a brand…",

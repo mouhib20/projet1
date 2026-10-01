@@ -96,6 +96,12 @@
     color: #86efac;
 }
 
+.alert-warning {
+    background: #2b2311;
+    border: 1px solid #7c5e1d;
+    color: #fcd34d;
+}
+
 .form-card {
     background: #161b27;
     border: 1px solid #21263a;

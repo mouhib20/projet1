@@ -42,6 +42,7 @@ export class CompatGroupsComponent implements OnInit {
 
     selectPartTypePill(pt: PartType): void {
         this.form.id_part_type = pt.id;
+        this.refreshOverlapWarnings();
     }
 
     openAddPartType(): void {
@@ -199,6 +200,7 @@ export class CompatGroupsComponent implements OnInit {
         if (idx >= 0) this.form.modeleIds.splice(idx, 1);
         this.baseModelSearchTerm = '';
         this.showBaseModelDropdown = false;
+        this.refreshOverlapWarnings();
     }
 
     openAddModelForBase(): void {
@@ -236,11 +238,36 @@ export class CompatGroupsComponent implements OnInit {
         if (!this.form.modeleIds.includes(m.id)) this.form.modeleIds.push(m.id);
         this.modelSearchTerm = '';
         this.showModelSearchDropdown = false;
+        this.refreshOverlapWarnings();
     }
 
     removeCompatibleModel(id: number): void {
         const idx = this.form.modeleIds.indexOf(id);
         if (idx >= 0) this.form.modeleIds.splice(idx, 1);
+        this.refreshOverlapWarnings();
+    }
+
+    // ── Overlap warning: a selected device (base or compatible) already sits in another group of
+    // the same part type - never blocks saving, just surfaces it so the editor can decide whether
+    // to add devices to that existing group instead of fragmenting the catalogue further. ──
+    overlapWarnings: string[] = [];
+
+    private refreshOverlapWarnings(): void {
+        this.overlapWarnings = [];
+        if (!this.form.id_part_type) return;
+        const idPartType = this.form.id_part_type;
+        const idsToCheck = [this.form.id_base_model, ...this.form.modeleIds].filter((id): id is number => id != null);
+        idsToCheck.forEach((idModel) => {
+            this.compatService.checkGroupOverlap(idModel, idPartType, this.editingId ?? undefined).subscribe({
+                next: (groups) => {
+                    const device = this.models.find(m => m.id === idModel);
+                    const label = device ? `${device.marque} ${device.nom}` : '';
+                    groups.forEach((g) => {
+                        this.overlapWarnings.push(this.translate.instant('COMPAT_GROUPS.OVERLAP_WARNING', { device: label, models: g.modeles.join(', ') }));
+                    });
+                }
+            });
+        });
     }
 
     openAddModelFromSearch(): void {
@@ -343,6 +370,7 @@ export class CompatGroupsComponent implements OnInit {
         this.showBaseModelDropdown = false;
         this.modelSearchTerm = '';
         this.showModelSearchDropdown = false;
+        this.overlapWarnings = [];
     }
 
     openAddForm(): void {
@@ -362,6 +390,7 @@ export class CompatGroupsComponent implements OnInit {
                 this.form = { id_part_type: detail.id_part_type, id_base_model: detail.id_base_model, modeleIds, note: detail.note || '' };
                 this.resetInlineCreateState();
                 this.showForm = true;
+                this.refreshOverlapWarnings();
             },
             error: (err) => { this.errorMsg = err.error?.message || 'COMPAT_GROUPS.ERR_LOAD'; }
         });

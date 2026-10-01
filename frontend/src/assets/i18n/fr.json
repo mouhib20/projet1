@@ -369,6 +369,7 @@
         "BASE_MODEL_LABEL": "Téléphone original de la pièce *",
         "CHANGE_BASE": "Changer",
         "COMPATIBLE_LABEL": "Téléphones compatibles",
+        "OVERLAP_WARNING": "{{device}} appartient déjà à un autre groupe du même type, avec : {{models}}. Vouliez-vous plutôt ajouter des appareils à ce groupe-là ?",
         "SEARCH_MODELS_PLACEHOLDER": "Chercher un modèle…",
         "ADD_MODEL_PROMPT": "Ajouter « {{term}} » comme nouveau modèle",
         "SEARCH_BRAND_PLACEHOLDER": "Chercher une marque…",

@@ -369,6 +369,7 @@
         "BASE_MODEL_LABEL": "الهاتف الأصلي للقطعة *",
         "CHANGE_BASE": "تغيير",
         "COMPATIBLE_LABEL": "الهواتف المتوافقة",
+        "OVERLAP_WARNING": "{{device}} ينتمي بالفعل إلى مجموعة أخرى من نفس النوع، مع: {{models}}. هل تريد إضافة الأجهزة إلى تلك المجموعة بدلًا من ذلك؟",
         "SEARCH_MODELS_PLACEHOLDER": "ابحث عن موديل…",
         "ADD_MODEL_PROMPT": "إضافة \"{{term}}\" كموديل جديد",
         "SEARCH_BRAND_PLACEHOLDER": "ابحث عن ماركة…",

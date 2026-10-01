@@ -326,6 +326,30 @@ describe('CompatibilityService', () => {
         });
     });
 
+    describe('verifierChevauchementGroupe() — warns about other groups with the same model+part type', () => {
+        it('rejects a store admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
+            await expect(service.verifierChevauchementGroupe(1, 2, undefined, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('excludes the group currently being edited', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValue([]);
+            await service.verifierChevauchementGroupe(5, 2, 10, 'Bearer x');
+            const [sql, params] = dataSource.query.mock.calls[0];
+            expect(sql).toMatch(/\$3::int IS NULL OR cg\.id != \$3/);
+            expect(params).toEqual([5, 2, 10]);
+        });
+
+        it('returns the other group(s) with their member names when an overlap exists', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValue([{ id_group: 7, modeles: ['Samsung A12', 'Apple iPhone 17'] }]);
+            await expect(service.verifierChevauchementGroupe(1, 2, undefined, 'Bearer x')).resolves.toEqual([
+                { id_group: 7, modeles: ['Samsung A12', 'Apple iPhone 17'] },
+            ]);
+        });
+    });
+
     describe('obtenirGroupe() — editor-only, 404 when missing', () => {
         it('rejects a store admin', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
