@@ -90,8 +90,8 @@
             </thead>
             <tbody>
                 <tr *ngFor="let matchedPart of matchedParts">
-                    <td class="fw-bold">{{ selectedBrand?.nom }}</td>
-                    <td class="fw-bold">{{ selectedModel?.nom }}</td>
+                    <td class="fw-bold">{{ matchedPart.marque || selectedBrand?.nom }}</td>
+                    <td class="fw-bold">{{ matchedPart.modele || selectedModel?.nom }}</td>
                     <td>
                         <span class="badge-ok" *ngIf="matchedPart.id_article">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }}</span>
                         <span class="badge-out" *ngIf="!matchedPart.id_article">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>

@@ -92,7 +92,7 @@ export class CompatibilityService {
         return this.dataSource.query(
             `SELECT cg.id AS id_group, pt.id AS id_part_type, pt.nom_fr, pt.nom_en, pt.nom_ar,
                     cg.note, cg.image,
-                    a.id_article, a.designation, a.quantite, a.prix_vente
+                    a.id_article, a.designation, a.quantite, a.prix_vente, a.marque, a.modele
                FROM compat_group_model cgm
                JOIN compat_group cg ON cg.id = cgm.id_group
                JOIN part_type pt ON pt.id = cg.id_part_type

@@ -19,6 +19,8 @@ interface PartRow {
     designation: string | null;
     quantite: number | null;
     prix_vente: number | null;
+    marque: string | null;
+    modele: string | null;
 }
 
 @Component({
