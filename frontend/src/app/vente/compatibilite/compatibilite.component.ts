@@ -151,18 +151,19 @@ export class CompatibiliteComponent implements OnInit {
 
     /** "Add to sale": hands the article id off via the shared bridge service and leaves Operations
      *  to resolve it against its own already-loaded article list once there - only the id travels,
-     *  so a stale/short-lived copy of the article never gets added. */
-    addToSale(part: PartRow): void {
-        if (!part.id_article) return;
-        this.posBridge.sendArticleToSale(part.id_article);
+     *  so a stale/short-lived copy of the article never gets added. Shared by the main parts table
+     *  and the compatible-devices grid, so it takes the article id directly rather than a PartRow. */
+    addToSale(item: { id_article: number | null }): void {
+        if (!item.id_article) return;
+        this.posBridge.sendArticleToSale(item.id_article);
         this.router.navigate(['/vente/operations']);
     }
 
     /** "Use in repair": same handoff, but Reparation opens a fresh ticket with the part already
      *  added, leaving client selection to the user. */
-    useInRepair(part: PartRow): void {
-        if (!part.id_article) return;
-        this.posBridge.sendArticleToRepair(part.id_article);
+    useInRepair(item: { id_article: number | null }): void {
+        if (!item.id_article) return;
+        this.posBridge.sendArticleToRepair(item.id_article);
         this.router.navigate(['/reparation']);
     }
 

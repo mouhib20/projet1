@@ -516,6 +516,18 @@
     margin-top: 2px;
 }
 
+.device-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.device-card-actions .btn-quick-action {
+    width: 100%;
+}
+
 .confirmed-badge {
     position: absolute;
     top: 8px;

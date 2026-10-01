@@ -150,6 +150,14 @@
                 <div class="device-card-name">{{ d.nom }}</div>
                 <span class="badge-ok device-card-stock" *ngIf="d.id_article">{{ 'COMPATIBILITE.STATUS_IN_STOCK' | translate }} · {{ d.quantite }}</span>
                 <span class="badge-out device-card-stock" *ngIf="!d.id_article">{{ 'COMPATIBILITE.STATUS_NOT_STOCKED' | translate }}</span>
+                <div class="device-card-actions" *ngIf="d.id_article && (auth.hasPermission('ventes', 'ajouter') || auth.hasPermission('reparation', 'ajouter'))">
+                    <button type="button" class="btn-quick-action" *ngIf="auth.hasPermission('ventes', 'ajouter')" (click)="addToSale(d)">
+                        🛒 {{ 'COMPATIBILITE.ADD_TO_SALE' | translate }}
+                    </button>
+                    <button type="button" class="btn-quick-action" *ngIf="auth.hasPermission('reparation', 'ajouter')" (click)="useInRepair(d)">
+                        🔧 {{ 'COMPATIBILITE.USE_IN_REPAIR' | translate }}
+                    </button>
+                </div>
             </div>
         </div>
     </div>
