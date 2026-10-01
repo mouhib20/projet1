@@ -119,6 +119,22 @@ describe('CompatibilityService', () => {
             expect(update!.params[3]).toEqual(expect.arrayContaining(['13', 'iphone 13']));
         });
 
+        it('strips a trailing bilingual "(...)" suffix from sous_categorie before comparing, in the UPDATE SQL itself', async () => {
+            const calls: { sql: string; params: any[] }[] = [];
+            dataSource.query.mockImplementation((sql: string, params: any[]) => {
+                calls.push({ sql, params });
+                if (sql.includes('SELECT cg.id AS id_group')) return Promise.resolve([{ id_group: 13, nom_fr: 'Batterie', nom_en: 'Batterie', nom_ar: 'Batterie' }]);
+                if (sql.includes('SELECT dm.nom, b.nom AS marque')) return Promise.resolve([{ nom: '13', marque: 'iphone' }]);
+                return Promise.resolve([]);
+            });
+            await service.piecesPourModele(23);
+            const update = calls.find(c => c.sql.includes('UPDATE article SET compat_group_id'));
+            // An article bought through a supplier invoice (Factures) stores its own bilingual
+            // label verbatim, e.g. "Batterie (بطارية)" - the comparison has to strip that suffix
+            // itself rather than expecting the catalogue's plain "batterie" to somehow equal it.
+            expect(update!.sql).toContain("regexp_replace(LOWER(TRIM(sous_categorie)), '\\s*\\([^)]*\\)\\s*$', '') = ANY");
+        });
+
         it('the UPDATE also re-points an article whose current group no longer lists its own device (a stale link), not just NULL ones', async () => {
             const calls: { sql: string; params: any[] }[] = [];
             dataSource.query.mockImplementation((sql: string, params: any[]) => {
@@ -541,6 +557,18 @@ describe('CompatibilityService', () => {
             await service.autoResolveGroupeRecherche(['Batterie'], 'iphone', '13');
             const [, modelParams] = dataSource.query.mock.calls[2];
             expect(modelParams).toEqual([5, '13', ['13', 'iphone 13', 'iphone13']]);
+        });
+
+        it('strips a trailing bilingual "(...)" suffix from the type term (an article bought via a supplier invoice stores it verbatim, e.g. "Batterie (بطارية)")', async () => {
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 2 }]) // part_type - only matches once "(بطارية)" is stripped
+                .mockResolvedValueOnce([{ id: 1 }])
+                .mockResolvedValueOnce([{ id: 5 }])
+                .mockResolvedValueOnce([{ id: 10 }]);
+            await service.autoResolveGroupeRecherche(['Batterie (بطارية)'], 'Samsung', 'A12');
+            const [typeSql, typeParams] = dataSource.query.mock.calls[0];
+            expect(typeSql).toMatch(/FROM part_type/);
+            expect(typeParams[0]).toEqual(expect.arrayContaining(['batterie (بطارية)', 'batterie']));
         });
 
         it('sends a whitespace-compacted fallback term for the model (e.g. "spark 6" -> "spark6")', async () => {

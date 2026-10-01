@@ -127,7 +127,10 @@ export class CompatibilityService {
      *  legitimately list its device (that ambiguity, e.g. a model split across two intentionally
      *  separate parts, is left alone on purpose). Matching is exact (case-insensitive, trimmed,
      *  plus a whitespace-compact fallback for the model name, same as autoResolveGroupeRecherche
-     *  and the Glace/Glass synonym below), never fuzzy. */
+     *  and the Glace/Glass synonym below), never fuzzy - except sous_categorie also has a trailing
+     *  "(...)" parenthetical stripped before comparing, since articles bought through a supplier
+     *  invoice (Factures) store their own bilingual label verbatim as sous_categorie (e.g. "Batterie
+     *  (بطارية)"), never the plain key Stock's own form uses. */
     private async autoLierArticlesOrphelins(idModele: number, idMagasin: number): Promise<void> {
         const groupes = await this.dataSource.query(
             `SELECT cg.id AS id_group, pt.nom_fr, pt.nom_en, pt.nom_ar
@@ -161,7 +164,7 @@ export class CompatibilityService {
                       WHERE id_magasin = $2
                         AND LOWER(TRIM(marque)) = $3
                         AND (LOWER(TRIM(modele)) = ANY($4::text[]) OR REPLACE(LOWER(modele), ' ', '') = ANY($4::text[]))
-                        AND LOWER(TRIM(sous_categorie)) = ANY($5::text[])
+                        AND regexp_replace(LOWER(TRIM(sous_categorie)), '\\s*\\([^)]*\\)\\s*$', '') = ANY($5::text[])
                         AND (
                           compat_group_id IS NULL
                           OR NOT EXISTS (
@@ -257,11 +260,17 @@ export class CompatibilityService {
      *  case-insensitive, trimmed matches only (plus a whitespace-insensitive fallback for the
      *  model name, e.g. 'spark6' vs 'spark 6', and a redundant-brand-name fallback, e.g. device
      *  catalogue name '13' vs the fuller 'iphone 13' Stock was typed with - see
-     *  nomModeleVariantes()) - never a fuzzy/partial match, to avoid linking the wrong device.
-     *  `raison` says exactly which step failed, so the Stock form can tell the user why instead of
-     *  a generic "no match". */
+     *  nomModeleVariantes()) - never a fuzzy/partial match, to avoid linking the wrong device. Each
+     *  type term also gets its trailing "(...)" parenthetical stripped before matching, since an
+     *  article bought through a supplier invoice (Factures) carries its own bilingual label
+     *  verbatim as sous_categorie (e.g. "Batterie (بطارية)"), never the plain key Stock's own form
+     *  sends. `raison` says exactly which step failed, so the Stock form can tell the user why
+     *  instead of a generic "no match". */
     async autoResolveGroupeRecherche(termesType: string[], marque: string, modele: string): Promise<{ id_group: number; id_part_type: number } | { raison: 'type' | 'marque' | 'modele' | 'groupe' }> {
-        const termes = [...new Set(termesType.map(t => t.trim().toLowerCase()).filter(Boolean))];
+        const termes = [...new Set(termesType.flatMap(t => {
+            const base = t.trim().toLowerCase();
+            return [base, base.replace(/\s*\([^)]*\)\s*$/, '').trim()];
+        }).filter(Boolean))];
         const marqueNorm = marque.trim().toLowerCase();
         const modeleNorm = modele.trim().toLowerCase();
         const modeleVariantes = this.nomModeleVariantes(marqueNorm, modeleNorm);
