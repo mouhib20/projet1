@@ -127,6 +127,10 @@ export class CompatibiliteComponent implements OnInit {
         return this.availableOnly ? this.matchedParts.filter(p => p.id_article) : this.matchedParts;
     }
 
+    get visibleDevices(): CompatibleDevice[] {
+        return this.availableOnly ? this.compatibleDevices.filter(d => d.id_article) : this.compatibleDevices;
+    }
+
     get totalInStock(): number {
         return this.matchedParts.filter(p => p.id_article).reduce((sum, p) => sum + (p.quantite ?? 0), 0);
     }

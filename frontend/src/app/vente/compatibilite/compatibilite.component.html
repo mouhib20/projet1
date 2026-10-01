@@ -141,8 +141,8 @@
         <div class="loading-state small" *ngIf="devicesLoading">
             <div class="loading-icon">⟳</div>
         </div>
-        <div class="devices-grid" *ngIf="!devicesLoading">
-            <div class="device-card" *ngFor="let d of compatibleDevices">
+        <div class="devices-grid" *ngIf="!devicesLoading && visibleDevices.length">
+            <div class="device-card" *ngFor="let d of visibleDevices">
                 <span class="confirmed-badge">✓ {{ 'COMPATIBILITE.CONFIRMED_MATCH_BADGE' | translate }}</span>
                 <img *ngIf="imageUrl(d.image)" [src]="imageUrl(d.image)" [alt]="d.nom" />
                 <span *ngIf="!imageUrl(d.image)" class="picker-card-placeholder">📱</span>
@@ -159,6 +159,9 @@
                     </button>
                 </div>
             </div>
+        </div>
+        <div class="empty-state small" *ngIf="!devicesLoading && !visibleDevices.length">
+            <strong>{{ 'COMPATIBILITE.NO_STOCKED_RESULTS' | translate }}</strong>
         </div>
     </div>
 
