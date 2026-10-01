@@ -15,7 +15,7 @@ describe('CompatibilityService', () => {
     let usersRepo: any;
 
     beforeEach(async () => {
-        dataSource = { query: jest.fn(), transaction: jest.fn() };
+        dataSource = { query: jest.fn().mockResolvedValue([]), transaction: jest.fn() };
         caisseService = { acteurRequis: jest.fn() };
         storeContext = { requireMagasinId: jest.fn().mockReturnValue(1) };
         usersRepo = { findOne: jest.fn(), find: jest.fn(), save: jest.fn(), create: jest.fn((v) => v), update: jest.fn() };
@@ -210,6 +210,24 @@ describe('CompatibilityService', () => {
             }));
             await service.creerGroupe({ id_part_type: 1, id_base_model: 5, modeleIds: [], statut: 'needs_test' }, 'Bearer x');
             expect(insertedStatut).toBe('needs_test');
+        });
+
+        it('reuses an existing group with the exact same part type and exact same member set, instead of creating a duplicate', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValueOnce([{ id: 17, membres: [5, 13] }]); // an existing group with members [5, 13]
+            await expect(
+                service.creerGroupe({ id_part_type: 1, id_base_model: 13, modeleIds: [5] }, 'Bearer x'),
+            ).resolves.toEqual({ id: 17 });
+            expect(dataSource.transaction).not.toHaveBeenCalled(); // never reaches the INSERT
+        });
+
+        it('does not reuse a group whose member set merely overlaps (not exactly equal)', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValueOnce([{ id: 17, membres: [5, 13] }]); // existing group has an extra member
+            dataSource.transaction.mockImplementation(async (cb) => cb({ query: jest.fn().mockResolvedValue([{ id: 99 }]) }));
+            await expect(
+                service.creerGroupe({ id_part_type: 1, id_base_model: 13, modeleIds: [5, 20] }, 'Bearer x'),
+            ).resolves.toEqual({ id: 99 });
         });
     });
 

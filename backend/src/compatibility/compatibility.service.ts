@@ -452,6 +452,10 @@ export class CompatibilityService {
     /** modeleIds is the "also fits" list - the base model is always added to compat_group_model
      *  too (so every existing read - search, stock status, the customer-facing device grid - keeps
      *  working unchanged off group membership alone), but it never needs to be in modeleIds itself. */
+    /** Case-insensitive-equivalent dedup for groups, same spirit as brand/model/part-type: if a
+     *  group with this exact part type and this exact member set (as a set, order doesn't matter)
+     *  already exists, reuse it instead of creating a silent duplicate - no warning needed, this
+     *  is never a legitimate case (an intentional split always differs in at least one member). */
     async creerGroupe(
         dto: { id_part_type: number; id_base_model: number; modeleIds: number[]; note?: string; image?: string; statut?: string },
         authorization?: string,
@@ -460,7 +464,21 @@ export class CompatibilityService {
         if (!dto.id_part_type) throw new BadRequestException('Le type de pièce est obligatoire.');
         if (!dto.id_base_model) throw new BadRequestException("Le téléphone original de la pièce est obligatoire.");
         const statut = dto.statut === 'needs_test' ? 'needs_test' : 'confirmed';
-        const modeles = [...new Set([dto.id_base_model, ...(dto.modeleIds || [])])];
+        const modeles = [...new Set([dto.id_base_model, ...(dto.modeleIds || [])])].sort((a, b) => a - b);
+
+        const candidats = await this.dataSource.query(
+            `SELECT cg.id, array_agg(cgm.id_model ORDER BY cgm.id_model) AS membres
+               FROM compat_group cg
+               JOIN compat_group_model cgm ON cgm.id_group = cg.id
+              WHERE cg.id_part_type = $1
+              GROUP BY cg.id`,
+            [dto.id_part_type],
+        );
+        const existant = candidats.find((c: { id: number; membres: number[] }) =>
+            c.membres.length === modeles.length && c.membres.every((m, i) => m === modeles[i]),
+        );
+        if (existant) return { id: existant.id };
+
         return this.dataSource.transaction(async (m) => {
             const [row] = await m.query(
                 `INSERT INTO compat_group (id_part_type, id_base_model, note, image, statut, cree_par) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
