@@ -117,9 +117,25 @@ export class OperationsComponent implements OnInit {
 
   loadArticles() {
     this.articleService.getArticles().subscribe({
-      next: (data) => { this.articles = data; this.offlineDb.articles.bulkPut(data as any).catch(() => undefined); },
+      next: (data) => {
+        this.articles = data;
+        this.offlineDb.articles.bulkPut(data as any).catch(() => undefined);
+        this.consumePendingSaleArticle();
+      },
       error: (err) => console.error(err)
     });
+  }
+
+  /** Picks up a specific article handed off from the Compatibility search page's "Add to sale"
+   *  button, if any - resolved against the article list just loaded above since the handoff only
+   *  carries an id, not the full ArticleForm. */
+  private consumePendingSaleArticle(): void {
+    const id = this.posBridge.consumePendingArticleIdForSale();
+    if (!id) return;
+    const article = this.articles.find(a => a.id_article === id);
+    if (!article) return;
+    this.posAddToCart(article);
+    this.activeView = 'pos';
   }
 
   get filteredVentes(): Vente[] {

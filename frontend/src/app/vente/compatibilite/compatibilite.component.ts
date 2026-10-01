@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CompatService } from '../../services/compat.service';
 import { AuthService } from '../../services/auth.service';
 import { articleImageUrl } from '../../services/article.service';
+import { PosBridgeService } from '../../services/pos-bridge.service';
 import { Brand, DeviceModel, PartType, CompatGroupStatut } from '../../models/compat.model';
 
 interface PartRow {
@@ -134,7 +136,26 @@ export class CompatibiliteComponent implements OnInit {
         private compatService: CompatService,
         public auth: AuthService,
         private translate: TranslateService,
+        private router: Router,
+        private posBridge: PosBridgeService,
     ) { }
+
+    /** "Add to sale": hands the article id off via the shared bridge service and leaves Operations
+     *  to resolve it against its own already-loaded article list once there - only the id travels,
+     *  so a stale/short-lived copy of the article never gets added. */
+    addToSale(part: PartRow): void {
+        if (!part.id_article) return;
+        this.posBridge.sendArticleToSale(part.id_article);
+        this.router.navigate(['/vente/operations']);
+    }
+
+    /** "Use in repair": same handoff, but Reparation opens a fresh ticket with the part already
+     *  added, leaving client selection to the user. */
+    useInRepair(part: PartRow): void {
+        if (!part.id_article) return;
+        this.posBridge.sendArticleToRepair(part.id_article);
+        this.router.navigate(['/reparation']);
+    }
 
     ngOnInit(): void {
         this.compatService.getPartTypesForSearch().subscribe({

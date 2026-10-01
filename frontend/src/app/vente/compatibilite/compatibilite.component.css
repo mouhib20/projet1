@@ -452,6 +452,29 @@
     color: #fcd34d;
 }
 
+.quick-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-quick-action {
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-radius: 6px;
+    color: #a5b4fc;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    white-space: nowrap;
+}
+
+.btn-quick-action:hover {
+    background: rgba(99, 102, 241, 0.22);
+}
+
 .devices-section {
     margin-bottom: 1.5rem;
 }

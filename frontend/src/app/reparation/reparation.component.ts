@@ -466,7 +466,21 @@ export class ReparationComponent implements OnInit {
             this.articles = data;
             this.stockParts = this.articles.filter(a => a.type === 'part' || a.type === 'accessory');
             this.offlineDb.articles.bulkPut(data as any).catch(() => undefined);
+            this.consumePendingRepairArticle();
         });
+    }
+
+    /** Picks up a specific article handed off from the Compatibility search page's "Use in
+     *  repair" button, if any - opens a fresh ticket with it already added as the first part,
+     *  leaving client selection to the user. Resolved against the article list just loaded above
+     *  since the handoff only carries an id, not the full ArticleForm. */
+    private consumePendingRepairArticle(): void {
+        const id = this.posBridge.consumePendingArticleIdForRepair();
+        if (!id) return;
+        const article = this.articles.find(a => a.id_article === id);
+        if (!article) return;
+        this.openTicketModal();
+        this.addPartToTicket(article);
     }
 
     loadFournisseurs() {
