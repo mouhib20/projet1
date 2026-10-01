@@ -83,7 +83,7 @@ describe('CompatibilityService', () => {
             await service.piecesPourModele(12);
             const update = calls.find(c => c.sql.includes('UPDATE article SET compat_group_id'));
             expect(update).toBeDefined();
-            expect(update!.params).toEqual([11, 1, 'samsung', 'a12', 'a12', ['vitre', 'glass', 'زجاج', 'glace']]);
+            expect(update!.params).toEqual([11, 1, 'samsung', ['a12', 'samsung a12', 'samsunga12'], ['vitre', 'glass', 'زجاج', 'glace']]);
             // The self-heal runs BEFORE the main read.
             const updateIdx = calls.findIndex(c => c.sql.includes('UPDATE article SET compat_group_id'));
             const mainIdx = calls.findIndex(c => c.sql.includes('LEFT JOIN article'));
@@ -100,7 +100,23 @@ describe('CompatibilityService', () => {
             });
             await service.piecesPourModele(12);
             const update = calls.find(c => c.sql.includes('UPDATE article SET compat_group_id'));
-            expect(update!.params[5]).toEqual(expect.arrayContaining(['glass', 'glace']));
+            expect(update!.params[4]).toEqual(expect.arrayContaining(['glass', 'glace']));
+        });
+
+        it('matches a device catalogued under just its bare number ("13") against Stock\'s fuller free-text model ("iphone 13"), and vice versa', async () => {
+            const calls: { sql: string; params: any[] }[] = [];
+            dataSource.query.mockImplementation((sql: string, params: any[]) => {
+                calls.push({ sql, params });
+                if (sql.includes('SELECT cg.id AS id_group')) return Promise.resolve([{ id_group: 13, nom_fr: 'Batterie', nom_en: 'Batterie', nom_ar: 'Batterie' }]);
+                if (sql.includes('SELECT dm.nom, b.nom AS marque')) return Promise.resolve([{ nom: '13', marque: 'iphone' }]);
+                return Promise.resolve([]);
+            });
+            await service.piecesPourModele(23);
+            const update = calls.find(c => c.sql.includes('UPDATE article SET compat_group_id'));
+            // An article typed as marque="iphone" / modele="iPhone 13" in Stock must still match a
+            // device catalogued with the bare nom "13" - the exact string "iphone 13" has to be one
+            // of the accepted variants, not just the catalogue's own literal "13".
+            expect(update!.params[3]).toEqual(expect.arrayContaining(['13', 'iphone 13']));
         });
 
         it('the UPDATE also re-points an article whose current group no longer lists its own device (a stale link), not just NULL ones', async () => {
@@ -516,6 +532,17 @@ describe('CompatibilityService', () => {
             expect(brandParams).toEqual(['samsung']);
         });
 
+        it('sends a redundant-brand-name fallback for the model (e.g. marque "iphone" + modele "13" -> also tries "iphone 13")', async () => {
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 2 }])
+                .mockResolvedValueOnce([{ id: 5 }])
+                .mockResolvedValueOnce([{ id: 10 }])
+                .mockResolvedValueOnce([{ id: 10 }]);
+            await service.autoResolveGroupeRecherche(['Batterie'], 'iphone', '13');
+            const [, modelParams] = dataSource.query.mock.calls[2];
+            expect(modelParams).toEqual([5, '13', ['13', 'iphone 13', 'iphone13']]);
+        });
+
         it('sends a whitespace-compacted fallback term for the model (e.g. "spark 6" -> "spark6")', async () => {
             dataSource.query
                 .mockResolvedValueOnce([{ id: 2 }])
@@ -524,7 +551,7 @@ describe('CompatibilityService', () => {
                 .mockResolvedValueOnce([{ id: 10 }]);
             await service.autoResolveGroupeRecherche(['Vitre'], 'ticno', 'spark 6');
             const [, modelParams] = dataSource.query.mock.calls[2];
-            expect(modelParams).toEqual([1, 'spark 6', 'spark6']);
+            expect(modelParams).toEqual([1, 'spark 6', ['spark 6', 'ticno spark 6', 'spark6', 'ticnospark6']]);
         });
     });
 

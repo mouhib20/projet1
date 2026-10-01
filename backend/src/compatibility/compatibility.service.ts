@@ -16,6 +16,20 @@ export class CompatibilityService {
         private readonly storeContext: StoreContextService,
     ) { }
 
+    /** The compat catalogue's device names aren't entered consistently - some models store just the
+     *  bare number ("13", "17"), others the full "brand + number" ("iphone 12"), depending on
+     *  whoever typed them into the editor. Stock's own free-text model field is typically typed as
+     *  the full product name regardless ("iPhone 13"), so an exact match against a bare "13" fails
+     *  even though it's the same device. Returns every normalized (lowercased, trimmed, then also
+     *  whitespace-compacted) form worth comparing against, with the brand name both included and
+     *  stripped, so either naming convention on either side still matches. */
+    private nomModeleVariantes(marqueNorm: string, nomNorm: string): string[] {
+        const avecMarque = nomNorm.startsWith(marqueNorm + ' ') ? nomNorm : `${marqueNorm} ${nomNorm}`;
+        const sansMarque = nomNorm.startsWith(marqueNorm + ' ') ? nomNorm.slice(marqueNorm.length + 1) : nomNorm;
+        const formes = [nomNorm, avecMarque, sansMarque];
+        return [...new Set([...formes, ...formes.map(f => f.replace(/\s+/g, ''))])];
+    }
+
     // ── Access checks ────────────────────────────────────────────
 
     private async superAdminRequis(authorization?: string): Promise<Acteur> {
@@ -141,13 +155,13 @@ export class CompatibilityService {
             for (const membre of membres) {
                 const marqueNorm = membre.marque.trim().toLowerCase();
                 const modeleNorm = membre.nom.trim().toLowerCase();
-                const modeleCompact = modeleNorm.replace(/\s+/g, '');
+                const modeleVariantes = this.nomModeleVariantes(marqueNorm, modeleNorm);
                 await this.dataSource.query(
                     `UPDATE article SET compat_group_id = $1
                       WHERE id_magasin = $2
                         AND LOWER(TRIM(marque)) = $3
-                        AND (LOWER(TRIM(modele)) = $4 OR REPLACE(LOWER(modele), ' ', '') = $5)
-                        AND LOWER(TRIM(sous_categorie)) = ANY($6::text[])
+                        AND (LOWER(TRIM(modele)) = ANY($4::text[]) OR REPLACE(LOWER(modele), ' ', '') = ANY($4::text[]))
+                        AND LOWER(TRIM(sous_categorie)) = ANY($5::text[])
                         AND (
                           compat_group_id IS NULL
                           OR NOT EXISTS (
@@ -159,7 +173,7 @@ export class CompatibilityService {
                               AND LOWER(TRIM(dm2.nom)) = LOWER(TRIM(article.modele))
                           )
                         )`,
-                    [groupe.id_group, idMagasin, marqueNorm, modeleNorm, modeleCompact, termesType],
+                    [groupe.id_group, idMagasin, marqueNorm, modeleVariantes, termesType],
                 );
             }
         }
@@ -241,14 +255,16 @@ export class CompatibilityService {
      *  compat catalogue (brand/device_model are ID-referenced there, not text) - lets an article
      *  auto-link to its compat group without the user re-picking brand/model by hand. Exact,
      *  case-insensitive, trimmed matches only (plus a whitespace-insensitive fallback for the
-     *  model name, e.g. 'spark6' vs 'spark 6') - never a fuzzy/partial match, to avoid linking
-     *  the wrong device. `raison` says exactly which step failed, so the Stock form can tell the
-     *  user why instead of a generic "no match". */
+     *  model name, e.g. 'spark6' vs 'spark 6', and a redundant-brand-name fallback, e.g. device
+     *  catalogue name '13' vs the fuller 'iphone 13' Stock was typed with - see
+     *  nomModeleVariantes()) - never a fuzzy/partial match, to avoid linking the wrong device.
+     *  `raison` says exactly which step failed, so the Stock form can tell the user why instead of
+     *  a generic "no match". */
     async autoResolveGroupeRecherche(termesType: string[], marque: string, modele: string): Promise<{ id_group: number; id_part_type: number } | { raison: 'type' | 'marque' | 'modele' | 'groupe' }> {
         const termes = [...new Set(termesType.map(t => t.trim().toLowerCase()).filter(Boolean))];
         const marqueNorm = marque.trim().toLowerCase();
         const modeleNorm = modele.trim().toLowerCase();
-        const modeleCompact = modeleNorm.replace(/\s+/g, '');
+        const modeleVariantes = this.nomModeleVariantes(marqueNorm, modeleNorm);
         if (!termes.length) return { raison: 'type' };
         if (!marqueNorm) return { raison: 'marque' };
         if (!modeleNorm) return { raison: 'modele' };
@@ -272,10 +288,10 @@ export class CompatibilityService {
         const modelRows = await this.dataSource.query(
             `SELECT id FROM device_model
                WHERE id_brand = $1
-                 AND (LOWER(TRIM(nom)) = $2 OR LOWER(TRIM(nom_commercial)) = $2 OR LOWER(TRIM(code)) = $2
-                      OR REPLACE(LOWER(nom), ' ', '') = $3)
+                 AND (LOWER(TRIM(nom)) = ANY($3::text[]) OR REPLACE(LOWER(nom), ' ', '') = ANY($3::text[])
+                      OR LOWER(TRIM(nom_commercial)) = $2 OR LOWER(TRIM(code)) = $2)
                LIMIT 1`,
-            [idBrand, modeleNorm, modeleCompact],
+            [idBrand, modeleNorm, modeleVariantes],
         );
         if (!modelRows[0]) return { raison: 'modele' };
         const idModel = modelRows[0].id;
