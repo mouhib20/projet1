@@ -92,7 +92,11 @@ export class CompatGroupsComponent implements OnInit {
         const nom = this.newBrand.nom.trim();
         this.compatService.createBrand({ nom }).subscribe({
             next: (res) => {
-                this.brands = [...this.brands, { id: res.id, nom, logo: null }];
+                // The backend dedups case/whitespace-insensitively and may hand back an existing
+                // id instead of a new one - skip the push then, or it renders as a duplicate.
+                if (!this.brands.some(b => b.id === res.id)) {
+                    this.brands = [...this.brands, { id: res.id, nom, logo: null }];
+                }
                 this.newModel.id_brand = res.id;
                 this.newModelBrandSearchTerm = '';
                 this.newBrand = { nom: '' };
@@ -146,7 +150,11 @@ export class CompatGroupsComponent implements OnInit {
         this.compatService.createModel({ id_brand: idBrand, nom, nom_commercial: nomCommercial, code, image }).subscribe({
             next: (res) => {
                 const brand = this.brands.find(b => b.id === idBrand);
-                this.models = [...this.models, { id: res.id, nom, nom_commercial: nomCommercial ?? null, code: code ?? null, image: image ?? null, id_brand: idBrand, marque: brand?.nom || '' }];
+                // Same dedup caveat as addBrand()/addPartType(): a reused existing model must not
+                // also render as a second entry.
+                if (!this.models.some(m => m.id === res.id)) {
+                    this.models = [...this.models, { id: res.id, nom, nom_commercial: nomCommercial ?? null, code: code ?? null, image: image ?? null, id_brand: idBrand, marque: brand?.nom || '' }];
+                }
                 if (context === 'base') {
                     this.selectBaseModel({ id: res.id } as DeviceModel);
                 } else {
@@ -451,8 +459,12 @@ export class CompatGroupsComponent implements OnInit {
         this.compatService.createPartType(dto).subscribe({
             next: (res) => {
                 // Add locally instead of refetching: avoids a second round-trip racing with
-                // whatever the user does next (e.g. submitting the group right away).
-                this.partTypes = [...this.partTypes, { id: res.id, nom_fr: dto.nom_fr, nom_en: dto.nom_en, nom_ar: dto.nom_ar, categorie: 'part' }];
+                // whatever the user does next (e.g. submitting the group right away). The backend
+                // dedups case/whitespace-insensitively and may hand back an EXISTING id instead of
+                // a new one - skip the push then, or the reused pill renders twice.
+                if (!this.partTypes.some(t => t.id === res.id)) {
+                    this.partTypes = [...this.partTypes, { id: res.id, nom_fr: dto.nom_fr, nom_en: dto.nom_en, nom_ar: dto.nom_ar, categorie: 'part' }];
+                }
                 this.form.id_part_type = res.id;
                 this.newPartType = { nom_fr: '', nom_en: '', nom_ar: '' };
                 this.showNewPartType = false;
