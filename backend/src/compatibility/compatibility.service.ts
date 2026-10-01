@@ -281,12 +281,20 @@ export class CompatibilityService {
         return this.dataSource.query(`SELECT id, nom_fr, nom_en, nom_ar, categorie FROM part_type ORDER BY nom_fr`);
     }
 
+    /** Case-insensitive, trimmed dedup against any of the three language names - a group only
+     *  matches one exact part_type id, so two "glass" rows (e.g. one created a second time by
+     *  accident) silently split a device's groups across different, unrelated part types. */
     async creerTypePiece(dto: { nom_fr: string; nom_en: string; nom_ar: string; categorie?: 'part' | 'accessory' }, authorization?: string): Promise<{ id: number }> {
         await this.editeurRequis(authorization);
         const nomFr = String(dto.nom_fr ?? '').trim();
         const nomEn = String(dto.nom_en ?? '').trim();
         const nomAr = String(dto.nom_ar ?? '').trim();
         if (!nomFr || !nomEn || !nomAr) throw new BadRequestException('Le nom du type de pièce est obligatoire dans les trois langues.');
+        const existant = await this.dataSource.query(
+            `SELECT id FROM part_type WHERE LOWER(TRIM(nom_fr)) = LOWER($1) OR LOWER(TRIM(nom_en)) = LOWER($2) OR LOWER(TRIM(nom_ar)) = LOWER($3) LIMIT 1`,
+            [nomFr, nomEn, nomAr],
+        );
+        if (existant[0]) return { id: existant[0].id };
         const rows = await this.dataSource.query(
             `INSERT INTO part_type (nom_fr, nom_en, nom_ar, categorie) VALUES ($1, $2, $3, $4) RETURNING id`,
             [nomFr, nomEn, nomAr, dto.categorie === 'accessory' ? 'accessory' : 'part'],

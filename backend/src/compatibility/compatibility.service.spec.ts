@@ -211,6 +211,25 @@ describe('CompatibilityService', () => {
             ).rejects.toThrow();
         });
 
+        it('creerTypePiece returns the existing part type instead of inserting a case/whitespace duplicate', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValueOnce([{ id: 4 }]); // existing-type lookup finds "Glass"
+            await expect(
+                service.creerTypePiece({ nom_fr: 'Vitre', nom_en: ' Glass ', nom_ar: 'زجاج' }, 'Bearer x'),
+            ).resolves.toEqual({ id: 4 });
+            expect(dataSource.query).toHaveBeenCalledTimes(1); // never reaches the INSERT
+        });
+
+        it('creerTypePiece inserts when no existing part type matches any of the three names', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query
+                .mockResolvedValueOnce([]) // no existing match
+                .mockResolvedValueOnce([{ id: 8 }]); // INSERT ... RETURNING id
+            await expect(
+                service.creerTypePiece({ nom_fr: 'Nouveau', nom_en: 'New', nom_ar: 'جديد' }, 'Bearer x'),
+            ).resolves.toEqual({ id: 8 });
+        });
+
         it('modifierModele rejects a store admin', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
             await expect(service.modifierModele(1, { image: '/x.png' }, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
