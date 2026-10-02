@@ -203,19 +203,36 @@
 
                                 <!-- Same form for every type, including "Autre" -->
                                 <div class="form-row">
-                                    <div class="form-group">
+                                    <div class="form-group compat-combobox">
                                         <label class="d-block" style="direction: ltr; text-align: left;">{{
                                             'FACTURES.BRAND' | translate }}</label>
                                         <input type="text" [(ngModel)]="currentItem.marque"
+                                            (input)="onMarqueInput()"
+                                            (focus)="showMarqueSuggestions = true; onMarqueInput()"
+                                            (blur)="closeMarqueSuggestions()"
                                             class="form-control dark-input text-right"
-                                            [placeholder]="'FACTURES.BRAND_EX' | translate">
+                                            [placeholder]="'FACTURES.BRAND_EX' | translate"
+                                            autocomplete="off">
+                                        <div class="compat-suggestions" *ngIf="showCompatHelp && showMarqueSuggestions && filteredCompatBrands.length">
+                                            <div class="compat-suggestion-item" *ngFor="let b of filteredCompatBrands"
+                                                (mousedown)="selectCompatBrand(b)">{{ b.nom }}</div>
+                                        </div>
                                     </div>
-                                    <div class="form-group">
+                                    <div class="form-group compat-combobox">
                                         <label class="d-block" style="direction: ltr; text-align: left;">{{
                                             'FACTURES.MODEL' | translate }}</label>
                                         <input type="text" [(ngModel)]="currentItem.modele"
+                                            (input)="onModeleInput()"
+                                            (focus)="showModeleSuggestions = true; onModeleInput()"
+                                            (blur)="closeModeleSuggestions()"
                                             class="form-control dark-input text-right"
-                                            [placeholder]="'FACTURES.MODEL_EX' | translate">
+                                            [placeholder]="'FACTURES.MODEL_EX' | translate"
+                                            autocomplete="off">
+                                        <div class="compat-suggestions" *ngIf="showCompatHelp && showModeleSuggestions && filteredCompatModels.length">
+                                            <div class="compat-suggestion-item" *ngFor="let m of filteredCompatModels"
+                                                (mousedown)="selectCompatModel(m)">{{ m.nom }}</div>
+                                        </div>
+                                        <span class="catalogue-hint" *ngIf="showCompatHelp && selectedCompatBrandId === null && currentItem.marque">{{ 'FACTURES.PICK_BRAND_FOR_MODELS' | translate }}</span>
                                     </div>
                                 </div>
 

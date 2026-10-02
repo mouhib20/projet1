@@ -7,6 +7,8 @@ import { FournisseurService } from '../../services/fournisseur.service';
 import { ArticleService, ArticleForm, articleImageUrl } from '../../services/article.service';
 import { FactureAchat, FactureItem } from '../../models/facture-achat.model';
 import { Fournisseur } from '../../models/fournisseur.model';
+import { CompatService } from '../../services/compat.service';
+import { Brand, DeviceModel } from '../../models/compat.model';
 
 @Component({
   selector: 'app-factures',
@@ -56,6 +58,18 @@ export class FacturesComponent implements OnInit, OnDestroy {
   imageError = '';
   catalogueLookupPending = false;
   @ViewChild('searchInput') searchInput!: ElementRef;
+
+  // ── Compat-catalogue suggestions for Marque/Modèle (explicit exception to the freeze on this
+  // module - helps type the brand/model consistently with the shared compatibility catalogue
+  // instead of free text, now that it's been bulk-imported with real data). Suggestions only,
+  // never required - free typing still works exactly as before. ──
+  compatBrands: Brand[] = [];
+  filteredCompatBrands: Brand[] = [];
+  showMarqueSuggestions = false;
+  compatModelsForBrand: DeviceModel[] = [];
+  filteredCompatModels: DeviceModel[] = [];
+  showModeleSuggestions = false;
+  selectedCompatBrandId: number | null = null;
 
   /** Display-only correction for category labels whose stored value can't change (Stock/Factures
    *  already have real articles under it) - 'Glace' shows as "Glass" everywhere, nothing stored changes. */
@@ -121,7 +135,8 @@ export class FacturesComponent implements OnInit, OnDestroy {
   constructor(
     private factureAchatService: FactureAchatService,
     private fournisseurService: FournisseurService,
-    private articleService: ArticleService
+    private articleService: ArticleService,
+    private compatService: CompatService
   ) { }
 
   ngOnInit(): void {
@@ -129,6 +144,7 @@ export class FacturesComponent implements OnInit, OnDestroy {
     this.loadFactures();
     this.loadFournisseurs();
     this.loadArticles();
+    this.compatService.getBrandsForSearch().subscribe({ next: (data) => this.compatBrands = data });
   }
 
   initForm() {
@@ -421,6 +437,51 @@ export class FacturesComponent implements OnInit, OnDestroy {
         this.searchInput.nativeElement.focus();
       }
     }, 100);
+  }
+
+  /** "Autre" has no real place in the shared compat catalogue (it's a catch-all, not a device
+   *  part type) - every other supplier type does, so suggestions only make sense there. */
+  get showCompatHelp(): boolean {
+    return !!this.currentItem.type && this.currentItem.type !== 'Autre (شيء آخر)';
+  }
+
+  onMarqueInput(): void {
+    this.selectedCompatBrandId = null;
+    this.compatModelsForBrand = [];
+    this.filteredCompatModels = [];
+    const term = (this.currentItem.marque || '').trim().toLowerCase();
+    this.filteredCompatBrands = term
+      ? this.compatBrands.filter(b => b.nom.toLowerCase().includes(term)).slice(0, 8)
+      : this.compatBrands.slice(0, 8);
+  }
+
+  selectCompatBrand(b: Brand): void {
+    this.currentItem.marque = b.nom;
+    this.selectedCompatBrandId = b.id;
+    this.showMarqueSuggestions = false;
+    this.compatService.getModelsForSearch(b.id).subscribe({
+      next: (data) => { this.compatModelsForBrand = data; this.onModeleInput(); }
+    });
+  }
+
+  closeMarqueSuggestions(): void {
+    setTimeout(() => this.showMarqueSuggestions = false, 200);
+  }
+
+  onModeleInput(): void {
+    const term = (this.currentItem.modele || '').trim().toLowerCase();
+    this.filteredCompatModels = term
+      ? this.compatModelsForBrand.filter(m => m.nom.toLowerCase().includes(term)).slice(0, 8)
+      : this.compatModelsForBrand.slice(0, 8);
+  }
+
+  selectCompatModel(m: DeviceModel): void {
+    this.currentItem.modele = m.nom;
+    this.showModeleSuggestions = false;
+  }
+
+  closeModeleSuggestions(): void {
+    setTimeout(() => this.showModeleSuggestions = false, 200);
   }
 
   selectSmartArticle(article: ArticleForm) {

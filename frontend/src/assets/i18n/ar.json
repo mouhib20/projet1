@@ -140,6 +140,7 @@
         "MODEL": "الموديل (للمخزون)",
         "BRAND_EX": "مثال: Samsung",
         "MODEL_EX": "مثال: Galaxy A51",
+        "PICK_BRAND_FOR_MODELS": "اختر ماركة أعلاه لرؤية موديلاتها",
         "QTY_RECEIVED": "الكمية المستلمة",
         "BARCODE": "الباركود (اختياري)",
         "CATALOGUE_LOOKUP": "جارٍ البحث في الكتالوج المشترك…",

@@ -265,6 +265,37 @@
     display: block;
 }
 
+.compat-combobox {
+    position: relative;
+}
+
+.compat-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: #161b27;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    margin-top: 2px;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.compat-suggestion-item {
+    padding: 7px 12px;
+    font-size: 13px;
+    color: #c9d1d9;
+    cursor: pointer;
+    text-align: right;
+}
+
+.compat-suggestion-item:hover {
+    background: #1a1f30;
+}
+
 .modern-form label {
     font-size: 13px;
     font-weight: 600;

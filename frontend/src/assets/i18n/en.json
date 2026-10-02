@@ -140,6 +140,7 @@
         "MODEL": "Model (for stock)",
         "BRAND_EX": "Ex: Samsung",
         "MODEL_EX": "Ex: Galaxy A51",
+        "PICK_BRAND_FOR_MODELS": "Pick a brand above to see its models",
         "QTY_RECEIVED": "Qty Received",
         "BARCODE": "Barcode (optional)",
         "CATALOGUE_LOOKUP": "Searching the shared catalogue…",
