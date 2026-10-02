@@ -46,7 +46,7 @@ export class FacturesComponent implements OnInit, OnDestroy {
   ];
 
   accessoiresPartTypes: string[] = [
-    'Cendre',
+    'Coque Téléphone',
     'Glace'
   ];
 

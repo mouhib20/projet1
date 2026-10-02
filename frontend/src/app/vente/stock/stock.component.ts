@@ -26,7 +26,7 @@ const PART_SUB_CATEGORIES = [
 ];
 
 const ACCESSORY_SUB_CATEGORIES = [
-    { key: 'Cendre', label: 'Cendre' },
+    { key: 'Coque Téléphone', label: 'Coque Téléphone' },
     { key: 'Glace', label: 'Glass' }, // stored value stays 'Glace' - only the shown label changed
 ];
 
