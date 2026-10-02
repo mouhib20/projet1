@@ -454,6 +454,30 @@ export class CompatImportService {
         for (const { marque, lignes, logo, images } of parMarque) {
             if (marquesExclues.has(marque.trim().toLowerCase())) { resultat.ignores += lignes.length; continue; }
 
+            // Brand creation + logo are their own short transaction, deliberately separate from the
+            // models loop below - a brand like SAMSUNG can have 600+ models, each needing its own
+            // image resize, stretching that one transaction to minutes. Keeping the quick brand/logo
+            // step independent means it isn't exposed to whatever a many-minutes-long transaction
+            // risks (a long-lived DB connection going stale, a pooler recycling it, etc.) - observed
+            // in practice: logos consistently failed to persist only on the full real import (23
+            // brands, ~10 total minutes) despite succeeding in every smaller/faster repro, including
+            // SAMSUNG alone at full size (619 models, ~100s) - duration of the TOTAL request, not any
+            // single transaction, correlated with the failures.
+            let idBrand: number;
+            try {
+                idBrand = (await this.compatibilityService.creerMarqueInterne({ nom: marque })).id;
+                if (logo) {
+                    const [row] = await this.dataSource.query(`SELECT logo FROM brand WHERE id = $1`, [idBrand]);
+                    if (!row?.logo) {
+                        const url = await this.enregistrerImage(logo);
+                        await this.dataSource.query(`UPDATE brand SET logo = $2 WHERE id = $1`, [idBrand, url]);
+                    }
+                }
+            } catch (e: any) {
+                resultat.erreurs.push({ marque, message: e.message || String(e) });
+                continue;
+            }
+
             // Counted locally and only merged into `resultat` once this brand's transaction actually
             // commits - a brand that throws partway through rolls back every INSERT it made, and
             // must report zero of them too, not whatever happened to run before the failure. Without
@@ -461,15 +485,6 @@ export class CompatImportService {
             let brandAjoutes = 0, brandMisAJour = 0, brandIgnores = 0;
             try {
                 await this.dataSource.transaction(async (manager) => {
-                    const { id: idBrand } = await this.compatibilityService.creerMarqueInterne({ nom: marque }, manager);
-                    if (logo) {
-                        const [row] = await manager.query(`SELECT logo FROM brand WHERE id = $1`, [idBrand]);
-                        if (!row?.logo) {
-                            const url = await this.enregistrerImage(logo);
-                            await manager.query(`UPDATE brand SET logo = $2 WHERE id = $1`, [idBrand, url]);
-                        }
-                    }
-
                     for (const ligne of lignes) {
                         const cle = this.cleModele(marque, ligne.modele, ligne.code);
                         if (modelesExclus.has(cle)) { brandIgnores++; continue; }
