@@ -429,7 +429,8 @@
         "TYPE_BATTERY": "البطارية",
         "TYPE_GLASS": "الزجاج (Glass)",
         "TYPE_VITRE": "الواقي (Vitre)",
-        "TYPE_COQUE": "غطاء الهاتف"
+        "TYPE_COQUE": "غطاء الهاتف",
+        "BACK_TO_GROUPS": "العودة لمحرر التوافقية"
     },
     "COMPAT_GROUPS": {
         "TITLE": "التوافقية",
@@ -491,7 +492,8 @@
         "SUCCESS_DELETE": "تم حذف المجموعة بنجاح.",
         "ERR_SAVE": "خطأ أثناء الحفظ.",
         "ERR_DELETE": "خطأ أثناء الحذف.",
-        "SUGGESTIONS_LINK": "اقتراحات المحلات"
+        "SUGGESTIONS_LINK": "اقتراحات المحلات",
+        "IMPORT_LINK": "استيراد البيانات"
     },
     "COMPATIBILITE": {
         "TITLE": "التوافقية",

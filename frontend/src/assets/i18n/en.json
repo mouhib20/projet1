@@ -429,7 +429,8 @@
         "TYPE_BATTERY": "Battery",
         "TYPE_GLASS": "Glass",
         "TYPE_VITRE": "Vitre",
-        "TYPE_COQUE": "Phone case"
+        "TYPE_COQUE": "Phone case",
+        "BACK_TO_GROUPS": "Back to compatibility editor"
     },
     "COMPAT_GROUPS": {
         "TITLE": "Compatibility",
@@ -491,7 +492,8 @@
         "SUCCESS_DELETE": "Group deleted successfully.",
         "ERR_SAVE": "Error saving.",
         "ERR_DELETE": "Error deleting.",
-        "SUGGESTIONS_LINK": "Store suggestions"
+        "SUGGESTIONS_LINK": "Store suggestions",
+        "IMPORT_LINK": "Data import"
     },
     "COMPATIBILITE": {
         "TITLE": "Compatibility",

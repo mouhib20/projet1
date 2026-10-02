@@ -5,7 +5,10 @@
             <div class="page-title">📦 {{ 'IMPORT_DATA.TITLE' | translate }}</div>
             <div class="page-subtitle">{{ 'IMPORT_DATA.SUBTITLE' | translate }}</div>
         </div>
-        <button class="btn btn-secondary btn-sm" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
+        <div class="header-boutons">
+            <button class="btn btn-secondary btn-sm" *ngIf="auth.isCompatEditor()" (click)="goToCompatGroups()">🧩 {{ 'IMPORT_DATA.BACK_TO_GROUPS' | translate }}</button>
+            <button class="btn btn-secondary btn-sm" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
+        </div>
     </div>
 
     <div class="tabs-row">

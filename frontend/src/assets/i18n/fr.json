@@ -429,7 +429,8 @@
         "TYPE_BATTERY": "Batterie",
         "TYPE_GLASS": "Glass",
         "TYPE_VITRE": "Vitre",
-        "TYPE_COQUE": "Coque téléphone"
+        "TYPE_COQUE": "Coque téléphone",
+        "BACK_TO_GROUPS": "Retour à l'éditeur de compatibilité"
     },
     "COMPAT_GROUPS": {
         "TITLE": "Compatibilité",
@@ -491,7 +492,8 @@
         "SUCCESS_DELETE": "Groupe supprimé avec succès.",
         "ERR_SAVE": "Erreur lors de l'enregistrement.",
         "ERR_DELETE": "Erreur lors de la suppression.",
-        "SUGGESTIONS_LINK": "Suggestions des magasins"
+        "SUGGESTIONS_LINK": "Suggestions des magasins",
+        "IMPORT_LINK": "Import de données"
     },
     "COMPATIBILITE": {
         "TITLE": "Compatibilité",

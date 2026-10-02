@@ -449,6 +449,10 @@ export class CompatGroupsComponent implements OnInit {
         this.router.navigate(['/compat-editor/suggestions']);
     }
 
+    goToImport(): void {
+        this.router.navigate(['/compat-import']);
+    }
+
     logout(): void {
         this.auth.logout();
     }

@@ -52,21 +52,21 @@ describe('CompatImportService', () => {
         service = module.get<CompatImportService>(CompatImportService);
     });
 
-    describe('importEmployeeRequis — exclusive to compatibility_employee, NOT even super_admin', () => {
-        it.each(['super_admin', 'compat_editor', 'admin', 'vendeur'])('rejects role "%s" with a 403', async (role) => {
+    describe('importEmployeeRequis — compatibility_employee or compat_editor, NOT super_admin or any store role', () => {
+        it.each(['super_admin', 'admin', 'vendeur'])('rejects role "%s" with a 403', async (role) => {
             caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role });
             await expect(service.previsualiserMarquesModeles('/tmp/x.zip', 'x.zip', 'Bearer x')).rejects.toThrow(ForbiddenException);
         });
 
-        it('allows compatibility_employee', async () => {
-            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'Employe', role: 'compatibility_employee' });
+        it.each(['compatibility_employee', 'compat_editor'])('allows role "%s"', async (role) => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'Employe', role });
             const zip = buildZip([{ path: 'all_models.csv', content: 'marque,modele\n' }]);
             // writeFile-free path: previsualiserMarquesModeles takes a filePath, so we feed AdmZip a
             // real temp buffer written to disk.
             const fs = require('fs');
             const os = require('os');
             const path = require('path');
-            const tmp = path.join(os.tmpdir(), `test-${Date.now()}.zip`);
+            const tmp = path.join(os.tmpdir(), `test-${Date.now()}-${Math.random()}.zip`);
             fs.writeFileSync(tmp, zip.toBuffer());
             try {
                 await expect(service.previsualiserMarquesModeles(tmp, 'x.zip', 'Bearer x')).resolves.toBeDefined();

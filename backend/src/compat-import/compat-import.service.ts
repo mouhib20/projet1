@@ -157,12 +157,14 @@ export class CompatImportService {
 
     // ── Access checks ────────────────────────────────────────────
 
-    /** Deliberately NOT the editeurRequis()/OR-super_admin pattern used everywhere else in the
-     *  compat catalogue - this role is exclusive, super_admin included, by explicit request. */
+    /** compatibility_employee or compat_editor - deliberately NOT editeurRequis()'s OR-super_admin
+     *  pattern used everywhere else in the compat catalogue: super_admin and every store role stay
+     *  blocked here, by explicit request. compat_editor was added after the fact (the compat
+     *  catalogue's own manager asked to use this screen too, not just a dedicated import account). */
     private async importEmployeeRequis(authorization?: string): Promise<Acteur> {
         const acteur = await this.caisseService.acteurRequis(authorization);
-        if (acteur.role !== 'compatibility_employee') {
-            throw new ForbiddenException('Action réservée au rôle employé d\'import.');
+        if (acteur.role !== 'compatibility_employee' && acteur.role !== 'compat_editor') {
+            throw new ForbiddenException('Action réservée au rôle employé d\'import ou éditeur de compatibilité.');
         }
         return acteur;
     }

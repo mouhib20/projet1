@@ -12,6 +12,12 @@
     margin-bottom: 1.5rem;
 }
 
+.header-boutons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
 .page-title {
     font-size: 1.5rem;
     font-weight: 700;

@@ -30,6 +30,10 @@ export class ImportDataComponent {
         this.auth.logout();
     }
 
+    goToCompatGroups(): void {
+        this.router.navigate(['/compat-editor/groups']);
+    }
+
     partTypeLabelKey(key: string): string {
         return 'IMPORT_DATA.TYPE_' + key.toUpperCase();
     }
