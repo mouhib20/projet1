@@ -38,24 +38,14 @@ export class CompatibilityService {
         return acteur;
     }
 
-    /** Writing/editing the shared catalogue: compat_editor accounts, compatibility_employee
-     *  accounts (same manual edit rights as compat_editor, granted on explicit request), or
-     *  super_admin. Hard-delete (group, brand, model) is a separate, narrower check (see
-     *  suppressionRequis) - compat_editor is deliberately NOT in that one. */
+    /** Writing/editing/deleting the shared catalogue (groups, brands, models): compat_editor,
+     *  compatibility_employee or super_admin - all three have identical rights here, including
+     *  hard-delete (on explicit request; there used to be a narrower delete-only check excluding
+     *  compat_editor, now removed as that distinction no longer applies to any role). */
     private async editeurRequis(authorization?: string): Promise<Acteur> {
         const acteur = await this.caisseService.acteurRequis(authorization);
         if (acteur.role !== 'compat_editor' && acteur.role !== 'compatibility_employee' && acteur.role !== 'super_admin') {
             throw new ForbiddenException("Action réservée aux éditeurs de compatibilité.");
-        }
-        return acteur;
-    }
-
-    /** Hard-delete of a group, brand or model: super_admin, or compatibility_employee (granted
-     *  on explicit request - unlike editeurRequis, compat_editor is deliberately excluded here). */
-    private async suppressionRequis(authorization?: string): Promise<Acteur> {
-        const acteur = await this.caisseService.acteurRequis(authorization);
-        if (acteur.role !== 'super_admin' && acteur.role !== 'compatibility_employee') {
-            throw new ForbiddenException('Action réservée à un super administrateur.');
         }
         return acteur;
     }
@@ -388,7 +378,7 @@ export class CompatibilityService {
     /** Blocked (not cascaded) when models still exist under this brand - the person deletes those
      *  first, same spirit as supprimerModele's own block on in-use models. */
     async supprimerMarque(id: number, authorization?: string): Promise<void> {
-        await this.suppressionRequis(authorization);
+        await this.editeurRequis(authorization);
         const [existante] = await this.dataSource.query(`SELECT id FROM brand WHERE id = $1`, [id]);
         if (!existante) throw new NotFoundException(`Marque #${id} introuvable`);
         const [{ count }] = await this.dataSource.query(
@@ -482,7 +472,7 @@ export class CompatibilityService {
     /** Blocked (not cascaded) when the model is still used as a group's base model or as a
      *  compatible member of one - the person removes it from those groups first. */
     async supprimerModele(id: number, authorization?: string): Promise<void> {
-        await this.suppressionRequis(authorization);
+        await this.editeurRequis(authorization);
         const [existant] = await this.dataSource.query(`SELECT id FROM device_model WHERE id = $1`, [id]);
         if (!existant) throw new NotFoundException(`Modèle #${id} introuvable`);
         const [{ count }] = await this.dataSource.query(
@@ -532,8 +522,7 @@ export class CompatibilityService {
         return this.creerTypePieceInterne(dto);
     }
 
-    // ── Groups (write: compat_editor/compatibility_employee/super_admin; delete: super_admin
-    // or compatibility_employee only - compat_editor excluded, see suppressionGroupeRequis) ────
+    // ── Groups (write and delete: compat_editor/compatibility_employee/super_admin) ────
 
     /** Warns (never blocks) when a model being added to a group - as base or as compatible -
      *  already sits in a DIFFERENT group of the same part type. That's how a device ends up
@@ -685,7 +674,7 @@ export class CompatibilityService {
     }
 
     async supprimerGroupe(id: number, authorization?: string): Promise<void> {
-        await this.suppressionRequis(authorization);
+        await this.editeurRequis(authorization);
         const res = await this.dataSource.query(`DELETE FROM compat_group WHERE id = $1`, [id]);
         const affected = Array.isArray(res) ? res[1] : 0;
         if (!affected) throw new NotFoundException(`Groupe de compatibilité #${id} introuvable`);

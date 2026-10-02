@@ -271,10 +271,11 @@ describe('CompatibilityService', () => {
         });
     });
 
-    describe('suppressionGroupeRequis (via supprimerGroupe) — super_admin or compatibility_employee, not compat_editor', () => {
-        it('rejects compat_editor from deleting a group (narrower than editeurRequis on purpose)', async () => {
+    describe('supprimerGroupe() — compat_editor, compatibility_employee or super_admin', () => {
+        it('allows compat_editor to delete a group', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
-            await expect(service.supprimerGroupe(1, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
+            dataSource.query.mockResolvedValue([[], 1]);
+            await expect(service.supprimerGroupe(1, 'Bearer x')).resolves.toBeUndefined();
         });
 
         it('allows compatibility_employee to delete a group, on explicit request', async () => {
@@ -504,9 +505,9 @@ describe('CompatibilityService', () => {
         });
     });
 
-    describe('supprimerModele() — super_admin or compatibility_employee only, blocked while in use', () => {
-        it('rejects compat_editor (narrower than editeurRequis, same boundary as supprimerGroupe)', async () => {
-            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+    describe('supprimerModele() — compat_editor, compatibility_employee or super_admin, blocked while in use', () => {
+        it('rejects a regular store admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
             await expect(service.supprimerModele(1, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
         });
 
@@ -526,6 +527,15 @@ describe('CompatibilityService', () => {
 
         it('allows compatibility_employee to delete a model that is not in use', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 10, nom: 'Employe', role: 'compatibility_employee' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 7 }]) // model exists
+                .mockResolvedValueOnce([{ count: 0 }]) // unused
+                .mockResolvedValueOnce(undefined); // DELETE
+            await expect(service.supprimerModele(7, 'Bearer x')).resolves.toBeUndefined();
+        });
+
+        it('allows compat_editor to delete a model that is not in use', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
             dataSource.query
                 .mockResolvedValueOnce([{ id: 7 }]) // model exists
                 .mockResolvedValueOnce([{ count: 0 }]) // unused
@@ -560,8 +570,8 @@ describe('CompatibilityService', () => {
             await expect(service.modifierMarque(3, { nom: 'Apple' }, 'Bearer x')).rejects.toBeInstanceOf(BadRequestException);
         });
 
-        it('supprimerMarque rejects compat_editor (narrower than editeurRequis)', async () => {
-            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+        it('supprimerMarque rejects a regular store admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
             await expect(service.supprimerMarque(1, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
         });
 
@@ -575,6 +585,15 @@ describe('CompatibilityService', () => {
 
         it('allows compatibility_employee to delete a brand with no models left', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 10, nom: 'Employe', role: 'compatibility_employee' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 3 }]) // brand exists
+                .mockResolvedValueOnce([{ count: 0 }]) // no models left
+                .mockResolvedValueOnce(undefined); // DELETE
+            await expect(service.supprimerMarque(3, 'Bearer x')).resolves.toBeUndefined();
+        });
+
+        it('allows compat_editor to delete a brand with no models left', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
             dataSource.query
                 .mockResolvedValueOnce([{ id: 3 }]) // brand exists
                 .mockResolvedValueOnce([{ count: 0 }]) // no models left

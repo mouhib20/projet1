@@ -50,7 +50,7 @@
                         <td class="text-center">
                             <ng-container *ngIf="editingBrandId !== b.id">
                                 <button class="btn-outline btn-sm" (click)="startEditBrand(b)">✏️ {{ 'COMPAT_CATALOG.BTN_EDIT' | translate }}</button>
-                                <button class="btn-outline btn-sm" *ngIf="canDelete" (click)="deleteBrand(b)">🗑️ {{ 'COMPAT_CATALOG.BTN_DELETE' | translate }}</button>
+                                <button class="btn-outline btn-sm" (click)="deleteBrand(b)">🗑️ {{ 'COMPAT_CATALOG.BTN_DELETE' | translate }}</button>
                             </ng-container>
                             <ng-container *ngIf="editingBrandId === b.id">
                                 <button class="btn-outline btn-sm" (click)="saveEditBrand(b)">✓ {{ 'COMPAT_CATALOG.SAVE' | translate }}</button>
@@ -138,7 +138,7 @@
                             <td class="text-center">
                                 <ng-container *ngIf="editingModelId !== m.id">
                                     <button class="btn-outline btn-sm" (click)="startEditModel(m)">✏️ {{ 'COMPAT_CATALOG.BTN_EDIT' | translate }}</button>
-                                    <button class="btn-outline btn-sm" *ngIf="canDelete" (click)="deleteModel(m)">🗑️ {{ 'COMPAT_CATALOG.BTN_DELETE' | translate }}</button>
+                                    <button class="btn-outline btn-sm" (click)="deleteModel(m)">🗑️ {{ 'COMPAT_CATALOG.BTN_DELETE' | translate }}</button>
                                 </ng-container>
                                 <ng-container *ngIf="editingModelId === m.id">
                                     <button class="btn-outline btn-sm" (click)="saveEditModel(m)">✓ {{ 'COMPAT_CATALOG.SAVE' | translate }}</button>

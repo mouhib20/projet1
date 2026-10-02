@@ -55,10 +55,6 @@ export class CompatCatalogComponent implements OnInit {
         return this.models.filter(m => m.id_brand === idBrand).length;
     }
 
-    get canDelete(): boolean {
-        return this.auth.isSuperAdmin() || this.auth.isCompatImportEmployee();
-    }
-
     // ── Add brand ──
     showAddBrand = false;
     newBrandNom = '';
