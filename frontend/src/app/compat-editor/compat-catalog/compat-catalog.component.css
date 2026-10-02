@@ -247,6 +247,34 @@ select:focus {
     background: #0f1117;
 }
 
+.photo-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.model-photo-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+}
+
+.model-photo-btn input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
 .fw-bold {
     font-weight: 700;
     color: #ffffff;

@@ -516,6 +516,8 @@
         "RESULTS_TRUNCATED": "{{shown}} affichés sur {{total}} résultats — affinez votre recherche.",
         "COL_LOGO": "Logo",
         "COL_PHOTO": "Photo",
+        "CHANGE_PHOTO": "Changer la photo",
+        "ERR_IMAGE_UPLOAD": "Erreur lors du téléversement de l'image",
         "COL_NAME": "Nom",
         "COL_BRAND": "Marque",
         "COL_COMMERCIAL_NAME": "Nom commercial",

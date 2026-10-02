@@ -516,6 +516,8 @@
         "RESULTS_TRUNCATED": "{{shown}} من أصل {{total}} نتيجة — دقّق بحثك.",
         "COL_LOGO": "الشعار",
         "COL_PHOTO": "الصورة",
+        "CHANGE_PHOTO": "تغيير الصورة",
+        "ERR_IMAGE_UPLOAD": "خطأ أثناء رفع الصورة",
         "COL_NAME": "الاسم",
         "COL_BRAND": "الماركة",
         "COL_COMMERCIAL_NAME": "الاسم التجاري",

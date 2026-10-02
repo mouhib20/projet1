@@ -75,6 +75,9 @@ export class CompatCatalogComponent implements OnInit {
     editingModelId: number | null = null;
     editModel = { nom: '', nom_commercial: '', code: '' };
 
+    // ── Per-model photo upload, offered on each row ──
+    modelImageUploadingId: number | null = null;
+
     constructor(
         private compatService: CompatService,
         public auth: AuthService,
@@ -210,6 +213,34 @@ export class CompatCatalogComponent implements OnInit {
             },
             error: (err) => { this.errorMsg = err.error?.message || 'COMPAT_CATALOG.ERR_SAVE'; }
         });
+    }
+
+    onModelImageSelected(event: Event, m: DeviceModel): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+        if (!file) return;
+
+        this.clearMessages();
+        this.modelImageUploadingId = m.id;
+        this.compatService.uploadModelImage(file).subscribe({
+            next: (res) => {
+                this.compatService.updateModel(m.id, { image: res.url }).subscribe({
+                    next: () => {
+                        m.image = res.url; // same object reference in `models` - updates in place
+                        this.modelImageUploadingId = null;
+                    },
+                    error: (err) => {
+                        this.errorMsg = err.error?.message || 'COMPAT_CATALOG.ERR_IMAGE_UPLOAD';
+                        this.modelImageUploadingId = null;
+                    }
+                });
+            },
+            error: (err) => {
+                this.errorMsg = err.error?.message || 'COMPAT_CATALOG.ERR_IMAGE_UPLOAD';
+                this.modelImageUploadingId = null;
+            }
+        });
+        input.value = '';
     }
 
     deleteModel(m: DeviceModel): void {

@@ -112,7 +112,16 @@
                     </thead>
                     <tbody>
                         <tr *ngFor="let m of filteredModels">
-                            <td><img *ngIf="imageUrl(m.image)" [src]="imageUrl(m.image)" class="thumb"></td>
+                            <td>
+                                <div class="photo-cell">
+                                    <img *ngIf="imageUrl(m.image)" [src]="imageUrl(m.image)" class="thumb">
+                                    <label class="model-photo-btn" [title]="'COMPAT_CATALOG.CHANGE_PHOTO' | translate">
+                                        <span *ngIf="modelImageUploadingId !== m.id">📷</span>
+                                        <span *ngIf="modelImageUploadingId === m.id">⟳</span>
+                                        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onModelImageSelected($event, m)">
+                                    </label>
+                                </div>
+                            </td>
                             <td class="fw-bold">{{ m.marque }}</td>
                             <td>
                                 <ng-container *ngIf="editingModelId !== m.id">{{ m.nom }}</ng-container>
