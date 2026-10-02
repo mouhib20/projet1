@@ -14,6 +14,9 @@ import { ConnectivityService } from '../offline/connectivity.service';
 import { SyncService } from '../offline/sync.service';
 import { OfflineSessionService } from '../offline/offline-session.service';
 import { ConnectivityBadgeComponent } from '../offline/connectivity-badge/connectivity-badge.component';
+import { CompatService } from '../services/compat.service';
+import { Brand, DeviceModel } from '../models/compat.model';
+import { CompatBrandModelPicker } from '../services/compat-brand-model-picker';
 
 @Component({
     selector: 'app-reparation',
@@ -251,6 +254,11 @@ export class ReparationComponent implements OnInit {
     searchTerm = '';
     availableParts: ArticleForm[] = [];
 
+    // Compat catalogue brand/model suggestions (device, then used-part)
+    compatBrands: Brand[] = [];
+    appareilPicker!: CompatBrandModelPicker;
+    occasionPicker!: CompatBrandModelPicker;
+
     constructor(
         private reparationService: ReparationService,
         private clientService: ClientService,
@@ -264,7 +272,11 @@ export class ReparationComponent implements OnInit {
         private syncService: SyncService,
         private offlineSession: OfflineSessionService,
         private translate: TranslateService,
-    ) { }
+        private compatService: CompatService,
+    ) {
+        this.appareilPicker = new CompatBrandModelPicker(this.compatService, () => this.compatBrands);
+        this.occasionPicker = new CompatBrandModelPicker(this.compatService, () => this.compatBrands);
+    }
 
     async ngOnInit() {
         if (this.auth.hasPermission('reparation', 'voir')) {
@@ -278,6 +290,7 @@ export class ReparationComponent implements OnInit {
             this.loadClients();
             this.loadArticles();
             this.loadFournisseurs();
+            this.compatService.getBrandsForSearch().subscribe({ next: (data) => this.compatBrands = data });
             // Keeps this page's own offline caches (articles/clients/reparationsActive) warm,
             // independent of whether the user has visited Stock/Operations first.
             await this.syncService.pullReferenceData();

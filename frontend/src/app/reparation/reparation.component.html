@@ -482,15 +482,29 @@
             </div>
 
             <div class="form-row">
-                <div class="form-group flex-1">
+                <div class="form-group flex-1 compat-combobox">
                     <label>{{ 'REPARATION.BRAND' | translate }} <span class="required">*</span></label>
                     <input type="text" class="form-control" [(ngModel)]="ticketForm.marqueAppareil"
-                        [placeholder]="'REPARATION.BRAND_PLACEHOLDER' | translate">
+                        (input)="appareilPicker.onBrandInput(ticketForm.marqueAppareil)"
+                        (focus)="appareilPicker.showBrandSuggestions = true; appareilPicker.onBrandInput(ticketForm.marqueAppareil)"
+                        (blur)="appareilPicker.closeBrandSuggestions()"
+                        [placeholder]="'REPARATION.BRAND_PLACEHOLDER' | translate" autocomplete="off">
+                    <div class="compat-suggestions" *ngIf="appareilPicker.showBrandSuggestions && appareilPicker.filteredBrands.length">
+                        <div class="compat-suggestion-item" *ngFor="let b of appareilPicker.filteredBrands"
+                            (mousedown)="ticketForm.marqueAppareil = appareilPicker.selectBrand(b)">{{ b.nom }}</div>
+                    </div>
                 </div>
-                <div class="form-group flex-1">
+                <div class="form-group flex-1 compat-combobox">
                     <label>{{ 'REPARATION.MODEL' | translate }} <span class="required">*</span></label>
                     <input type="text" class="form-control" [(ngModel)]="ticketForm.modeleAppareil"
-                        [placeholder]="'REPARATION.MODEL_PLACEHOLDER' | translate">
+                        (input)="appareilPicker.onModelInput(ticketForm.modeleAppareil)"
+                        (focus)="appareilPicker.showModelSuggestions = true; appareilPicker.onModelInput(ticketForm.modeleAppareil)"
+                        (blur)="appareilPicker.closeModelSuggestions()"
+                        [placeholder]="'REPARATION.MODEL_PLACEHOLDER' | translate" autocomplete="off">
+                    <div class="compat-suggestions" *ngIf="appareilPicker.showModelSuggestions && appareilPicker.filteredModels.length">
+                        <div class="compat-suggestion-item" *ngFor="let m of appareilPicker.filteredModels"
+                            (mousedown)="ticketForm.modeleAppareil = appareilPicker.selectModel(m)">{{ m.nom }}</div>
+                    </div>
                 </div>
             </div>
 
@@ -771,8 +785,28 @@
                         <span class="text-muted">({{ 'REPARATION.ALREADY_ENTERED' | translate }})</span>
                     </div>
                     <div class="occasion-input-row" *ngIf="!occasionMarqueModeleReadonly">
-                        <input type="text" class="form-control" [(ngModel)]="occasionMarque" [placeholder]="'REPARATION.BRAND' | translate">
-                        <input type="text" class="form-control" [(ngModel)]="occasionModele" [placeholder]="'REPARATION.MODEL' | translate">
+                        <div class="compat-combobox flex-1">
+                            <input type="text" class="form-control" [(ngModel)]="occasionMarque"
+                                (input)="occasionPicker.onBrandInput(occasionMarque)"
+                                (focus)="occasionPicker.showBrandSuggestions = true; occasionPicker.onBrandInput(occasionMarque)"
+                                (blur)="occasionPicker.closeBrandSuggestions()"
+                                [placeholder]="'REPARATION.BRAND' | translate" autocomplete="off">
+                            <div class="compat-suggestions" *ngIf="occasionPicker.showBrandSuggestions && occasionPicker.filteredBrands.length">
+                                <div class="compat-suggestion-item" *ngFor="let b of occasionPicker.filteredBrands"
+                                    (mousedown)="occasionMarque = occasionPicker.selectBrand(b)">{{ b.nom }}</div>
+                            </div>
+                        </div>
+                        <div class="compat-combobox flex-1">
+                            <input type="text" class="form-control" [(ngModel)]="occasionModele"
+                                (input)="occasionPicker.onModelInput(occasionModele)"
+                                (focus)="occasionPicker.showModelSuggestions = true; occasionPicker.onModelInput(occasionModele)"
+                                (blur)="occasionPicker.closeModelSuggestions()"
+                                [placeholder]="'REPARATION.MODEL' | translate" autocomplete="off">
+                            <div class="compat-suggestions" *ngIf="occasionPicker.showModelSuggestions && occasionPicker.filteredModels.length">
+                                <div class="compat-suggestion-item" *ngFor="let m of occasionPicker.filteredModels"
+                                    (mousedown)="occasionModele = occasionPicker.selectModel(m)">{{ m.nom }}</div>
+                            </div>
+                        </div>
                     </div>
                     <div class="occasion-input-row" style="margin-top: 8px;">
                         <input type="number" min="0" step="0.01" class="form-control" [(ngModel)]="occasionPrix"
