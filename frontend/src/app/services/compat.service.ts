@@ -66,6 +66,14 @@ export class CompatService {
         return this.http.post<{ id: number }>(`${this.apiUrl}/brands`, dto);
     }
 
+    updateBrand(id: number, dto: { nom?: string; logo?: string }): Observable<void> {
+        return this.http.put<void>(`${this.apiUrl}/brands/${id}`, dto);
+    }
+
+    deleteBrand(id: number): Observable<void> {
+        return this.http.delete<void>(`${this.apiUrl}/brands/${id}`);
+    }
+
     getModels(): Observable<DeviceModel[]> {
         return this.http.get<DeviceModel[]>(`${this.apiUrl}/models`);
     }
@@ -74,8 +82,12 @@ export class CompatService {
         return this.http.post<{ id: number }>(`${this.apiUrl}/models`, dto);
     }
 
-    updateModel(id: number, dto: { image?: string }): Observable<void> {
+    updateModel(id: number, dto: { nom?: string; nom_commercial?: string; code?: string; image?: string }): Observable<void> {
         return this.http.put<void>(`${this.apiUrl}/models/${id}`, dto);
+    }
+
+    deleteModel(id: number): Observable<void> {
+        return this.http.delete<void>(`${this.apiUrl}/models/${id}`);
     }
 
     uploadModelImage(file: File): Observable<{ url: string }> {

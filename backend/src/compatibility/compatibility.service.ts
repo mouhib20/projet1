@@ -40,8 +40,8 @@ export class CompatibilityService {
 
     /** Writing/editing the shared catalogue: compat_editor accounts, compatibility_employee
      *  accounts (same manual edit rights as compat_editor, granted on explicit request), or
-     *  super_admin. Hard-delete of a group is a separate, narrower check (see
-     *  suppressionGroupeRequis) - compat_editor is deliberately NOT in that one. */
+     *  super_admin. Hard-delete (group, brand, model) is a separate, narrower check (see
+     *  suppressionRequis) - compat_editor is deliberately NOT in that one. */
     private async editeurRequis(authorization?: string): Promise<Acteur> {
         const acteur = await this.caisseService.acteurRequis(authorization);
         if (acteur.role !== 'compat_editor' && acteur.role !== 'compatibility_employee' && acteur.role !== 'super_admin') {
@@ -50,9 +50,9 @@ export class CompatibilityService {
         return acteur;
     }
 
-    /** Hard-delete of a group: super_admin, or compatibility_employee (granted on explicit
-     *  request - unlike editeurRequis, compat_editor is deliberately excluded here). */
-    private async suppressionGroupeRequis(authorization?: string): Promise<Acteur> {
+    /** Hard-delete of a group, brand or model: super_admin, or compatibility_employee (granted
+     *  on explicit request - unlike editeurRequis, compat_editor is deliberately excluded here). */
+    private async suppressionRequis(authorization?: string): Promise<Acteur> {
         const acteur = await this.caisseService.acteurRequis(authorization);
         if (acteur.role !== 'super_admin' && acteur.role !== 'compatibility_employee') {
             throw new ForbiddenException('Action réservée à un super administrateur.');
@@ -367,6 +367,40 @@ export class CompatibilityService {
         return this.creerMarqueInterne(dto);
     }
 
+    async modifierMarque(id: number, dto: { nom?: string; logo?: string }, authorization?: string): Promise<void> {
+        await this.editeurRequis(authorization);
+        const [existante] = await this.dataSource.query(`SELECT id FROM brand WHERE id = $1`, [id]);
+        if (!existante) throw new NotFoundException(`Marque #${id} introuvable`);
+        const nom = dto.nom?.trim();
+        if (nom) {
+            const [autre] = await this.dataSource.query(
+                `SELECT id FROM brand WHERE LOWER(TRIM(nom)) = LOWER($1) AND id != $2 LIMIT 1`,
+                [nom, id],
+            );
+            if (autre) throw new BadRequestException(`Une autre marque s'appelle déjà "${nom}".`);
+        }
+        await this.dataSource.query(
+            `UPDATE brand SET nom = COALESCE($2, nom), logo = COALESCE($3, logo) WHERE id = $1`,
+            [id, nom || null, dto.logo ?? null],
+        );
+    }
+
+    /** Blocked (not cascaded) when models still exist under this brand - the person deletes those
+     *  first, same spirit as supprimerModele's own block on in-use models. */
+    async supprimerMarque(id: number, authorization?: string): Promise<void> {
+        await this.suppressionRequis(authorization);
+        const [existante] = await this.dataSource.query(`SELECT id FROM brand WHERE id = $1`, [id]);
+        if (!existante) throw new NotFoundException(`Marque #${id} introuvable`);
+        const [{ count }] = await this.dataSource.query(
+            `SELECT COUNT(*)::int AS count FROM device_model WHERE id_brand = $1`,
+            [id],
+        );
+        if (count > 0) {
+            throw new BadRequestException(`Cette marque a ${count} modèle(s) lié(s) — supprimez-les d'abord.`);
+        }
+        await this.dataSource.query(`DELETE FROM brand WHERE id = $1`, [id]);
+    }
+
     async listerModeles(authorization?: string): Promise<any[]> {
         await this.editeurRequis(authorization);
         return this.dataSource.query(
@@ -418,13 +452,51 @@ export class CompatibilityService {
         return this.creerModeleInterne(dto);
     }
 
-    /** Only image is editable today - models otherwise have no edit path once created. */
-    async modifierModele(id: number, dto: { image?: string }, authorization?: string): Promise<void> {
+    async modifierModele(id: number, dto: { nom?: string; nom_commercial?: string; code?: string; image?: string }, authorization?: string): Promise<void> {
         await this.editeurRequis(authorization);
+        const [existant] = await this.dataSource.query(`SELECT id, id_brand FROM device_model WHERE id = $1`, [id]);
+        if (!existant) throw new NotFoundException(`Modèle #${id} introuvable`);
+        const nom = dto.nom?.trim();
+        const code = dto.code?.trim();
+        if (nom || code) {
+            const [autre] = await this.dataSource.query(
+                `SELECT id FROM device_model
+                   WHERE id_brand = $1 AND id != $2
+                     AND (($3::text IS NOT NULL AND LOWER(TRIM(nom)) = LOWER($3)) OR ($4::text IS NOT NULL AND LOWER(TRIM(code)) = LOWER($4)))
+                   LIMIT 1`,
+                [existant.id_brand, id, nom || null, code || null],
+            );
+            if (autre) throw new BadRequestException('Un autre modèle de cette marque porte déjà ce nom ou ce code.');
+        }
         await this.dataSource.query(
-            `UPDATE device_model SET image = COALESCE($2, image) WHERE id = $1`,
-            [id, dto.image ?? null],
+            `UPDATE device_model SET
+                nom = COALESCE($2, nom),
+                nom_commercial = COALESCE($3, nom_commercial),
+                code = COALESCE($4, code),
+                image = COALESCE($5, image)
+             WHERE id = $1`,
+            [id, nom || null, dto.nom_commercial?.trim() || null, code || null, dto.image ?? null],
         );
+    }
+
+    /** Blocked (not cascaded) when the model is still used as a group's base model or as a
+     *  compatible member of one - the person removes it from those groups first. */
+    async supprimerModele(id: number, authorization?: string): Promise<void> {
+        await this.suppressionRequis(authorization);
+        const [existant] = await this.dataSource.query(`SELECT id FROM device_model WHERE id = $1`, [id]);
+        if (!existant) throw new NotFoundException(`Modèle #${id} introuvable`);
+        const [{ count }] = await this.dataSource.query(
+            `SELECT COUNT(*)::int AS count FROM (
+                SELECT id_group FROM compat_group_model WHERE id_model = $1
+                UNION
+                SELECT id FROM compat_group WHERE id_base_model = $1
+             ) t`,
+            [id],
+        );
+        if (count > 0) {
+            throw new BadRequestException(`Ce modèle est utilisé dans ${count} groupe(s) de compatibilité — retirez-le d'abord.`);
+        }
+        await this.dataSource.query(`DELETE FROM device_model WHERE id = $1`, [id]);
     }
 
     async listerTypesPieces(authorization?: string): Promise<any[]> {
@@ -613,7 +685,7 @@ export class CompatibilityService {
     }
 
     async supprimerGroupe(id: number, authorization?: string): Promise<void> {
-        await this.suppressionGroupeRequis(authorization);
+        await this.suppressionRequis(authorization);
         const res = await this.dataSource.query(`DELETE FROM compat_group WHERE id = $1`, [id]);
         const affected = Array.isArray(res) ? res[1] : 0;
         if (!affected) throw new NotFoundException(`Groupe de compatibilité #${id} introuvable`);

@@ -29,6 +29,7 @@ import { CompatEditorsComponent } from './super-admin/compat-editors/compat-edit
 import { ImportEmployeesComponent } from './super-admin/import-employees/import-employees.component';
 import { WholesaleEditorsComponent } from './super-admin/wholesale-editors/wholesale-editors.component';
 import { CompatGroupsComponent } from './compat-editor/compat-groups/compat-groups.component';
+import { CompatCatalogComponent } from './compat-editor/compat-catalog/compat-catalog.component';
 import { SuggestionsComponent } from './compat-editor/suggestions/suggestions.component';
 import { ImportDataComponent } from './compat-import/import-data/import-data.component';
 import { WholesaleEditorProductsComponent } from './wholesale-editor/products/wholesale-editor-products.component';
@@ -76,6 +77,9 @@ export const routes: Routes = [
     },
     {
         path: 'compat-editor/groups', component: CompatGroupsComponent, canActivate: [compatEditorGuard],
+    },
+    {
+        path: 'compat-editor/catalog', component: CompatCatalogComponent, canActivate: [compatEditorGuard],
     },
     {
         path: 'compat-editor/suggestions', component: SuggestionsComponent, canActivate: [compatEditorGuard],

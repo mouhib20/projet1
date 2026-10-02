@@ -468,11 +468,118 @@ describe('CompatibilityService', () => {
 
         it('modifierModele allows compat_editor and updates only the image', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
-            dataSource.query.mockResolvedValue(undefined);
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 7, id_brand: 3 }]) // existing model lookup
+                .mockResolvedValueOnce(undefined); // UPDATE
             await service.modifierModele(7, { image: '/uploads/compat-models/x.png' }, 'Bearer x');
-            const [sql, params] = dataSource.query.mock.calls[0];
-            expect(sql).toMatch(/UPDATE device_model SET image = COALESCE\(\$2, image\) WHERE id = \$1/);
-            expect(params).toEqual([7, '/uploads/compat-models/x.png']);
+            const [sql, params] = dataSource.query.mock.calls[1];
+            expect(sql).toMatch(/UPDATE device_model SET/);
+            expect(params).toEqual([7, null, null, null, '/uploads/compat-models/x.png']);
+        });
+
+        it('modifierModele allows compatibility_employee and can rename the model', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 10, nom: 'Employe', role: 'compatibility_employee' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 7, id_brand: 3 }]) // existing model lookup
+                .mockResolvedValueOnce([]) // no name/code collision in the same brand
+                .mockResolvedValueOnce(undefined); // UPDATE
+            await service.modifierModele(7, { nom: 'Galaxy A05s' }, 'Bearer x');
+            const [sql, params] = dataSource.query.mock.calls[2];
+            expect(sql).toMatch(/UPDATE device_model SET/);
+            expect(params).toEqual([7, 'Galaxy A05s', null, null, null]);
+        });
+
+        it('modifierModele rejects renaming to a name/code already used by another model of the same brand', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 7, id_brand: 3 }]) // existing model lookup
+                .mockResolvedValueOnce([{ id: 8 }]); // a collision found
+            await expect(service.modifierModele(7, { nom: 'Galaxy A06' }, 'Bearer x')).rejects.toBeInstanceOf(BadRequestException);
+        });
+
+        it('modifierModele throws NotFoundException for a missing model', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValueOnce([]); // no row found
+            await expect(service.modifierModele(999, { nom: 'X' }, 'Bearer x')).rejects.toBeInstanceOf(NotFoundException);
+        });
+    });
+
+    describe('supprimerModele() — super_admin or compatibility_employee only, blocked while in use', () => {
+        it('rejects compat_editor (narrower than editeurRequis, same boundary as supprimerGroupe)', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            await expect(service.supprimerModele(1, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('throws NotFoundException for a missing model', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 10, nom: 'Employe', role: 'compatibility_employee' });
+            dataSource.query.mockResolvedValueOnce([]); // no row found
+            await expect(service.supprimerModele(999, 'Bearer x')).rejects.toBeInstanceOf(NotFoundException);
+        });
+
+        it('blocks deletion with a clear message when the model is used in a compatibility group', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 10, nom: 'Employe', role: 'compatibility_employee' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 7 }]) // model exists
+                .mockResolvedValueOnce([{ count: 2 }]); // used in 2 groups
+            await expect(service.supprimerModele(7, 'Bearer x')).rejects.toMatchObject({ message: expect.stringContaining('2 groupe(s)') });
+        });
+
+        it('allows compatibility_employee to delete a model that is not in use', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 10, nom: 'Employe', role: 'compatibility_employee' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 7 }]) // model exists
+                .mockResolvedValueOnce([{ count: 0 }]) // unused
+                .mockResolvedValueOnce(undefined); // DELETE
+            await expect(service.supprimerModele(7, 'Bearer x')).resolves.toBeUndefined();
+        });
+    });
+
+    describe('modifierMarque() / supprimerMarque() — same edit/delete boundaries as models', () => {
+        it('modifierMarque rejects a store admin', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
+            await expect(service.modifierMarque(1, { nom: 'X' }, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('modifierMarque allows compat_editor to rename a brand', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 3 }]) // existing brand lookup
+                .mockResolvedValueOnce([]) // no name collision
+                .mockResolvedValueOnce(undefined); // UPDATE
+            await service.modifierMarque(3, { nom: 'Samsung' }, 'Bearer x');
+            const [sql, params] = dataSource.query.mock.calls[2];
+            expect(sql).toMatch(/UPDATE brand SET/);
+            expect(params).toEqual([3, 'Samsung', null]);
+        });
+
+        it('modifierMarque rejects renaming to a name already used by another brand', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 3 }]) // existing brand lookup
+                .mockResolvedValueOnce([{ id: 4 }]); // a collision found
+            await expect(service.modifierMarque(3, { nom: 'Apple' }, 'Bearer x')).rejects.toBeInstanceOf(BadRequestException);
+        });
+
+        it('supprimerMarque rejects compat_editor (narrower than editeurRequis)', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            await expect(service.supprimerMarque(1, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('supprimerMarque blocks deletion with a clear message when models still exist under the brand', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 10, nom: 'Employe', role: 'compatibility_employee' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 3 }]) // brand exists
+                .mockResolvedValueOnce([{ count: 5 }]); // 5 models under it
+            await expect(service.supprimerMarque(3, 'Bearer x')).rejects.toMatchObject({ message: expect.stringContaining('5 modèle(s)') });
+        });
+
+        it('allows compatibility_employee to delete a brand with no models left', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 10, nom: 'Employe', role: 'compatibility_employee' });
+            dataSource.query
+                .mockResolvedValueOnce([{ id: 3 }]) // brand exists
+                .mockResolvedValueOnce([{ count: 0 }]) // no models left
+                .mockResolvedValueOnce(undefined); // DELETE
+            await expect(service.supprimerMarque(3, 'Bearer x')).resolves.toBeUndefined();
         });
     });
 

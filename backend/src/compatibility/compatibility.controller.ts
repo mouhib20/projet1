@@ -87,6 +87,20 @@ export class CompatibilityController {
         return this.service.creerMarque(body, auth);
     }
 
+    @Put('brands/:id')
+    modifierMarque(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() body: { nom?: string; logo?: string },
+        @Headers('authorization') auth?: string,
+    ) {
+        return this.service.modifierMarque(id, body, auth);
+    }
+
+    @Delete('brands/:id')
+    supprimerMarque(@Param('id', ParseIntPipe) id: number, @Headers('authorization') auth?: string) {
+        return this.service.supprimerMarque(id, auth);
+    }
+
     @Get('models')
     listerModeles(@Headers('authorization') auth?: string) {
         return this.service.listerModeles(auth);
@@ -103,10 +117,15 @@ export class CompatibilityController {
     @Put('models/:id')
     modifierModele(
         @Param('id', ParseIntPipe) id: number,
-        @Body() body: { image?: string },
+        @Body() body: { nom?: string; nom_commercial?: string; code?: string; image?: string },
         @Headers('authorization') auth?: string,
     ) {
         return this.service.modifierModele(id, body, auth);
+    }
+
+    @Delete('models/:id')
+    supprimerModele(@Param('id', ParseIntPipe) id: number, @Headers('authorization') auth?: string) {
+        return this.service.supprimerModele(id, auth);
     }
 
     @Post('models/upload-image')

@@ -453,6 +453,10 @@ export class CompatGroupsComponent implements OnInit {
         this.router.navigate(['/compat-import']);
     }
 
+    goToCatalog(): void {
+        this.router.navigate(['/compat-editor/catalog']);
+    }
+
     logout(): void {
         this.auth.logout();
     }

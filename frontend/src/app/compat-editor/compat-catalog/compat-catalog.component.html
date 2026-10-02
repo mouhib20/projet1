@@ -1,0 +1,155 @@
+<div class="catalog-page">
+
+    <div class="page-header">
+        <div>
+            <div class="page-title">📱 {{ 'COMPAT_CATALOG.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'COMPAT_CATALOG.SUBTITLE' | translate }}</div>
+        </div>
+        <div class="header-boutons">
+            <button class="btn btn-secondary" (click)="goToGroups()">🧩 {{ 'COMPAT_CATALOG.BACK_TO_GROUPS' | translate }}</button>
+            <button class="btn btn-secondary" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
+        </div>
+    </div>
+
+    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg | translate }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
+
+    <!-- ── Brands ── -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-title">{{ 'COMPAT_CATALOG.BRANDS_TITLE' | translate }} <span class="count-badge">{{ brands.length }}</span></div>
+            <button class="btn btn-primary btn-sm" *ngIf="!showAddBrand" (click)="openAddBrand()">＋ {{ 'COMPAT_CATALOG.ADD_BRAND' | translate }}</button>
+        </div>
+
+        <div class="inline-form" *ngIf="showAddBrand">
+            <input type="text" [(ngModel)]="newBrandNom" [placeholder]="'COMPAT_CATALOG.BRAND_NAME_PLACEHOLDER' | translate" (keydown.enter)="addBrand()">
+            <button class="btn btn-success btn-sm" (click)="addBrand()">✓ {{ 'COMPAT_CATALOG.SAVE' | translate }}</button>
+            <button class="btn btn-outline btn-sm" (click)="showAddBrand = false">{{ 'COMPAT_CATALOG.CANCEL' | translate }}</button>
+        </div>
+
+        <input type="text" class="search-input-full" [(ngModel)]="brandSearchTerm" [placeholder]="'COMPAT_CATALOG.SEARCH_BRAND_PLACEHOLDER' | translate">
+
+        <div class="table-container">
+            <table class="modern-table" *ngIf="filteredBrands.length; else noBrands">
+                <thead>
+                    <tr>
+                        <th>{{ 'COMPAT_CATALOG.COL_LOGO' | translate }}</th>
+                        <th>{{ 'COMPAT_CATALOG.COL_NAME' | translate }}</th>
+                        <th>{{ 'COMPAT_CATALOG.COL_MODEL_COUNT' | translate }}</th>
+                        <th class="text-center">{{ 'COMPAT_CATALOG.COL_ACTIONS' | translate }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let b of filteredBrands">
+                        <td><img *ngIf="imageUrl(b.logo)" [src]="imageUrl(b.logo)" class="thumb"></td>
+                        <td>
+                            <ng-container *ngIf="editingBrandId !== b.id">{{ b.nom }}</ng-container>
+                            <input *ngIf="editingBrandId === b.id" type="text" [(ngModel)]="editBrandNom" (keydown.enter)="saveEditBrand(b)">
+                        </td>
+                        <td>{{ modelCount(b.id) }}</td>
+                        <td class="text-center">
+                            <ng-container *ngIf="editingBrandId !== b.id">
+                                <button class="btn-outline btn-sm" (click)="startEditBrand(b)">✏️ {{ 'COMPAT_CATALOG.BTN_EDIT' | translate }}</button>
+                                <button class="btn-outline btn-sm" *ngIf="canDelete" (click)="deleteBrand(b)">🗑️ {{ 'COMPAT_CATALOG.BTN_DELETE' | translate }}</button>
+                            </ng-container>
+                            <ng-container *ngIf="editingBrandId === b.id">
+                                <button class="btn-outline btn-sm" (click)="saveEditBrand(b)">✓ {{ 'COMPAT_CATALOG.SAVE' | translate }}</button>
+                                <button class="btn-outline btn-sm" (click)="cancelEditBrand()">{{ 'COMPAT_CATALOG.CANCEL' | translate }}</button>
+                            </ng-container>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <ng-template #noBrands>
+                <div class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    {{ 'COMPAT_CATALOG.NO_BRANDS' | translate }}
+                </div>
+            </ng-template>
+        </div>
+    </div>
+
+    <!-- ── Models ── -->
+    <div class="section-card">
+        <div class="section-header">
+            <div class="section-title">{{ 'COMPAT_CATALOG.MODELS_TITLE' | translate }} <span class="count-badge">{{ models.length }}</span></div>
+            <button class="btn btn-primary btn-sm" *ngIf="!showAddModel" (click)="openAddModel()">＋ {{ 'COMPAT_CATALOG.ADD_MODEL' | translate }}</button>
+        </div>
+
+        <div class="inline-form new-model-form" *ngIf="showAddModel">
+            <select [(ngModel)]="newModel.id_brand">
+                <option [ngValue]="null" disabled>{{ 'COMPAT_CATALOG.PICK_BRAND' | translate }}</option>
+                <option *ngFor="let b of brands" [ngValue]="b.id">{{ b.nom }}</option>
+            </select>
+            <input type="text" [(ngModel)]="newModel.nom" [placeholder]="'COMPAT_CATALOG.MODEL_NAME_PLACEHOLDER' | translate">
+            <input type="text" [(ngModel)]="newModel.nom_commercial" [placeholder]="'COMPAT_CATALOG.MODEL_COMMERCIAL_PLACEHOLDER' | translate">
+            <input type="text" [(ngModel)]="newModel.code" [placeholder]="'COMPAT_CATALOG.MODEL_CODE_PLACEHOLDER' | translate">
+            <div class="inline-row">
+                <button class="btn btn-success btn-sm" (click)="addModel()">✓ {{ 'COMPAT_CATALOG.SAVE' | translate }}</button>
+                <button class="btn btn-outline btn-sm" (click)="showAddModel = false">{{ 'COMPAT_CATALOG.CANCEL' | translate }}</button>
+            </div>
+        </div>
+
+        <input type="text" class="search-input-full" [(ngModel)]="modelSearchTerm" [placeholder]="'COMPAT_CATALOG.SEARCH_MODEL_PLACEHOLDER' | translate">
+
+        <div class="table-container">
+            <div class="empty-state" *ngIf="!modelSearchTerm.trim()">
+                <div class="empty-icon">⌨️</div>
+                {{ 'COMPAT_CATALOG.TYPE_TO_SEARCH_MODELS' | translate: { count: models.length } }}
+            </div>
+
+            <ng-container *ngIf="modelSearchTerm.trim()">
+                <table class="modern-table" *ngIf="filteredModels.length; else noModels">
+                    <thead>
+                        <tr>
+                            <th>{{ 'COMPAT_CATALOG.COL_PHOTO' | translate }}</th>
+                            <th>{{ 'COMPAT_CATALOG.COL_BRAND' | translate }}</th>
+                            <th>{{ 'COMPAT_CATALOG.COL_NAME' | translate }}</th>
+                            <th>{{ 'COMPAT_CATALOG.COL_COMMERCIAL_NAME' | translate }}</th>
+                            <th>{{ 'COMPAT_CATALOG.COL_CODE' | translate }}</th>
+                            <th class="text-center">{{ 'COMPAT_CATALOG.COL_ACTIONS' | translate }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let m of filteredModels">
+                            <td><img *ngIf="imageUrl(m.image)" [src]="imageUrl(m.image)" class="thumb"></td>
+                            <td class="fw-bold">{{ m.marque }}</td>
+                            <td>
+                                <ng-container *ngIf="editingModelId !== m.id">{{ m.nom }}</ng-container>
+                                <input *ngIf="editingModelId === m.id" type="text" [(ngModel)]="editModel.nom" (keydown.enter)="saveEditModel(m)">
+                            </td>
+                            <td>
+                                <ng-container *ngIf="editingModelId !== m.id">{{ m.nom_commercial || '—' }}</ng-container>
+                                <input *ngIf="editingModelId === m.id" type="text" [(ngModel)]="editModel.nom_commercial">
+                            </td>
+                            <td>
+                                <ng-container *ngIf="editingModelId !== m.id">{{ m.code || '—' }}</ng-container>
+                                <input *ngIf="editingModelId === m.id" type="text" [(ngModel)]="editModel.code">
+                            </td>
+                            <td class="text-center">
+                                <ng-container *ngIf="editingModelId !== m.id">
+                                    <button class="btn-outline btn-sm" (click)="startEditModel(m)">✏️ {{ 'COMPAT_CATALOG.BTN_EDIT' | translate }}</button>
+                                    <button class="btn-outline btn-sm" *ngIf="canDelete" (click)="deleteModel(m)">🗑️ {{ 'COMPAT_CATALOG.BTN_DELETE' | translate }}</button>
+                                </ng-container>
+                                <ng-container *ngIf="editingModelId === m.id">
+                                    <button class="btn-outline btn-sm" (click)="saveEditModel(m)">✓ {{ 'COMPAT_CATALOG.SAVE' | translate }}</button>
+                                    <button class="btn-outline btn-sm" (click)="cancelEditModel()">{{ 'COMPAT_CATALOG.CANCEL' | translate }}</button>
+                                </ng-container>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <ng-template #noModels>
+                    <div class="empty-state">
+                        <div class="empty-icon">🔍</div>
+                        {{ 'COMPAT_CATALOG.NO_MODELS' | translate }}
+                    </div>
+                </ng-template>
+                <div class="results-note" *ngIf="modelMatchCount > filteredModels.length">
+                    {{ 'COMPAT_CATALOG.RESULTS_TRUNCATED' | translate: { shown: filteredModels.length, total: modelMatchCount } }}
+                </div>
+            </ng-container>
+        </div>
+    </div>
+
+</div>
