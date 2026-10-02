@@ -11,13 +11,13 @@ describe('CompatibilityService', () => {
     let service: CompatibilityService;
     let dataSource: { query: jest.Mock; transaction: jest.Mock };
     let caisseService: { acteurRequis: jest.Mock };
-    let storeContext: { requireMagasinId: jest.Mock };
+    let storeContext: { requireMagasinId: jest.Mock; getMagasinId: jest.Mock };
     let usersRepo: any;
 
     beforeEach(async () => {
         dataSource = { query: jest.fn().mockResolvedValue([]), transaction: jest.fn() };
         caisseService = { acteurRequis: jest.fn() };
-        storeContext = { requireMagasinId: jest.fn().mockReturnValue(1) };
+        storeContext = { requireMagasinId: jest.fn().mockReturnValue(1), getMagasinId: jest.fn().mockReturnValue(1) };
         usersRepo = { findOne: jest.fn(), find: jest.fn(), save: jest.fn(), create: jest.fn((v) => v), update: jest.fn() };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -746,6 +746,16 @@ describe('CompatibilityService', () => {
         it('returns null when the group does not exist', async () => {
             dataSource.query.mockResolvedValue([]);
             await expect(service.groupeInfoRecherche(999)).resolves.toBeNull();
+        });
+    });
+
+    describe('enregistrerRechercheNonTrouvee() — the market-analytics "nothing in stock" signal, no editor check', () => {
+        it('inserts a row with the model, part type and current store id', async () => {
+            await service.enregistrerRechercheNonTrouvee(5, 2);
+            const [sql, params] = dataSource.query.mock.calls[0];
+            expect(sql).toMatch(/INSERT INTO recherche_sans_stock/);
+            expect(params).toEqual([5, 2, 1]); // id_model, id_part_type, id_magasin from StoreContextService
+            expect(storeContext.getMagasinId).toHaveBeenCalled();
         });
     });
 

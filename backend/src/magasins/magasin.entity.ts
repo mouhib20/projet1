@@ -12,6 +12,9 @@ export class Magasin {
     adresse: string | null;
 
     @Column({ nullable: true })
+    wilaya: string | null;
+
+    @Column({ nullable: true })
     telephone: string | null;
 
     /** Root-relative path, e.g. '/uploads/magasins/xxx.png' — same convention as Article.image. */

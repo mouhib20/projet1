@@ -251,7 +251,11 @@ export class CompatibiliteComponent implements OnInit {
                         return (b.quantite ?? 0) - (a.quantite ?? 0);
                     });
                 this.partsLoading = false;
-                if (this.matchedParts.length) this.loadCompatibleDevices(this.matchedParts.map(p => p.id_group));
+                if (this.matchedParts.length) {
+                    this.loadCompatibleDevices(this.matchedParts.map(p => p.id_group));
+                } else {
+                    this.logSearchIfNothingInStock();
+                }
             },
             error: (err) => {
                 this.partsLoading = false;
@@ -277,6 +281,7 @@ export class CompatibiliteComponent implements OnInit {
                         this.compatibleDevices = [...parDevice.values()];
                         this.mergeDeviceStockIntoMatchedParts();
                         this.devicesLoading = false;
+                        this.logSearchIfNothingInStock();
                     }
                 },
                 error: (err) => {
@@ -316,6 +321,15 @@ export class CompatibiliteComponent implements OnInit {
             if (this.enStock(a) !== this.enStock(b)) return this.enStock(a) ? -1 : 1;
             return (b.quantite ?? 0) - (a.quantite ?? 0);
         });
+    }
+
+    /** Fire-and-forget signal for the super_admin market-analytics page: this exact model+part-type
+     *  search ended with nothing usable in stock. Silently ignored on failure - it's background
+     *  telemetry, never worth bothering the person searching for a part. */
+    private logSearchIfNothingInStock(): void {
+        if (!this.selectedModelId || !this.selectedPartTypeId) return;
+        if (this.matchedParts.some(p => this.enStock(p))) return;
+        this.compatService.logRechercheNonTrouvee(this.selectedModelId, this.selectedPartTypeId).subscribe({ error: () => undefined });
     }
 
     private resetResult(): void {

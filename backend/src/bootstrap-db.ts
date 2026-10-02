@@ -399,6 +399,66 @@ async function migrer(): Promise<void> {
             )
         `);
 
+        // Market analytics (super_admin's cross-store "what sells, what to stock wholesale" page).
+        await client.query(`ALTER TABLE "magasin" ADD COLUMN IF NOT EXISTS "wilaya" character varying(100)`);
+
+        // Every compat search that resolved to zero in-stock article, across every store - the
+        // demand signal for the "what to stock wholesale" tab. Logged as-is (model + part type),
+        // not pre-resolved to a compat_group: a model/part-type pair can belong to more than one
+        // group, and resolving it is cheap to redo in the nightly rollup but not worth adding a
+        // DB round-trip to the interactive search path for.
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "recherche_sans_stock" (
+                "id" SERIAL PRIMARY KEY,
+                "id_model" integer NOT NULL,
+                "id_part_type" integer NOT NULL,
+                "id_magasin" integer,
+                "date_creation" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS "recherche_sans_stock_model_type_idx" ON "recherche_sans_stock" ("id_model", "id_part_type")`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "recherche_sans_stock_date_idx" ON "recherche_sans_stock" ("date_creation")`);
+
+        // Daily rollup per compat_group PER STORE (one physical part across every store), rebuilt
+        // every night by AdminAnalyticsService instead of aggregating vente/mouvement_achat/
+        // reparation_item from scratch on every page load - those tables have no indexes suited to
+        // this and will only grow. id_magasin is part of the grain (not just a count) so a period
+        // filter can still answer "how many DISTINCT stores" correctly via COUNT(DISTINCT
+        // id_magasin) - a per-day-only store count can't be summed across days without double-
+        // counting a store that sold on more than one day. Same reasoning for price: montant/qte
+        // totals (not a pre-averaged price) so a period's true weighted average is SUM(montant)/
+        // SUM(qte), while min/max are carried directly since MIN(MIN(...))/MAX(MAX(...)) is exact.
+        // id_group has no FK: a group can be deleted later, and its history should stay.
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "analytics_resume_quotidien" (
+                "date_jour" date NOT NULL,
+                "id_group" integer NOT NULL,
+                "id_magasin" integer NOT NULL,
+                "qte_vendue" integer NOT NULL DEFAULT 0,
+                "qte_reparation" integer NOT NULL DEFAULT 0,
+                "montant_achat_total" numeric(12,2) NOT NULL DEFAULT 0,
+                "qte_achat_total" integer NOT NULL DEFAULT 0,
+                "prix_achat_min" numeric(10,2),
+                "prix_achat_max" numeric(10,2),
+                "montant_vente_total" numeric(12,2) NOT NULL DEFAULT 0,
+                "prix_vente_min" numeric(10,2),
+                "prix_vente_max" numeric(10,2),
+                "date_calcul" timestamp NOT NULL DEFAULT now(),
+                PRIMARY KEY ("date_jour", "id_group", "id_magasin")
+            )
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS "analytics_resume_quotidien_group_idx" ON "analytics_resume_quotidien" ("id_group")`);
+
+        // Performance indexes for the rollup's own source queries (none existed on these tables).
+        await client.query(`CREATE INDEX IF NOT EXISTS "vente_date_idx" ON "vente" ("date")`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "vente_id_article_idx" ON "vente" ("id_article")`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "mouvement_achat_date_idx" ON "mouvement_achat" ("date_mouvement")`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "mouvement_achat_id_article_idx" ON "mouvement_achat" ("id_article")`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "reparation_item_id_article_idx" ON "reparation_item" ("id_article")`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "reparation_date_reception_idx" ON "reparation" ("date_reception")`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "article_compat_group_id_idx" ON "article" ("compat_group_id")`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "fournisseur_tel_idx" ON "fournisseur" ("tel")`);
+
         // Seed a super_admin account if requested and none exists yet (idempotent, every boot)
         const superAdminPwd = process.env.SEED_SUPER_ADMIN_PASSWORD || '';
         if (superAdminPwd.length >= 10) {

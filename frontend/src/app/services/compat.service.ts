@@ -56,6 +56,11 @@ export class CompatService {
         });
     }
 
+    /** Fire-and-forget: feeds the super_admin market-analytics "what to stock wholesale" signal. */
+    logRechercheNonTrouvee(idModel: number, idPartType: number): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/search/not-found`, { id_model: idModel, id_part_type: idPartType });
+    }
+
     // ── Reference data (editor) ──
 
     getBrands(): Observable<Brand[]> {

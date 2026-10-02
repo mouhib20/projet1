@@ -49,6 +49,7 @@ import { CompatImportModule } from './compat-import/compat-import.module';
 import { WholesaleListing } from './wholesale/wholesale-listing.entity';
 import { WholesaleOrder } from './wholesale/wholesale-order.entity';
 import { WholesaleModule } from './wholesale/wholesale.module';
+import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
 
 @Module({
     imports: [
@@ -106,6 +107,7 @@ import { WholesaleModule } from './wholesale/wholesale.module';
         CompatibilityModule,
         CompatImportModule,
         WholesaleModule,
+        AdminAnalyticsModule,
     ],
     controllers: [AppController],
     providers: [

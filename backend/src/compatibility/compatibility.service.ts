@@ -323,6 +323,18 @@ export class CompatibilityService {
         return rows[0] ?? null;
     }
 
+    /** Feeds the super_admin market-analytics page's "what to stock wholesale" signal: every
+     *  model+part-type search the Compatibilité screen resolves with zero in-stock article, across
+     *  every store. Logged as-is, not pre-resolved to a compat_group (see recherche_sans_stock's
+     *  migration comment) - any logged-in store user can call this, same access as the search
+     *  itself (@RequirePermission('compatibilite','voir') at the controller). */
+    async enregistrerRechercheNonTrouvee(idModel: number, idPartType: number): Promise<void> {
+        await this.dataSource.query(
+            `INSERT INTO recherche_sans_stock (id_model, id_part_type, id_magasin) VALUES ($1, $2, $3)`,
+            [idModel, idPartType, this.storeContext.getMagasinId()],
+        );
+    }
+
     // ── Reference data (brands, models, part types): editor-only, for building groups ──
 
     async listerMarques(authorization?: string): Promise<any[]> {

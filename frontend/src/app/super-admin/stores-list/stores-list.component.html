@@ -9,6 +9,7 @@
         <div class="header-boutons">
             <button class="btn btn-secondary" (click)="goToCompatEditors()">🧑‍🔧 {{ 'SUPER_ADMIN.COMPAT_EDITORS_LINK' | translate }}</button>
             <button class="btn btn-secondary" (click)="goToWholesaleEditors()">📦 {{ 'SUPER_ADMIN.WHOLESALE_EDITORS_LINK' | translate }}</button>
+            <button class="btn btn-secondary" (click)="goToMarketAnalytics()">📊 {{ 'SUPER_ADMIN.MARKET_ANALYTICS_LINK' | translate }}</button>
             <button class="btn btn-primary" *ngIf="!showForm" (click)="openAddForm()">＋ {{ 'SUPER_ADMIN.ADD_STORE' | translate }}</button>
             <button class="btn btn-secondary" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
         </div>
@@ -35,6 +36,10 @@
             <div class="form-group full">
                 <label>{{ 'SUPER_ADMIN.STORE_ADDRESS_LABEL' | translate }}</label>
                 <input type="text" [(ngModel)]="form.adresse" [placeholder]="'SUPER_ADMIN.STORE_ADDRESS_PLACEHOLDER' | translate" />
+            </div>
+            <div class="form-group">
+                <label>{{ 'SUPER_ADMIN.STORE_WILAYA_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.wilaya" [placeholder]="'SUPER_ADMIN.STORE_WILAYA_PLACEHOLDER' | translate" />
             </div>
             <div class="form-group full">
                 <label>{{ 'SUPER_ADMIN.STORE_LOGO_LABEL' | translate }}</label>
@@ -103,6 +108,7 @@
                     <th></th>
                     <th>{{ 'SUPER_ADMIN.COL_NAME' | translate }}</th>
                     <th>{{ 'SUPER_ADMIN.COL_PHONE' | translate }}</th>
+                    <th>{{ 'SUPER_ADMIN.COL_WILAYA' | translate }}</th>
                     <th class="text-center">{{ 'SUPER_ADMIN.COL_STATUS' | translate }}</th>
                     <th class="text-center">{{ 'SUPER_ADMIN.COL_ACTIONS' | translate }}</th>
                 </tr>
@@ -115,6 +121,17 @@
                     </td>
                     <td class="fw-bold">{{ s.nom }}</td>
                     <td>{{ s.telephone || '—' }}</td>
+                    <td>
+                        <ng-container *ngIf="editingWilayaId !== s.id_magasin">
+                            {{ s.wilaya || '—' }}
+                            <button class="btn-outline btn-sm" (click)="startEditWilaya(s)">✏️</button>
+                        </ng-container>
+                        <span class="inline-row" *ngIf="editingWilayaId === s.id_magasin">
+                            <input type="text" [(ngModel)]="editWilaya" (keydown.enter)="saveWilaya(s)" />
+                            <button class="btn-outline btn-sm" (click)="saveWilaya(s)">✓</button>
+                            <button class="btn-outline btn-sm" (click)="cancelEditWilaya()">{{ 'CANCEL' | translate }}</button>
+                        </span>
+                    </td>
                     <td class="text-center">
                         <span class="badge-dette" *ngIf="!s.actif">{{ 'SUPER_ADMIN.STATUS_SUSPENDED' | translate }}</span>
                         <span class="text-success" *ngIf="s.actif">{{ 'SUPER_ADMIN.STATUS_ACTIVE' | translate }}</span>

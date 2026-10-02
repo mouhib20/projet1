@@ -5,6 +5,7 @@ export interface Magasin {
     nom: string;
     adresse?: string | null;
     telephone?: string | null;
+    wilaya?: string | null;
     logo?: string | null;
     actif?: boolean;
     date_creation?: string;
@@ -15,6 +16,7 @@ export interface MagasinCreate {
     nom: string;
     adresse?: string;
     telephone?: string;
+    wilaya?: string;
     ownerNom: string;
     ownerTelephone?: string;
     ownerUsername: string;

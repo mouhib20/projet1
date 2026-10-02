@@ -36,7 +36,29 @@ export class StoresListComponent implements OnInit {
     }
 
     emptyForm(): MagasinCreate {
-        return { nom: '', adresse: '', telephone: '', ownerNom: '', ownerTelephone: '', ownerUsername: '', ownerPassword: '' };
+        return { nom: '', adresse: '', telephone: '', wilaya: '', ownerNom: '', ownerTelephone: '', ownerUsername: '', ownerPassword: '' };
+    }
+
+    // ── Inline wilaya edit, used by the market-analytics "région" filter ──
+    editingWilayaId: number | null = null;
+    editWilaya = '';
+
+    startEditWilaya(store: Magasin): void {
+        this.editingWilayaId = store.id_magasin ?? null;
+        this.editWilaya = store.wilaya || '';
+    }
+
+    cancelEditWilaya(): void {
+        this.editingWilayaId = null;
+    }
+
+    saveWilaya(store: Magasin): void {
+        if (!store.id_magasin) return;
+        const wilaya = this.editWilaya.trim();
+        this.magasinService.updateMagasin(store.id_magasin, { wilaya }).subscribe({
+            next: () => { store.wilaya = wilaya || null; this.editingWilayaId = null; },
+            error: (err) => { this.errorMsg = err.error?.message || 'SUPER_ADMIN.ERR_STATUT'; }
+        });
     }
 
     loadStores(): void {
@@ -145,6 +167,10 @@ export class StoresListComponent implements OnInit {
 
     goToWholesaleEditors(): void {
         this.router.navigate(['/super-admin/wholesale-editors']);
+    }
+
+    goToMarketAnalytics(): void {
+        this.router.navigate(['/super-admin/market-analytics']);
     }
 
     logout(): void {

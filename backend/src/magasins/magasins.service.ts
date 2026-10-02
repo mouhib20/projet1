@@ -43,7 +43,7 @@ export class MagasinsService {
 
     /** Creates a store and its owner account together, in one transaction. */
     async create(dto: {
-        nom?: string; adresse?: string; telephone?: string;
+        nom?: string; adresse?: string; telephone?: string; wilaya?: string;
         ownerNom?: string; ownerTelephone?: string; ownerUsername?: string; ownerPassword?: string;
     }, authorization?: string): Promise<Magasin> {
         await this.superAdminRequis(authorization);
@@ -65,6 +65,7 @@ export class MagasinsService {
                 nom,
                 adresse: dto.adresse?.trim() || null,
                 telephone: dto.telephone?.trim() || null,
+                wilaya: dto.wilaya?.trim() || null,
             }));
             await m.save(m.create(Utilisateur, {
                 nom: ownerNom,
@@ -82,13 +83,14 @@ export class MagasinsService {
         });
     }
 
-    async update(id: number, dto: { nom?: string; adresse?: string; telephone?: string }, authorization?: string): Promise<Magasin> {
+    async update(id: number, dto: { nom?: string; adresse?: string; telephone?: string; wilaya?: string }, authorization?: string): Promise<Magasin> {
         await this.findOne(id, authorization);
         if (dto.nom !== undefined && !String(dto.nom).trim()) throw new BadRequestException('Le nom du magasin est obligatoire.');
         await this.repo.update(id, {
             ...(dto.nom !== undefined ? { nom: dto.nom.trim() } : {}),
             ...(dto.adresse !== undefined ? { adresse: dto.adresse.trim() || null } : {}),
             ...(dto.telephone !== undefined ? { telephone: dto.telephone.trim() || null } : {}),
+            ...(dto.wilaya !== undefined ? { wilaya: dto.wilaya.trim() || null } : {}),
         });
         return this.findOne(id, authorization);
     }

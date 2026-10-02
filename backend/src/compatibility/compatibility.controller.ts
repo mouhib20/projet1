@@ -66,6 +66,12 @@ export class CompatibilityController {
         return this.service.groupeInfoRecherche(id);
     }
 
+    @Post('search/not-found')
+    @RequirePermission('compatibilite', 'voir')
+    enregistrerRechercheNonTrouvee(@Body() body: { id_model: number; id_part_type: number }) {
+        return this.service.enregistrerRechercheNonTrouvee(body.id_model, body.id_part_type);
+    }
+
     @Post('suggestions')
     @RequirePermission('compatibilite', 'ajouter')
     creerSuggestion(
