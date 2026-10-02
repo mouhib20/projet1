@@ -9,5 +9,6 @@ import { CaisseModule } from '../caisse/caisse.module';
     imports: [TypeOrmModule.forFeature([Utilisateur]), CaisseModule],
     controllers: [CompatibilityController],
     providers: [CompatibilityService],
+    exports: [CompatibilityService],
 })
 export class CompatibilityModule { }

@@ -328,21 +328,30 @@ export class CompatibilityService {
     }
 
     /** Case-insensitive, trimmed dedup ("Samsung" / "samsung " / "SAMSUNG" must resolve to the
-     *  same row) - returns the existing brand instead of creating a near-duplicate. */
-    async creerMarque(dto: { nom: string; logo?: string }, authorization?: string): Promise<{ id: number }> {
-        await this.editeurRequis(authorization);
+     *  same row) - returns the existing brand instead of creating a near-duplicate. No role check -
+     *  shared by creerMarque() (compat_editor/super_admin) and the bulk-import module
+     *  (compatibility_employee), each of which does its OWN role check before calling this.
+     *  `runner` defaults to the plain pool connection but accepts a transaction's EntityManager too,
+     *  so a caller running several of these Interne calls inside one `dataSource.transaction(...)`
+     *  (e.g. the bulk importer's one-transaction-per-brand requirement) gets true atomicity. */
+    async creerMarqueInterne(dto: { nom: string; logo?: string }, runner: { query: (sql: string, params?: any[]) => Promise<any> } = this.dataSource): Promise<{ id: number }> {
         const nom = String(dto.nom ?? '').trim();
         if (!nom) throw new BadRequestException('Le nom de la marque est obligatoire.');
-        const existant = await this.dataSource.query(
+        const existant = await runner.query(
             `SELECT id FROM brand WHERE LOWER(TRIM(nom)) = LOWER($1) LIMIT 1`,
             [nom],
         );
         if (existant[0]) return { id: existant[0].id };
-        const rows = await this.dataSource.query(
+        const rows = await runner.query(
             `INSERT INTO brand (nom, logo) VALUES ($1, $2) RETURNING id`,
             [nom, dto.logo || null],
         );
         return { id: rows[0].id };
+    }
+
+    async creerMarque(dto: { nom: string; logo?: string }, authorization?: string): Promise<{ id: number }> {
+        await this.editeurRequis(authorization);
+        return this.creerMarqueInterne(dto);
     }
 
     async listerModeles(authorization?: string): Promise<any[]> {
@@ -355,29 +364,45 @@ export class CompatibilityService {
     }
 
     /** Case-insensitive, trimmed dedup scoped to the brand (the same model name can legitimately
-     *  exist under two different brands) - returns the existing model instead of creating a
-     *  near-duplicate. Image, if given, still overwrites the existing row's (COALESCE keeps it
-     *  when not given), so re-"creating" a known model to attach a photo still works. */
-    async creerModele(dto: { id_brand: number; nom: string; nom_commercial?: string; code?: string; image?: string }, authorization?: string): Promise<{ id: number }> {
-        await this.editeurRequis(authorization);
+     *  exist under two different brands) - matches on `code` first when the incoming row has one
+     *  (two rows with the same code are the same physical model even if the name text differs
+     *  slightly), falling back to `nom` otherwise - returns the existing model instead of creating
+     *  a near-duplicate. Image, if given, still overwrites the existing row's (COALESCE keeps it
+     *  when not given), so re-"creating" a known model to attach a photo still works. No role check
+     *  - shared by creerModele() (compat_editor/super_admin) and the bulk-import module
+     *  (compatibility_employee), each of which does its OWN role check before calling this.
+     *  `runner` - see creerMarqueInterne(). Note: an existing model's image is always overwritten
+     *  when `dto.image` is given (that's how the compat-editor's own "attach a photo" action
+     *  re-calls this) - the bulk importer, which must NOT overwrite a manually-set photo, checks
+     *  the existing row itself first and omits `image` from the call when one is already set. */
+    async creerModeleInterne(dto: { id_brand: number; nom: string; nom_commercial?: string; code?: string; image?: string }, runner: { query: (sql: string, params?: any[]) => Promise<any> } = this.dataSource): Promise<{ id: number }> {
         const nom = String(dto.nom ?? '').trim();
+        const code = dto.code?.trim() || null;
         if (!dto.id_brand) throw new BadRequestException('La marque est obligatoire.');
         if (!nom) throw new BadRequestException('Le nom du modèle est obligatoire.');
-        const existant = await this.dataSource.query(
-            `SELECT id FROM device_model WHERE id_brand = $1 AND LOWER(TRIM(nom)) = LOWER($2) LIMIT 1`,
-            [dto.id_brand, nom],
+        const existant = await runner.query(
+            `SELECT id FROM device_model
+               WHERE id_brand = $1
+                 AND ($3::text IS NOT NULL AND LOWER(TRIM(code)) = LOWER($3) OR LOWER(TRIM(nom)) = LOWER($2))
+               LIMIT 1`,
+            [dto.id_brand, nom, code],
         );
         if (existant[0]) {
             if (dto.image) {
-                await this.dataSource.query(`UPDATE device_model SET image = $2 WHERE id = $1`, [existant[0].id, dto.image]);
+                await runner.query(`UPDATE device_model SET image = $2 WHERE id = $1`, [existant[0].id, dto.image]);
             }
             return { id: existant[0].id };
         }
-        const rows = await this.dataSource.query(
+        const rows = await runner.query(
             `INSERT INTO device_model (id_brand, nom, nom_commercial, code, image) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-            [dto.id_brand, nom, dto.nom_commercial?.trim() || null, dto.code?.trim() || null, dto.image || null],
+            [dto.id_brand, nom, dto.nom_commercial?.trim() || null, code, dto.image || null],
         );
         return { id: rows[0].id };
+    }
+
+    async creerModele(dto: { id_brand: number; nom: string; nom_commercial?: string; code?: string; image?: string }, authorization?: string): Promise<{ id: number }> {
+        await this.editeurRequis(authorization);
+        return this.creerModeleInterne(dto);
     }
 
     /** Only image is editable today - models otherwise have no edit path once created. */
@@ -397,22 +422,29 @@ export class CompatibilityService {
     /** Case-insensitive, trimmed dedup against any of the three language names - a group only
      *  matches one exact part_type id, so two "glass" rows (e.g. one created a second time by
      *  accident) silently split a device's groups across different, unrelated part types. */
-    async creerTypePiece(dto: { nom_fr: string; nom_en: string; nom_ar: string; categorie?: 'part' | 'accessory' }, authorization?: string): Promise<{ id: number }> {
-        await this.editeurRequis(authorization);
+    /** No role check - shared by creerTypePiece() (compat_editor/super_admin) and the bulk-import
+     *  module (compatibility_employee), each of which does its OWN role check before calling this.
+     *  `runner` - see creerMarqueInterne(). */
+    async creerTypePieceInterne(dto: { nom_fr: string; nom_en: string; nom_ar: string; categorie?: 'part' | 'accessory' }, runner: { query: (sql: string, params?: any[]) => Promise<any> } = this.dataSource): Promise<{ id: number }> {
         const nomFr = String(dto.nom_fr ?? '').trim();
         const nomEn = String(dto.nom_en ?? '').trim();
         const nomAr = String(dto.nom_ar ?? '').trim();
         if (!nomFr || !nomEn || !nomAr) throw new BadRequestException('Le nom du type de pièce est obligatoire dans les trois langues.');
-        const existant = await this.dataSource.query(
+        const existant = await runner.query(
             `SELECT id FROM part_type WHERE LOWER(TRIM(nom_fr)) = LOWER($1) OR LOWER(TRIM(nom_en)) = LOWER($2) OR LOWER(TRIM(nom_ar)) = LOWER($3) LIMIT 1`,
             [nomFr, nomEn, nomAr],
         );
         if (existant[0]) return { id: existant[0].id };
-        const rows = await this.dataSource.query(
+        const rows = await runner.query(
             `INSERT INTO part_type (nom_fr, nom_en, nom_ar, categorie) VALUES ($1, $2, $3, $4) RETURNING id`,
             [nomFr, nomEn, nomAr, dto.categorie === 'accessory' ? 'accessory' : 'part'],
         );
         return { id: rows[0].id };
+    }
+
+    async creerTypePiece(dto: { nom_fr: string; nom_en: string; nom_ar: string; categorie?: 'part' | 'accessory' }, authorization?: string): Promise<{ id: number }> {
+        await this.editeurRequis(authorization);
+        return this.creerTypePieceInterne(dto);
     }
 
     // ── Groups (write: compat_editor/super_admin; delete: super_admin only) ────
@@ -481,11 +513,13 @@ export class CompatibilityService {
      *  group with this exact part type and this exact member set (as a set, order doesn't matter)
      *  already exists, reuse it instead of creating a silent duplicate - no warning needed, this
      *  is never a legitimate case (an intentional split always differs in at least one member). */
-    async creerGroupe(
+    /** No role check - shared by creerGroupe() (compat_editor/super_admin) and the bulk-import
+     *  module (compatibility_employee), each of which does its OWN role check before calling this.
+     *  `creePar` is the acteur id to record, resolved by the caller from its own role check. */
+    async creerGroupeInterne(
         dto: { id_part_type: number; id_base_model: number; modeleIds: number[]; note?: string; image?: string; statut?: string },
-        authorization?: string,
+        creePar: number | null,
     ): Promise<{ id: number }> {
-        const acteur = await this.editeurRequis(authorization);
         if (!dto.id_part_type) throw new BadRequestException('Le type de pièce est obligatoire.');
         if (!dto.id_base_model) throw new BadRequestException("Le téléphone original de la pièce est obligatoire.");
         const statut = dto.statut === 'needs_test' ? 'needs_test' : 'confirmed';
@@ -507,7 +541,7 @@ export class CompatibilityService {
         return this.dataSource.transaction(async (m) => {
             const [row] = await m.query(
                 `INSERT INTO compat_group (id_part_type, id_base_model, note, image, statut, cree_par) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-                [dto.id_part_type, dto.id_base_model, dto.note?.trim() || null, dto.image || null, statut, acteur.id],
+                [dto.id_part_type, dto.id_base_model, dto.note?.trim() || null, dto.image || null, statut, creePar],
             );
             for (const idModel of modeles) {
                 await m.query(
@@ -517,6 +551,14 @@ export class CompatibilityService {
             }
             return { id: row.id };
         });
+    }
+
+    async creerGroupe(
+        dto: { id_part_type: number; id_base_model: number; modeleIds: number[]; note?: string; image?: string; statut?: string },
+        authorization?: string,
+    ): Promise<{ id: number }> {
+        const acteur = await this.editeurRequis(authorization);
+        return this.creerGroupeInterne(dto, acteur.id);
     }
 
     async modifierGroupe(

@@ -1,0 +1,78 @@
+<div class="editors-page">
+
+    <div class="page-header">
+        <div>
+            <button class="btn btn-secondary btn-sm" (click)="back()">← {{ 'SUPER_ADMIN.BACK_TO_LIST' | translate }}</button>
+            <div class="page-title">📦 {{ 'IMPORT_EMPLOYEES.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'IMPORT_EMPLOYEES.SUBTITLE' | translate }}</div>
+        </div>
+        <div class="header-boutons" *ngIf="!showForm">
+            <button class="btn btn-primary" (click)="openAddForm()">＋ {{ 'IMPORT_EMPLOYEES.ADD_EMPLOYEE' | translate }}</button>
+        </div>
+    </div>
+
+    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg | translate }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
+
+    <div class="form-card" *ngIf="showForm">
+        <div class="form-card-header">➕ {{ 'IMPORT_EMPLOYEES.NEW_EMPLOYEE' | translate }}</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>{{ 'IMPORT_EMPLOYEES.NAME_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.nom" [placeholder]="'IMPORT_EMPLOYEES.NAME_PLACEHOLDER' | translate" />
+            </div>
+            <div class="form-group">
+                <label>{{ 'IMPORT_EMPLOYEES.USERNAME_LABEL' | translate }}</label>
+                <input type="text" [(ngModel)]="form.username" [placeholder]="'IMPORT_EMPLOYEES.USERNAME_PLACEHOLDER' | translate" />
+            </div>
+            <div class="form-group">
+                <label>{{ 'IMPORT_EMPLOYEES.PASSWORD_LABEL' | translate }}</label>
+                <input type="password" [(ngModel)]="form.password" [placeholder]="'IMPORT_EMPLOYEES.PASSWORD_PLACEHOLDER' | translate" />
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn btn-secondary" (click)="cancelForm()">{{ 'CANCEL' | translate }}</button>
+            <button class="btn btn-success" [disabled]="saving" (click)="save()">
+                {{ (saving ? 'IMPORT_EMPLOYEES.SAVING' : 'IMPORT_EMPLOYEES.CREATE') | translate }}
+            </button>
+        </div>
+    </div>
+
+    <div class="loading-state" *ngIf="loading">
+        <div class="loading-icon">⟳</div>
+        <strong>{{ 'IMPORT_EMPLOYEES.LOADING' | translate }}</strong>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && employees.length === 0">
+        <div class="empty-icon">📦</div>
+        <strong>{{ 'IMPORT_EMPLOYEES.EMPTY' | translate }}</strong>
+    </div>
+
+    <div class="table-container" *ngIf="!loading && employees.length > 0">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>{{ 'IMPORT_EMPLOYEES.COL_NAME' | translate }}</th>
+                    <th>{{ 'IMPORT_EMPLOYEES.COL_USERNAME' | translate }}</th>
+                    <th class="text-center">{{ 'IMPORT_EMPLOYEES.COL_STATUS' | translate }}</th>
+                    <th class="text-center">{{ 'IMPORT_EMPLOYEES.COL_ACTIONS' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let e of employees">
+                    <td class="fw-bold">{{ e.nom }}</td>
+                    <td>{{ e.username }}</td>
+                    <td class="text-center">
+                        <span class="badge-dette" *ngIf="!e.actif">{{ 'IMPORT_EMPLOYEES.STATUS_SUSPENDED' | translate }}</span>
+                        <span class="text-success" *ngIf="e.actif">{{ 'IMPORT_EMPLOYEES.STATUS_ACTIVE' | translate }}</span>
+                    </td>
+                    <td class="text-center">
+                        <button class="btn-outline btn-sm" (click)="toggleStatut(e)">
+                            {{ (e.actif ? 'IMPORT_EMPLOYEES.BTN_SUSPEND' : 'IMPORT_EMPLOYEES.BTN_REACTIVATE') | translate }}
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

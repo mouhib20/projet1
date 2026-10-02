@@ -45,6 +45,7 @@ import { PartType } from './compatibility/part-type.entity';
 import { CompatGroup } from './compatibility/compat-group.entity';
 import { CompatSuggestion } from './compatibility/compat-suggestion.entity';
 import { CompatibilityModule } from './compatibility/compatibility.module';
+import { CompatImportModule } from './compat-import/compat-import.module';
 import { WholesaleListing } from './wholesale/wholesale-listing.entity';
 import { WholesaleOrder } from './wholesale/wholesale-order.entity';
 import { WholesaleModule } from './wholesale/wholesale.module';
@@ -103,6 +104,7 @@ import { WholesaleModule } from './wholesale/wholesale.module';
         EmployeesModule,
         MagasinsModule,
         CompatibilityModule,
+        CompatImportModule,
         WholesaleModule,
     ],
     controllers: [AppController],

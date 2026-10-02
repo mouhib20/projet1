@@ -21,13 +21,16 @@ import { adminGuard } from './guards/admin.guard';
 import { permissionGuard } from './guards/permission.guard';
 import { superAdminGuard } from './guards/super-admin.guard';
 import { compatEditorGuard } from './guards/compat-editor.guard';
+import { compatImportGuard } from './guards/compat-import.guard';
 import { wholesaleEditorGuard } from './guards/wholesale-editor.guard';
 import { StoresListComponent } from './super-admin/stores-list/stores-list.component';
 import { StoreModulesComponent } from './super-admin/store-modules/store-modules.component';
 import { CompatEditorsComponent } from './super-admin/compat-editors/compat-editors.component';
+import { ImportEmployeesComponent } from './super-admin/import-employees/import-employees.component';
 import { WholesaleEditorsComponent } from './super-admin/wholesale-editors/wholesale-editors.component';
 import { CompatGroupsComponent } from './compat-editor/compat-groups/compat-groups.component';
 import { SuggestionsComponent } from './compat-editor/suggestions/suggestions.component';
+import { ImportDataComponent } from './compat-import/import-data/import-data.component';
 import { WholesaleEditorProductsComponent } from './wholesale-editor/products/wholesale-editor-products.component';
 import { WholesaleEditorOrdersComponent } from './wholesale-editor/orders/wholesale-editor-orders.component';
 import { PendingOperationsComponent } from './offline/pending-operations/pending-operations.component';
@@ -69,10 +72,16 @@ export const routes: Routes = [
         path: 'super-admin/wholesale-editors', component: WholesaleEditorsComponent, canActivate: [superAdminGuard],
     },
     {
+        path: 'super-admin/import-employees', component: ImportEmployeesComponent, canActivate: [superAdminGuard],
+    },
+    {
         path: 'compat-editor/groups', component: CompatGroupsComponent, canActivate: [compatEditorGuard],
     },
     {
         path: 'compat-editor/suggestions', component: SuggestionsComponent, canActivate: [compatEditorGuard],
+    },
+    {
+        path: 'compat-import', component: ImportDataComponent, canActivate: [compatImportGuard],
     },
     {
         path: 'wholesale-editor/products', component: WholesaleEditorProductsComponent, canActivate: [wholesaleEditorGuard],

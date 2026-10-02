@@ -392,8 +392,17 @@ describe('CompatibilityService', () => {
             dataSource.query.mockResolvedValueOnce([{ id: 11 }]); // existing-model lookup
             await expect(service.creerModele({ id_brand: 1, nom: ' a12 ' }, 'Bearer x')).resolves.toEqual({ id: 11 });
             const [sql, params] = dataSource.query.mock.calls[0];
-            expect(sql).toMatch(/WHERE id_brand = \$1 AND LOWER\(TRIM\(nom\)\) = LOWER\(\$2\)/);
-            expect(params).toEqual([1, 'a12']);
+            expect(sql).toMatch(/WHERE id_brand = \$1/);
+            expect(sql).toMatch(/LOWER\(TRIM\(nom\)\) = LOWER\(\$2\)/);
+            expect(params).toEqual([1, 'a12', null]);
+        });
+
+        it('creerModele also matches an existing model by code when the incoming row has one, even if the name text differs', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            dataSource.query.mockResolvedValueOnce([{ id: 11 }]); // existing-model lookup, matched by code
+            await expect(service.creerModele({ id_brand: 1, nom: 'Galaxy A12', code: ' SM-A125F ' }, 'Bearer x')).resolves.toEqual({ id: 11 });
+            const [, params] = dataSource.query.mock.calls[0];
+            expect(params).toEqual([1, 'Galaxy A12', 'SM-A125F']);
         });
 
         it('creerModele updates the existing model\'s image when re-"creating" it with a photo', async () => {

@@ -386,6 +386,19 @@ async function migrer(): Promise<void> {
         await client.query(`ALTER TABLE "sync_operation_log" ALTER COLUMN "client_id" TYPE character varying(64)`);
         await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "sync_operation_log_client_id_idx" ON "sync_operation_log" ("client_id")`);
 
+        // Audit trail for the bulk compat-catalogue imports (brands/models ZIP, compatibilities
+        // JSON) done by the compatibility_employee role - who/when/which file/what happened.
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "compat_import_log" (
+                "id" SERIAL PRIMARY KEY,
+                "type" character varying(30) NOT NULL,
+                "id_utilisateur" integer,
+                "nom_fichier" character varying(255),
+                "resultat" jsonb,
+                "date_creation" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+
         // Seed a super_admin account if requested and none exists yet (idempotent, every boot)
         const superAdminPwd = process.env.SEED_SUPER_ADMIN_PASSWORD || '';
         if (superAdminPwd.length >= 10) {

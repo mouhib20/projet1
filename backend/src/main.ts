@@ -12,6 +12,7 @@ async function bootstrap() {
     mkdirSync(join(process.cwd(), 'uploads', 'magasins'), { recursive: true });
     mkdirSync(join(process.cwd(), 'uploads', 'compat-models'), { recursive: true });
     mkdirSync(join(process.cwd(), 'uploads', 'wholesale'), { recursive: true });
+    mkdirSync(join(process.cwd(), 'uploads', 'compat-import-tmp'), { recursive: true });
 
     // Empty database on first start: create the tables and the login accounts (AUTO_INIT_DB=true)
     await initialiserBase();

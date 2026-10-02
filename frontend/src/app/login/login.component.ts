@@ -25,10 +25,12 @@ export class LoginComponent {
         }
     }
 
-    /** Super Admin, compat_editor and wholesale_editor have no store of their own and never see the regular POS/stock/etc. pages. */
+    /** Super Admin, compat_editor, compatibility_employee and wholesale_editor have no store of
+     *  their own and never see the regular POS/stock/etc. pages. */
     private landingRoute(): string {
         if (this.authService.isSuperAdmin()) return '/super-admin/stores';
         if (this.authService.isCompatEditor()) return '/compat-editor/groups';
+        if (this.authService.isCompatImportEmployee()) return '/compat-import';
         if (this.authService.isWholesaleEditor()) return '/wholesale-editor/products';
         return '/vente/accueil';
     }

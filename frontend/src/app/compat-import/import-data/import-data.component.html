@@ -1,0 +1,187 @@
+<div class="import-page">
+
+    <div class="page-header">
+        <div>
+            <div class="page-title">📦 {{ 'IMPORT_DATA.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'IMPORT_DATA.SUBTITLE' | translate }}</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
+    </div>
+
+    <div class="tabs-row">
+        <button type="button" class="tab-btn" [class.active]="activeTab === 'brands'" (click)="activeTab = 'brands'">
+            🏷️ {{ 'IMPORT_DATA.TAB_BRANDS' | translate }}
+        </button>
+        <button type="button" class="tab-btn" [class.active]="activeTab === 'compat'" (click)="activeTab = 'compat'">
+            🧩 {{ 'IMPORT_DATA.TAB_COMPAT' | translate }}
+        </button>
+    </div>
+
+    <!-- ═══════════════ TAB 1: Brands & Models ═══════════════ -->
+    <div class="tab-panel" *ngIf="activeTab === 'brands'">
+
+        <div class="upload-card" *ngIf="!bmPreview && !bmResult">
+            <label class="upload-label">{{ 'IMPORT_DATA.UPLOAD_ZIP_LABEL' | translate }}</label>
+            <input type="file" accept=".zip" (change)="onBmFileSelected($event)" />
+            <div class="alert alert-error" *ngIf="bmErrorMsg">⚠️ {{ bmErrorMsg | translate }}</div>
+            <div class="progress-row" *ngIf="bmUploadProgress !== null">
+                <div class="progress-bar"><div class="progress-fill" [style.width.%]="bmUploadProgress"></div></div>
+                <span>{{ bmUploadProgress }}%</span>
+            </div>
+            <button class="btn btn-primary" [disabled]="!bmFile || bmLoading" (click)="uploadBmPreview()">
+                {{ (bmLoading ? 'IMPORT_DATA.ANALYZING' : 'IMPORT_DATA.ANALYZE_FILE') | translate }}
+            </button>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-section" *ngIf="bmPreview">
+            <div class="alert alert-error" *ngIf="bmErrorMsg">⚠️ {{ bmErrorMsg | translate }}</div>
+            <div class="alert alert-error" *ngIf="bmPreview.erreursFichier.length">
+                <div *ngFor="let e of bmPreview.erreursFichier">⚠️ {{ e }}</div>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-card" *ngFor="let m of bmPreview.marques" [class.excluded]="bmExcludedBrands.has(m.marque)">
+                    <label class="summary-card-header">
+                        <input type="checkbox" [checked]="!bmExcludedBrands.has(m.marque)" (change)="toggleBrandExcluded(m.marque)" />
+                        <strong>{{ m.marque }}</strong>
+                    </label>
+                    <div class="summary-stats">
+                        <span class="stat-new">{{ 'IMPORT_DATA.STAT_NEW' | translate:{ n: m.nouveaux } }}</span>
+                        <span class="stat-existing">{{ 'IMPORT_DATA.STAT_EXISTING' | translate:{ n: m.existants } }}</span>
+                        <span class="stat-no-image" *ngIf="m.sansImage">{{ 'IMPORT_DATA.STAT_NO_IMAGE' | translate:{ n: m.sansImage } }}</span>
+                        <span class="stat-errors" *ngIf="m.erreurs">{{ 'IMPORT_DATA.STAT_ERRORS' | translate:{ n: m.erreurs } }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <input type="text" class="search-input" [(ngModel)]="bmSearchTerm" [placeholder]="'IMPORT_DATA.SEARCH_MODELS_PLACEHOLDER' | translate" />
+
+            <div class="models-list">
+                <div class="model-row" *ngFor="let m of filteredBmModels" [class.excluded]="bmExcludedBrands.has(m.marque) || bmExcludedModels.has(m.cleModele)">
+                    <input type="checkbox"
+                        [checked]="!bmExcludedBrands.has(m.marque) && !bmExcludedModels.has(m.cleModele)"
+                        [disabled]="bmExcludedBrands.has(m.marque)"
+                        (change)="toggleModelExcluded(m.cleModele)" />
+                    <img *ngIf="m.thumbnail" [src]="m.thumbnail" class="model-thumb" />
+                    <span *ngIf="!m.thumbnail" class="model-thumb-placeholder">📱</span>
+                    <div class="model-info">
+                        <div class="model-name">{{ m.marque }} — {{ m.modele }}</div>
+                        <div class="model-code" *ngIf="m.code">{{ m.code }}</div>
+                    </div>
+                    <span class="badge-ok" *ngIf="m.statut === 'new'">{{ 'IMPORT_DATA.STATUS_NEW' | translate }}</span>
+                    <span class="badge-existing" *ngIf="m.statut === 'existing'">{{ 'IMPORT_DATA.STATUS_EXISTING' | translate }}</span>
+                    <span class="badge-out" *ngIf="!m.aUneImage">{{ 'IMPORT_DATA.NO_IMAGE' | translate }}</span>
+                </div>
+                <div class="empty-hint" *ngIf="!filteredBmModels.length">{{ 'IMPORT_DATA.NO_RESULTS' | translate }}</div>
+            </div>
+
+            <div class="confirm-row">
+                <button class="btn btn-secondary" (click)="bmPreview = null; bmFile = null">{{ 'CANCEL' | translate }}</button>
+                <button class="btn btn-success" [disabled]="bmConfirming" (click)="confirmBm()">
+                    {{ (bmConfirming ? 'IMPORT_DATA.IMPORTING' : 'IMPORT_DATA.CONFIRM_IMPORT') | translate }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div class="result-card" *ngIf="bmResult">
+            <div class="result-title">✅ {{ 'IMPORT_DATA.RESULT_TITLE' | translate }}</div>
+            <ul class="result-stats">
+                <li>{{ 'IMPORT_DATA.RESULT_ADDED' | translate:{ n: bmResult.ajoutes } }}</li>
+                <li>{{ 'IMPORT_DATA.RESULT_UPDATED' | translate:{ n: bmResult.misAJour } }}</li>
+                <li>{{ 'IMPORT_DATA.RESULT_IGNORED' | translate:{ n: bmResult.ignores } }}</li>
+            </ul>
+            <div class="alert alert-error" *ngIf="bmResult.erreurs.length">
+                <div>{{ 'IMPORT_DATA.RESULT_ERRORS' | translate:{ n: bmResult.erreurs.length } }}</div>
+                <button class="btn-outline btn-sm" (click)="downloadBmErrorReport()">⬇️ {{ 'IMPORT_DATA.DOWNLOAD_ERROR_REPORT' | translate }}</button>
+            </div>
+            <button class="btn btn-secondary" (click)="bmResult = null">{{ 'IMPORT_DATA.NEW_IMPORT' | translate }}</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════ TAB 2: Compatibilities ═══════════════ -->
+    <div class="tab-panel" *ngIf="activeTab === 'compat'">
+
+        <div class="upload-card" *ngIf="!compatPreview && !compatResult">
+            <label class="upload-label">{{ 'IMPORT_DATA.UPLOAD_COMPAT_LABEL' | translate }}</label>
+            <input type="file" accept=".json,.zip" (change)="onCompatFileSelected($event)" />
+
+            <div class="types-row">
+                <label class="type-chip" *ngFor="let key of partTypeKeys" [class.selected]="compatSelectedTypes.has(key)">
+                    <input type="checkbox" [checked]="compatSelectedTypes.has(key)" (change)="toggleCompatType(key)" />
+                    {{ partTypeLabelKey(key) | translate }}
+                </label>
+            </div>
+
+            <div class="alert alert-error" *ngIf="compatErrorMsg">⚠️ {{ compatErrorMsg | translate }}</div>
+            <div class="progress-row" *ngIf="compatUploadProgress !== null">
+                <div class="progress-bar"><div class="progress-fill" [style.width.%]="compatUploadProgress"></div></div>
+                <span>{{ compatUploadProgress }}%</span>
+            </div>
+            <button class="btn btn-primary" [disabled]="!compatFile || compatLoading" (click)="uploadCompatPreview()">
+                {{ (compatLoading ? 'IMPORT_DATA.ANALYZING' : 'IMPORT_DATA.ANALYZE_FILE') | translate }}
+            </button>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-section" *ngIf="compatPreview">
+            <div class="alert alert-error" *ngIf="compatErrorMsg">⚠️ {{ compatErrorMsg | translate }}</div>
+
+            <div class="summary-grid">
+                <div class="summary-card" *ngFor="let t of compatPreview.types">
+                    <div class="summary-card-header"><strong>{{ partTypeLabelKey(t.partTypeKey) | translate }}</strong></div>
+                    <div class="summary-stats">
+                        <span class="stat-new">{{ 'IMPORT_DATA.STAT_NEW_GROUPS' | translate:{ n: t.nouveaux } }}</span>
+                        <span class="stat-existing" *ngIf="t.aFusionner">{{ 'IMPORT_DATA.STAT_TO_MERGE' | translate:{ n: t.aFusionner } }}</span>
+                        <span class="stat-errors" *ngIf="t.modelesIntrouvables">{{ 'IMPORT_DATA.STAT_NOT_FOUND' | translate:{ n: t.modelesIntrouvables } }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="groups-list">
+                <div class="group-row" *ngFor="let g of visibleCompatGroups" [class.excluded]="compatExcludedGroups.has(g.cleGroupe)">
+                    <div class="group-row-header">
+                        <input type="checkbox" [checked]="!compatExcludedGroups.has(g.cleGroupe)" (change)="toggleGroupExcluded(g.cleGroupe)" />
+                        <strong>{{ partTypeLabelKey(g.partTypeKey) | translate }}</strong>
+                        <span class="badge-ok" *ngIf="g.statutPropose === 'confirmed'">{{ 'IMPORT_DATA.COMPAT_CONFIRMED' | translate }}</span>
+                        <span class="badge-needs-test" *ngIf="g.statutPropose === 'needs_test'">{{ 'IMPORT_DATA.COMPAT_NEEDS_TEST' | translate }}</span>
+                        <span class="badge-merge" *ngIf="g.action === 'merge'">{{ 'IMPORT_DATA.WILL_MERGE' | translate }}</span>
+                    </div>
+                    <div class="group-models">
+                        <span class="model-pill" *ngFor="let m of g.modeles" [class.not-found]="!m.trouve">
+                            {{ m.brand }} {{ m.nom }}
+                            <em *ngIf="!m.trouve">({{ 'IMPORT_DATA.MODEL_NOT_FOUND' | translate }})</em>
+                        </span>
+                    </div>
+                    <div class="merge-confirm-row" *ngIf="g.action === 'merge'">
+                        <label>
+                            <input type="checkbox" [checked]="compatConfirmedMerges.has(g.cleGroupe)" (change)="toggleMergeConfirmed(g.cleGroupe)" />
+                            {{ 'IMPORT_DATA.CONFIRM_MERGE_WITH' | translate:{ models: g.fusionAvecModeles?.join(', ') } }}
+                        </label>
+                    </div>
+                </div>
+                <div class="empty-hint" *ngIf="!visibleCompatGroups.length">{{ 'IMPORT_DATA.NO_RESULTS' | translate }}</div>
+            </div>
+
+            <div class="confirm-row">
+                <button class="btn btn-secondary" (click)="compatPreview = null; compatFile = null">{{ 'CANCEL' | translate }}</button>
+                <button class="btn btn-success" [disabled]="compatConfirming" (click)="confirmCompat()">
+                    {{ (compatConfirming ? 'IMPORT_DATA.IMPORTING' : 'IMPORT_DATA.CONFIRM_IMPORT') | translate }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div class="result-card" *ngIf="compatResult">
+            <div class="result-title">✅ {{ 'IMPORT_DATA.RESULT_TITLE' | translate }}</div>
+            <ul class="result-stats">
+                <li>{{ 'IMPORT_DATA.RESULT_GROUPS_CREATED' | translate:{ n: compatResult.crees } }}</li>
+                <li>{{ 'IMPORT_DATA.RESULT_GROUPS_MERGED' | translate:{ n: compatResult.fusionnes } }}</li>
+                <li>{{ 'IMPORT_DATA.RESULT_IGNORED' | translate:{ n: compatResult.ignores } }}</li>
+                <li *ngIf="compatResult.modelesIntrouvables">{{ 'IMPORT_DATA.RESULT_MODELS_NOT_FOUND' | translate:{ n: compatResult.modelesIntrouvables } }}</li>
+            </ul>
+            <button class="btn btn-secondary" (click)="compatResult = null">{{ 'IMPORT_DATA.NEW_IMPORT' | translate }}</button>
+        </div>
+    </div>
+</div>

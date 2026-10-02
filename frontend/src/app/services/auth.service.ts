@@ -7,7 +7,7 @@ import { environment } from '../../environments/environment';
 import { OfflineDbService } from '../offline/offline-db.service';
 import { OfflineSessionService } from '../offline/offline-session.service';
 
-export type UserRole = 'super_admin' | 'compat_editor' | 'wholesale_editor' | 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
+export type UserRole = 'super_admin' | 'compat_editor' | 'compatibility_employee' | 'wholesale_editor' | 'admin' | 'vendeur' | 'vendeuse' | 'visiteur';
 export type Departement = 'ventes' | 'stock' | 'reparation' | 'fournisseurs' | 'charges' | 'clients' | 'rapports' | 'compatibilite' | 'wholesale';
 export type PermissionAction = 'voir' | 'ajouter' | 'modifier' | 'supprimer';
 export type PermissionEntry = { voir: boolean; ajouter: boolean; modifier: boolean; supprimer: boolean };
@@ -84,6 +84,13 @@ export class AuthService {
 
     isCompatEditor(): boolean {
         return this.getRole() === 'compat_editor';
+    }
+
+    /** Exclusive role for the bulk brands/models + compatibilities import screen - unlike every
+     *  other compat-catalogue role check, this one is never OR'd with isSuperAdmin() anywhere, by
+     *  explicit request (not even super_admin should see this screen). */
+    isCompatImportEmployee(): boolean {
+        return this.getRole() === 'compatibility_employee';
     }
 
     isWholesaleEditor(): boolean {
