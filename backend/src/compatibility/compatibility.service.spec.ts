@@ -271,14 +271,20 @@ describe('CompatibilityService', () => {
         });
     });
 
-    describe('superAdminRequis (via supprimerGroupe/creerEditeur) — super_admin only, not compat_editor', () => {
-        it('rejects compat_editor from deleting a group', async () => {
+    describe('suppressionGroupeRequis (via supprimerGroupe) — super_admin or compatibility_employee, not compat_editor', () => {
+        it('rejects compat_editor from deleting a group (narrower than editeurRequis on purpose)', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
             await expect(service.supprimerGroupe(1, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
         });
 
-        it('rejects compatibility_employee from deleting a group too (same boundary as compat_editor)', async () => {
+        it('allows compatibility_employee to delete a group, on explicit request', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 10, nom: 'Employe', role: 'compatibility_employee' });
+            dataSource.query.mockResolvedValue([[], 1]);
+            await expect(service.supprimerGroupe(1, 'Bearer x')).resolves.toBeUndefined();
+        });
+
+        it('rejects a regular store admin from deleting a group', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
             await expect(service.supprimerGroupe(1, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
         });
 

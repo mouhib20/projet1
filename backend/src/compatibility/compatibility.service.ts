@@ -40,11 +40,22 @@ export class CompatibilityService {
 
     /** Writing/editing the shared catalogue: compat_editor accounts, compatibility_employee
      *  accounts (same manual edit rights as compat_editor, granted on explicit request), or
-     *  super_admin. Hard-delete of a group stays super_admin-only (see supprimerGroupe). */
+     *  super_admin. Hard-delete of a group is a separate, narrower check (see
+     *  suppressionGroupeRequis) - compat_editor is deliberately NOT in that one. */
     private async editeurRequis(authorization?: string): Promise<Acteur> {
         const acteur = await this.caisseService.acteurRequis(authorization);
         if (acteur.role !== 'compat_editor' && acteur.role !== 'compatibility_employee' && acteur.role !== 'super_admin') {
             throw new ForbiddenException("Action réservée aux éditeurs de compatibilité.");
+        }
+        return acteur;
+    }
+
+    /** Hard-delete of a group: super_admin, or compatibility_employee (granted on explicit
+     *  request - unlike editeurRequis, compat_editor is deliberately excluded here). */
+    private async suppressionGroupeRequis(authorization?: string): Promise<Acteur> {
+        const acteur = await this.caisseService.acteurRequis(authorization);
+        if (acteur.role !== 'super_admin' && acteur.role !== 'compatibility_employee') {
+            throw new ForbiddenException('Action réservée à un super administrateur.');
         }
         return acteur;
     }
@@ -449,7 +460,8 @@ export class CompatibilityService {
         return this.creerTypePieceInterne(dto);
     }
 
-    // ── Groups (write: compat_editor/super_admin; delete: super_admin only) ────
+    // ── Groups (write: compat_editor/compatibility_employee/super_admin; delete: super_admin
+    // or compatibility_employee only - compat_editor excluded, see suppressionGroupeRequis) ────
 
     /** Warns (never blocks) when a model being added to a group - as base or as compatible -
      *  already sits in a DIFFERENT group of the same part type. That's how a device ends up
@@ -601,7 +613,7 @@ export class CompatibilityService {
     }
 
     async supprimerGroupe(id: number, authorization?: string): Promise<void> {
-        await this.superAdminRequis(authorization);
+        await this.suppressionGroupeRequis(authorization);
         const res = await this.dataSource.query(`DELETE FROM compat_group WHERE id = $1`, [id]);
         const affected = Array.isArray(res) ? res[1] : 0;
         if (!affected) throw new NotFoundException(`Groupe de compatibilité #${id} introuvable`);

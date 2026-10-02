@@ -203,7 +203,7 @@
                     <td>{{ g.note || '—' }}</td>
                     <td class="text-center">
                         <button class="btn-outline btn-sm" (click)="openEditForm(g)">✏️ {{ 'COMPAT_GROUPS.BTN_EDIT' | translate }}</button>
-                        <button class="btn-outline btn-sm" *ngIf="auth.isSuperAdmin()" (click)="deleteGroup(g)">🗑️ {{ 'COMPAT_GROUPS.BTN_DELETE' | translate }}</button>
+                        <button class="btn-outline btn-sm" *ngIf="auth.isSuperAdmin() || auth.isCompatImportEmployee()" (click)="deleteGroup(g)">🗑️ {{ 'COMPAT_GROUPS.BTN_DELETE' | translate }}</button>
                     </td>
                 </tr>
             </tbody>
