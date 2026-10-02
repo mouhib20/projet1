@@ -322,7 +322,8 @@
         "ERR_SAVE_MODULES": "Error saving the sections.",
         "COMPAT_EDITORS_LINK": "Compatibility editors",
         "WHOLESALE_EDITORS_LINK": "Wholesale Editors",
-        "MARKET_ANALYTICS_LINK": "Market analytics"
+        "MARKET_ANALYTICS_LINK": "Market analytics",
+        "ACC_ANALYTICS_LINK": "Accessories analytics"
     },
     "MARKET_ANALYTICS": {
         "TITLE": "Market analytics",
@@ -373,6 +374,36 @@
         "DETAIL_SUPPLIERS": "Suppliers of this part",
         "NO_SUPPLIERS": "No supplier recorded for this part over the period.",
         "CHEAPEST": "cheapest"
+    },
+    "ACC_ANALYTICS": {
+        "TITLE": "Accessories analytics",
+        "SUBTITLE": "Aggregated view across every store for accessories: sales, suppliers, and what to stock wholesale",
+        "RECALC_NOW": "Recalculate now",
+        "RECALCULATING": "Recalculating…",
+        "RECALC_SUCCESS": "Summary recalculated successfully.",
+        "RECALC_ERROR": "Error recalculating the summary.",
+        "ERR_LOAD": "Could not load the data.",
+        "ERR_LINK": "Error linking the product.",
+        "CATEGORY_LABEL": "Category",
+        "TAB_SUMMARY": "Summary",
+        "TAB_TOP": "Best sellers",
+        "TAB_UNLINKED": "Unlinked",
+        "COL_CATEGORY": "Category",
+        "COL_PRODUCT": "Product",
+        "COL_BARCODE": "Barcode",
+        "COL_REVENUE": "Revenue",
+        "COL_PROFIT": "Profit",
+        "COL_MARGIN": "Margin",
+        "COL_BEST_SELLER": "Best seller",
+        "COL_STOCKOUT_DAYS": "Stock-out days",
+        "COL_TREND": "Trend",
+        "TOP10_QTY": "Top 10 (quantity)",
+        "TOP10_PROFIT": "Top 10 (profit)",
+        "BTN_LINK": "Link",
+        "BTN_NEW_PRODUCT": "New product",
+        "SUGGESTIONS_TITLE": "Suggested similar products",
+        "NO_SUGGESTIONS": "No suggestion - create a new product.",
+        "NO_UNLINKED": "Every accessory is linked."
     },
     "COMPAT_EDITORS": {
         "TITLE": "Compatibility editors",

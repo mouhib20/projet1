@@ -179,6 +179,10 @@ export class MarketAnalyticsComponent implements OnInit {
         this.router.navigate(['/super-admin/stores']);
     }
 
+    goToAccessories(): void {
+        this.router.navigate(['/super-admin/accessories-analytics']);
+    }
+
     logout(): void {
         this.auth.logout();
     }

@@ -322,7 +322,8 @@
         "ERR_SAVE_MODULES": "خطأ أثناء حفظ الأقسام.",
         "COMPAT_EDITORS_LINK": "خدام التوافقات",
         "WHOLESALE_EDITORS_LINK": "محررو الجملة",
-        "MARKET_ANALYTICS_LINK": "تحليل السوق"
+        "MARKET_ANALYTICS_LINK": "تحليل السوق",
+        "ACC_ANALYTICS_LINK": "تحليل الإكسسوارات"
     },
     "MARKET_ANALYTICS": {
         "TITLE": "تحليل السوق",
@@ -373,6 +374,36 @@
         "DETAIL_SUPPLIERS": "مزوّدو هذه القطعة",
         "NO_SUPPLIERS": "لا يوجد مزوّد مسجَّل لهذه القطعة خلال الفترة.",
         "CHEAPEST": "الأرخص"
+    },
+    "ACC_ANALYTICS": {
+        "TITLE": "تحليل الإكسسوارات",
+        "SUBTITLE": "نظرة مجمّعة على كل المحلات للإكسسوارات: المبيعات، المزوّدون، وما يجب توفيره بالجملة",
+        "RECALC_NOW": "إعادة الحساب الآن",
+        "RECALCULATING": "جارٍ إعادة الحساب…",
+        "RECALC_SUCCESS": "تم إعادة حساب الملخص بنجاح.",
+        "RECALC_ERROR": "خطأ أثناء إعادة الحساب.",
+        "ERR_LOAD": "تعذّر تحميل البيانات.",
+        "ERR_LINK": "خطأ أثناء الربط.",
+        "CATEGORY_LABEL": "الفئة",
+        "TAB_SUMMARY": "الملخص",
+        "TAB_TOP": "الأكثر بيعاً",
+        "TAB_UNLINKED": "غير مربوط",
+        "COL_CATEGORY": "الفئة",
+        "COL_PRODUCT": "المنتج",
+        "COL_BARCODE": "الباركود",
+        "COL_REVENUE": "الإيرادات",
+        "COL_PROFIT": "الربح",
+        "COL_MARGIN": "هامش الربح",
+        "COL_BEST_SELLER": "الأكثر مبيعاً",
+        "COL_STOCKOUT_DAYS": "أيام النفاد",
+        "COL_TREND": "الاتجاه",
+        "TOP10_QTY": "أفضل 10 (كمية)",
+        "TOP10_PROFIT": "أفضل 10 (ربح)",
+        "BTN_LINK": "ربط",
+        "BTN_NEW_PRODUCT": "منتج جديد",
+        "SUGGESTIONS_TITLE": "منتجات مشابهة مقترحة",
+        "NO_SUGGESTIONS": "لا توجد اقتراحات - أنشئ منتجاً جديداً.",
+        "NO_UNLINKED": "كل الإكسسوارات مربوطة."
     },
     "COMPAT_EDITORS": {
         "TITLE": "خدام التوافقات",

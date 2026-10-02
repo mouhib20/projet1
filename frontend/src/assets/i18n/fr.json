@@ -322,7 +322,8 @@
         "ERR_SAVE_MODULES": "Erreur lors de l'enregistrement des sections.",
         "COMPAT_EDITORS_LINK": "Éditeurs de compatibilité",
         "WHOLESALE_EDITORS_LINK": "Éditeurs de la vente en gros",
-        "MARKET_ANALYTICS_LINK": "Analyse du marché"
+        "MARKET_ANALYTICS_LINK": "Analyse du marché",
+        "ACC_ANALYTICS_LINK": "Analyse des accessoires"
     },
     "MARKET_ANALYTICS": {
         "TITLE": "Analyse du marché",
@@ -373,6 +374,36 @@
         "DETAIL_SUPPLIERS": "Fournisseurs de cette pièce",
         "NO_SUPPLIERS": "Aucun fournisseur enregistré pour cette pièce sur la période.",
         "CHEAPEST": "le moins cher"
+    },
+    "ACC_ANALYTICS": {
+        "TITLE": "Analyse des accessoires",
+        "SUBTITLE": "Vue agrégée de tous les magasins sur les accessoires : ventes, fournisseurs, et quoi stocker en gros",
+        "RECALC_NOW": "Recalculer maintenant",
+        "RECALCULATING": "Recalcul…",
+        "RECALC_SUCCESS": "Résumé recalculé avec succès.",
+        "RECALC_ERROR": "Erreur lors du recalcul.",
+        "ERR_LOAD": "Impossible de charger les données.",
+        "ERR_LINK": "Erreur lors du rattachement.",
+        "CATEGORY_LABEL": "Catégorie",
+        "TAB_SUMMARY": "Résumé",
+        "TAB_TOP": "Les plus vendus",
+        "TAB_UNLINKED": "Non rattachés",
+        "COL_CATEGORY": "Catégorie",
+        "COL_PRODUCT": "Produit",
+        "COL_BARCODE": "Code-barres",
+        "COL_REVENUE": "Revenus",
+        "COL_PROFIT": "Profit",
+        "COL_MARGIN": "Marge",
+        "COL_BEST_SELLER": "Meilleure vente",
+        "COL_STOCKOUT_DAYS": "Jours de rupture",
+        "COL_TREND": "Tendance",
+        "TOP10_QTY": "Top 10 (quantité)",
+        "TOP10_PROFIT": "Top 10 (profit)",
+        "BTN_LINK": "Rattacher",
+        "BTN_NEW_PRODUCT": "Nouveau produit",
+        "SUGGESTIONS_TITLE": "Produits similaires suggérés",
+        "NO_SUGGESTIONS": "Aucune suggestion - créez un nouveau produit.",
+        "NO_UNLINKED": "Tous les accessoires sont rattachés."
     },
     "COMPAT_EDITORS": {
         "TITLE": "Éditeurs de compatibilité",

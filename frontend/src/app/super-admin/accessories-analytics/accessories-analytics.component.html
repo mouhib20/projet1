@@ -1,0 +1,340 @@
+<div class="analytics-page">
+
+    <div class="page-header">
+        <div>
+            <div class="page-title">🎧 {{ 'ACC_ANALYTICS.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'ACC_ANALYTICS.SUBTITLE' | translate }}</div>
+        </div>
+        <div class="header-boutons">
+            <button class="btn btn-secondary btn-sm" [disabled]="recalculating" (click)="recalculerMaintenant()">
+                🔄 {{ (recalculating ? 'ACC_ANALYTICS.RECALCULATING' : 'ACC_ANALYTICS.RECALC_NOW') | translate }}
+            </button>
+            <button class="btn btn-secondary" (click)="goToMarketAnalytics()">📊 {{ 'SUPER_ADMIN.MARKET_ANALYTICS_LINK' | translate }}</button>
+            <button class="btn btn-secondary" (click)="goBack()">🏬 {{ 'MARKET_ANALYTICS.BACK_TO_STORES' | translate }}</button>
+            <button class="btn btn-secondary" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
+        </div>
+    </div>
+
+    <div class="alert alert-success" *ngIf="recalcMsg === 'ACC_ANALYTICS.RECALC_SUCCESS'">✅ {{ recalcMsg | translate }}</div>
+    <div class="alert alert-error" *ngIf="recalcMsg && recalcMsg !== 'ACC_ANALYTICS.RECALC_SUCCESS'">⚠️ {{ recalcMsg | translate }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+        <div class="filter-group">
+            <label>{{ 'MARKET_ANALYTICS.PERIOD_LABEL' | translate }}</label>
+            <select [(ngModel)]="filtres.periode" (ngModelChange)="setPeriode($event)">
+                <option value="week">{{ 'MARKET_ANALYTICS.PERIOD_WEEK' | translate }}</option>
+                <option value="month">{{ 'MARKET_ANALYTICS.PERIOD_MONTH' | translate }}</option>
+                <option value="quarter">{{ 'MARKET_ANALYTICS.PERIOD_QUARTER' | translate }}</option>
+                <option value="year">{{ 'MARKET_ANALYTICS.PERIOD_YEAR' | translate }}</option>
+                <option value="custom">{{ 'MARKET_ANALYTICS.PERIOD_CUSTOM' | translate }}</option>
+            </select>
+        </div>
+        <ng-container *ngIf="filtres.periode === 'custom'">
+            <div class="filter-group">
+                <label>{{ 'MARKET_ANALYTICS.FROM_LABEL' | translate }}</label>
+                <input type="date" [(ngModel)]="filtres.dateDebut" (change)="applyFilters()">
+            </div>
+            <div class="filter-group">
+                <label>{{ 'MARKET_ANALYTICS.TO_LABEL' | translate }}</label>
+                <input type="date" [(ngModel)]="filtres.dateFin" (change)="applyFilters()">
+            </div>
+        </ng-container>
+        <div class="filter-group">
+            <label>{{ 'ACC_ANALYTICS.CATEGORY_LABEL' | translate }}</label>
+            <select [(ngModel)]="filtres.categorie" (ngModelChange)="applyFilters()">
+                <option [ngValue]="undefined">{{ 'MARKET_ANALYTICS.ALL' | translate }}</option>
+                <option *ngFor="let c of categories" [ngValue]="c">{{ c }}</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>{{ 'MARKET_ANALYTICS.BRAND_LABEL' | translate }}</label>
+            <select [(ngModel)]="filtres.marque" (ngModelChange)="applyFilters()">
+                <option [ngValue]="undefined">{{ 'MARKET_ANALYTICS.ALL' | translate }}</option>
+                <option *ngFor="let m of marques" [ngValue]="m">{{ m }}</option>
+            </select>
+        </div>
+        <div class="filter-group" *ngIf="wilayas.length">
+            <label>{{ 'MARKET_ANALYTICS.WILAYA_LABEL' | translate }}</label>
+            <select [(ngModel)]="filtres.wilaya" (ngModelChange)="applyFilters()">
+                <option [ngValue]="undefined">{{ 'MARKET_ANALYTICS.ALL' | translate }}</option>
+                <option *ngFor="let w of wilayas" [ngValue]="w">{{ w }}</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-row">
+        <button class="tab-btn" [class.active]="activeTab === 'resume'" (click)="setTab('resume')">📋 {{ 'ACC_ANALYTICS.TAB_SUMMARY' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'top'" (click)="setTab('top')">🏆 {{ 'ACC_ANALYTICS.TAB_TOP' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'fournisseurs'" (click)="setTab('fournisseurs')">🚚 {{ 'MARKET_ANALYTICS.TAB_SUPPLIERS' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'gros'" (click)="setTab('gros')">📦 {{ 'MARKET_ANALYTICS.TAB_WHOLESALE' | translate }}</button>
+        <button class="tab-btn" [class.active]="activeTab === 'nonLies'" (click)="setTab('nonLies')">🔗 {{ 'ACC_ANALYTICS.TAB_UNLINKED' | translate }}</button>
+        <button class="btn btn-secondary btn-sm export-btn" (click)="exportCsv()">⬇️ CSV</button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="loading">
+        <div class="loading-icon">⟳</div>
+        <strong>{{ 'MARKET_ANALYTICS.LOADING' | translate }}</strong>
+    </div>
+
+    <!-- Tab 1: Summary -->
+    <div class="table-container" *ngIf="!loading && activeTab === 'resume' && resume">
+        <table class="modern-table" *ngIf="resume.parCategorie.length; else emptyResume">
+            <thead>
+                <tr>
+                    <th>{{ 'ACC_ANALYTICS.COL_CATEGORY' | translate }}</th>
+                    <th class="text-center">{{ 'MARKET_ANALYTICS.COL_QTY_SOLD' | translate }}</th>
+                    <th class="text-center">{{ 'ACC_ANALYTICS.COL_REVENUE' | translate }}</th>
+                    <th class="text-center">{{ 'ACC_ANALYTICS.COL_PROFIT' | translate }}</th>
+                    <th class="text-center">{{ 'ACC_ANALYTICS.COL_MARGIN' | translate }}</th>
+                    <th>{{ 'ACC_ANALYTICS.COL_BEST_SELLER' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let c of resume.parCategorie">
+                    <td class="fw-bold">{{ c.categorie }}</td>
+                    <td class="text-center">{{ c.qte_vendue }}</td>
+                    <td class="text-center">{{ c.revenus }}</td>
+                    <td class="text-center">{{ c.profit }}</td>
+                    <td class="text-center">{{ c.marge_pct != null ? c.marge_pct + '%' : '—' }}</td>
+                    <td>
+                        <ng-container *ngIf="c.meilleur_produit">{{ c.meilleur_produit.marque }} {{ c.meilleur_produit.nom }}</ng-container>
+                        <ng-container *ngIf="!c.meilleur_produit">—</ng-container>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <ng-template #emptyResume>
+            <div class="empty-state"><div class="empty-icon">📭</div>{{ 'MARKET_ANALYTICS.EMPTY' | translate }}</div>
+        </ng-template>
+
+        <ng-container *ngIf="resume.top10Qte.length">
+            <div class="detail-section-title">{{ 'ACC_ANALYTICS.TOP10_QTY' | translate }}</div>
+            <table class="modern-table">
+                <thead><tr><th>{{ 'ACC_ANALYTICS.COL_PRODUCT' | translate }}</th><th class="text-center">{{ 'MARKET_ANALYTICS.COL_QTY_SOLD' | translate }}</th></tr></thead>
+                <tbody>
+                    <tr *ngFor="let p of resume.top10Qte">
+                        <td>{{ p.marque }} {{ p.nom }}</td>
+                        <td class="text-center">{{ p.qte_vendue }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </ng-container>
+
+        <ng-container *ngIf="resume.top10Profit.length">
+            <div class="detail-section-title">{{ 'ACC_ANALYTICS.TOP10_PROFIT' | translate }}</div>
+            <table class="modern-table">
+                <thead><tr><th>{{ 'ACC_ANALYTICS.COL_PRODUCT' | translate }}</th><th class="text-center">{{ 'ACC_ANALYTICS.COL_PROFIT' | translate }}</th></tr></thead>
+                <tbody>
+                    <tr *ngFor="let p of resume.top10Profit">
+                        <td>{{ p.marque }} {{ p.nom }}</td>
+                        <td class="text-center">{{ p.profit }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </ng-container>
+    </div>
+
+    <!-- Tab 2: Top products -->
+    <div class="table-container" *ngIf="!loading && activeTab === 'top'">
+        <table class="modern-table" *ngIf="topProduits.length; else emptyTop">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>{{ 'ACC_ANALYTICS.COL_CATEGORY' | translate }}</th>
+                    <th>{{ 'MARKET_ANALYTICS.COL_BRAND_MODEL' | translate }}</th>
+                    <th>{{ 'ACC_ANALYTICS.COL_BARCODE' | translate }}</th>
+                    <th class="text-center">{{ 'MARKET_ANALYTICS.COL_QTY_SOLD' | translate }}</th>
+                    <th class="text-center">{{ 'MARKET_ANALYTICS.COL_NB_STORES' | translate }}</th>
+                    <th class="text-center">{{ 'MARKET_ANALYTICS.COL_BUY_PRICE' | translate }}</th>
+                    <th class="text-center">{{ 'MARKET_ANALYTICS.COL_SELL_PRICE' | translate }}</th>
+                    <th class="text-center">{{ 'ACC_ANALYTICS.COL_MARGIN' | translate }}</th>
+                    <th>{{ 'MARKET_ANALYTICS.COL_CHEAPEST_SUPPLIER' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <ng-container *ngFor="let p of topProduits">
+                    <tr (click)="toggleDetail(p)" class="clickable-row">
+                        <td><img *ngIf="imageUrl(p.image)" [src]="imageUrl(p.image)" class="thumb"></td>
+                        <td>{{ p.categorie }}</td>
+                        <td class="fw-bold">{{ p.marque }} {{ p.nom }}</td>
+                        <td>{{ p.barcode || '—' }}</td>
+                        <td class="text-center">{{ p.qte_vendue }}</td>
+                        <td class="text-center">{{ p.nb_magasins }}</td>
+                        <td class="text-center">
+                            <ng-container *ngIf="p.prix_achat_moyen != null">{{ p.prix_achat_moyen }} ({{ p.prix_achat_min }}–{{ p.prix_achat_max }})</ng-container>
+                        </td>
+                        <td class="text-center">
+                            <ng-container *ngIf="p.prix_vente_moyen != null">{{ p.prix_vente_moyen }} ({{ p.prix_vente_min }}–{{ p.prix_vente_max }})</ng-container>
+                        </td>
+                        <td class="text-center">{{ p.marge_pct != null ? p.marge_pct + '%' : '—' }}</td>
+                        <td>
+                            <a *ngIf="p.moins_cher_fournisseur as f" [href]="waLink(f.telephone)" target="_blank" (click)="$event.stopPropagation()">{{ f.nom }} — {{ f.prix_moyen }} 💬</a>
+                            <span *ngIf="!p.moins_cher_fournisseur">—</span>
+                        </td>
+                    </tr>
+                    <tr *ngIf="detailOpenId === p.id_produit" class="detail-row">
+                        <td colspan="10">
+                            <div class="detail-panel" *ngIf="!detailLoading && detail">
+                                <div class="detail-section-title">{{ 'MARKET_ANALYTICS.DETAIL_MONTHLY' | translate }}</div>
+                                <table class="modern-table" *ngIf="detail.parMois.length">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ 'MARKET_ANALYTICS.COL_MONTH' | translate }}</th>
+                                            <th class="text-center">{{ 'MARKET_ANALYTICS.COL_QTY_SOLD' | translate }}</th>
+                                            <th class="text-center">{{ 'MARKET_ANALYTICS.COL_NB_STORES' | translate }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngFor="let m of detail.parMois">
+                                            <td>{{ m.mois }}</td>
+                                            <td class="text-center">{{ m.qte_vendue }}</td>
+                                            <td class="text-center">{{ m.nb_magasins }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div class="detail-section-title">{{ 'MARKET_ANALYTICS.DETAIL_SUPPLIERS' | translate }}</div>
+                                <ul class="suppliers-list" *ngIf="detail.fournisseurs.length; else noSuppliers">
+                                    <li *ngFor="let f of detail.fournisseurs">
+                                        {{ f.nom }} — {{ f.prix_moyen }} — <a [href]="waLink(f.telephone)" target="_blank">💬 {{ f.telephone }}</a>
+                                    </li>
+                                </ul>
+                                <ng-template #noSuppliers><div class="empty-hint">{{ 'MARKET_ANALYTICS.NO_SUPPLIERS' | translate }}</div></ng-template>
+                            </div>
+                            <div class="loading-state" *ngIf="detailLoading"><div class="loading-icon">⟳</div></div>
+                        </td>
+                    </tr>
+                </ng-container>
+            </tbody>
+        </table>
+        <ng-template #emptyTop>
+            <div class="empty-state"><div class="empty-icon">📭</div>{{ 'MARKET_ANALYTICS.EMPTY' | translate }}</div>
+        </ng-template>
+    </div>
+
+    <!-- Tab 3: Suppliers -->
+    <div class="table-container" *ngIf="!loading && activeTab === 'fournisseurs'">
+        <table class="modern-table" *ngIf="fournisseurs.length; else emptyFourn">
+            <thead>
+                <tr>
+                    <th>{{ 'MARKET_ANALYTICS.COL_SUPPLIER' | translate }}</th>
+                    <th>{{ 'MARKET_ANALYTICS.COL_PHONE' | translate }}</th>
+                    <th>{{ 'ACC_ANALYTICS.COL_CATEGORY' | translate }}</th>
+                    <th>{{ 'ACC_ANALYTICS.COL_PRODUCT' | translate }}</th>
+                    <th class="text-center">{{ 'MARKET_ANALYTICS.COL_PRICE' | translate }}</th>
+                    <th class="text-center">{{ 'MARKET_ANALYTICS.COL_NB_STORES' | translate }}</th>
+                    <th>{{ 'MARKET_ANALYTICS.COL_LAST_PURCHASE' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let f of fournisseurs" [class.cheapest-row]="f.moins_cher">
+                    <td class="fw-bold">{{ f.nom }}</td>
+                    <td><a [href]="waLink(f.telephone)" target="_blank">💬 {{ f.telephone }}</a></td>
+                    <td>{{ f.categorie }}</td>
+                    <td>{{ f.marque }} {{ f.nom_produit }}</td>
+                    <td class="text-center">{{ f.prix_moyen }} <span class="badge-cheapest" *ngIf="f.moins_cher">{{ 'MARKET_ANALYTICS.CHEAPEST' | translate }}</span></td>
+                    <td class="text-center">{{ f.nb_magasins }}</td>
+                    <td>{{ f.derniere_date | date:'yyyy-MM-dd' }}</td>
+                </tr>
+            </tbody>
+        </table>
+        <ng-template #emptyFourn>
+            <div class="empty-state"><div class="empty-icon">📭</div>{{ 'MARKET_ANALYTICS.EMPTY' | translate }}</div>
+        </ng-template>
+    </div>
+
+    <!-- Tab 4: Wholesale recommendations -->
+    <div class="table-container" *ngIf="!loading && activeTab === 'gros'">
+        <table class="modern-table" *ngIf="recommandations.length; else emptyGros">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>{{ 'ACC_ANALYTICS.COL_CATEGORY' | translate }}</th>
+                    <th>{{ 'MARKET_ANALYTICS.COL_BRAND_MODEL' | translate }}</th>
+                    <th class="text-center">{{ 'MARKET_ANALYTICS.COL_SCORE' | translate }}</th>
+                    <th class="text-center">{{ 'MARKET_ANALYTICS.COL_SUGGESTED_QTY' | translate }}</th>
+                    <th class="text-center">{{ 'ACC_ANALYTICS.COL_MARGIN' | translate }}</th>
+                    <th class="text-center">{{ 'ACC_ANALYTICS.COL_STOCKOUT_DAYS' | translate }}</th>
+                    <th class="text-center">{{ 'ACC_ANALYTICS.COL_TREND' | translate }}</th>
+                    <th>{{ 'MARKET_ANALYTICS.COL_CHEAPEST_SUPPLIER' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let r of recommandations">
+                    <td><img *ngIf="imageUrl(r.image)" [src]="imageUrl(r.image)" class="thumb"></td>
+                    <td>{{ r.categorie }}</td>
+                    <td class="fw-bold">{{ r.marque }} {{ r.nom }}</td>
+                    <td class="text-center fw-bold">{{ r.score }}</td>
+                    <td class="text-center">{{ r.quantite_suggeree_mois }}</td>
+                    <td class="text-center">{{ r.marge_pct != null ? r.marge_pct + '%' : '—' }}</td>
+                    <td class="text-center">{{ r.jours_rupture }}</td>
+                    <td class="text-center">
+                        <span *ngIf="r.tendance === 'hausse'">📈</span>
+                        <span *ngIf="r.tendance === 'baisse'">📉</span>
+                        <span *ngIf="r.tendance === 'stable'">➡️</span>
+                    </td>
+                    <td>
+                        <a *ngIf="r.moins_cher_fournisseur as f" [href]="waLink(f.telephone)" target="_blank">{{ f.nom }} — {{ f.prix_moyen }} 💬</a>
+                        <span *ngIf="!r.moins_cher_fournisseur">—</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <ng-template #emptyGros>
+            <div class="empty-state"><div class="empty-icon">📭</div>{{ 'MARKET_ANALYTICS.EMPTY' | translate }}</div>
+        </ng-template>
+    </div>
+
+    <!-- Tab 5: Unlinked -->
+    <div class="table-container" *ngIf="!loading && activeTab === 'nonLies'">
+        <table class="modern-table" *ngIf="nonLies.length; else emptyNonLies">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>{{ 'ACC_ANALYTICS.COL_PRODUCT' | translate }}</th>
+                    <th>{{ 'ACC_ANALYTICS.COL_CATEGORY' | translate }}</th>
+                    <th>{{ 'ACC_ANALYTICS.COL_BARCODE' | translate }}</th>
+                    <th class="text-center">{{ 'MARKET_ANALYTICS.COL_ACTIONS' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <ng-container *ngFor="let a of nonLies">
+                    <tr>
+                        <td><img *ngIf="imageUrl(a.image)" [src]="imageUrl(a.image)" class="thumb"></td>
+                        <td class="fw-bold">{{ a.marque }} {{ a.designation }}</td>
+                        <td>{{ a.sous_categorie }}</td>
+                        <td>{{ a.barcode || '—' }}</td>
+                        <td class="text-center">
+                            <button class="btn-outline btn-sm" (click)="startLink(a)">🔗 {{ 'ACC_ANALYTICS.BTN_LINK' | translate }}</button>
+                        </td>
+                    </tr>
+                    <tr *ngIf="linkingArticleId === a.id_article" class="detail-row">
+                        <td colspan="5">
+                            <div class="detail-panel">
+                                <div class="detail-section-title">{{ 'ACC_ANALYTICS.SUGGESTIONS_TITLE' | translate }}</div>
+                                <div class="loading-state" *ngIf="suggestionsLoading"><div class="loading-icon">⟳</div></div>
+                                <div class="suggestions-row" *ngIf="!suggestionsLoading">
+                                    <button class="btn-outline btn-sm" *ngFor="let s of suggestions" (click)="linkToSuggestion(s)">
+                                        {{ s.marque }} {{ s.nom }}
+                                    </button>
+                                    <span class="empty-hint" *ngIf="!suggestions.length">{{ 'ACC_ANALYTICS.NO_SUGGESTIONS' | translate }}</span>
+                                </div>
+                                <div class="form-actions-row">
+                                    <button class="btn btn-primary btn-sm" (click)="linkAsNewProduct(a)">＋ {{ 'ACC_ANALYTICS.BTN_NEW_PRODUCT' | translate }}</button>
+                                    <button class="btn-outline btn-sm" (click)="cancelLink()">{{ 'CANCEL' | translate }}</button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-container>
+            </tbody>
+        </table>
+        <ng-template #emptyNonLies>
+            <div class="empty-state"><div class="empty-icon">✅</div>{{ 'ACC_ANALYTICS.NO_UNLINKED' | translate }}</div>
+        </ng-template>
+    </div>
+
+</div>

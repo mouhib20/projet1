@@ -50,6 +50,12 @@ export class Article {
     @Column({ nullable: true })
     compat_group_id: number | null;
 
+    /** Optional link to the shared accessory catalogue (accessoire_produit.id) - see
+     *  AdminAccessoriesAnalyticsService. Accessory equivalent of compat_group_id, filled by that
+     *  service's nightly auto-link pass or by a manual link, never by the article create/edit flow. */
+    @Column({ nullable: true })
+    accessoire_produit_id: number | null;
+
     /** Kept fresh by a DB trigger (set_updated_at) regardless of ORM or raw-SQL updates - drives the
      *  offline mode's incremental sync (ArticlesService.syncDepuis). */
     @Column({ type: 'timestamp' })

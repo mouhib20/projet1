@@ -9,6 +9,7 @@
             <button class="btn btn-secondary btn-sm" [disabled]="recalculating" (click)="recalculerMaintenant()">
                 🔄 {{ (recalculating ? 'MARKET_ANALYTICS.RECALCULATING' : 'MARKET_ANALYTICS.RECALC_NOW') | translate }}
             </button>
+            <button class="btn btn-secondary" (click)="goToAccessories()">🎧 {{ 'SUPER_ADMIN.ACC_ANALYTICS_LINK' | translate }}</button>
             <button class="btn btn-secondary" (click)="goBack()">🏬 {{ 'MARKET_ANALYTICS.BACK_TO_STORES' | translate }}</button>
             <button class="btn btn-secondary" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
         </div>

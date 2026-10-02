@@ -459,6 +459,57 @@ async function migrer(): Promise<void> {
         await client.query(`CREATE INDEX IF NOT EXISTS "article_compat_group_id_idx" ON "article" ("compat_group_id")`);
         await client.query(`CREATE INDEX IF NOT EXISTS "fournisseur_tel_idx" ON "fournisseur" ("tel")`);
 
+        // Accessories analytics (super_admin's cross-store "what sells, what to stock wholesale"
+        // page for accessories - a separate catalogue from the compat/parts one, since accessories
+        // aren't tied to a device model). No shared reference catalogue existed for them at all
+        // (unlike parts, which already had brand/device_model/compat_group) - accessoire_produit is
+        // that catalogue, built fresh by AdminAccessoriesAnalyticsService's nightly auto-link pass
+        // (by barcode first, else category+brand+cleaned-name) instead of by hand like compat's.
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "accessoire_produit" (
+                "id" SERIAL PRIMARY KEY,
+                "categorie" character varying(100) NOT NULL,
+                "marque" character varying(150),
+                "nom" character varying(255) NOT NULL,
+                "barcode" character varying(100),
+                "image" character varying(255),
+                "date_creation" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS "accessoire_produit_barcode_idx" ON "accessoire_produit" ("barcode")`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "accessoire_produit_match_idx" ON "accessoire_produit" ("categorie", "marque", "nom")`);
+
+        // No FK constraint - same deliberate choice as article.compat_group_id (a deleted product
+        // shouldn't block deleting/keeping the article, and this column is written by a batch
+        // process, not the interactive article create/edit flow).
+        await client.query(`ALTER TABLE "article" ADD COLUMN IF NOT EXISTS "accessoire_produit_id" integer`);
+        await client.query(`CREATE INDEX IF NOT EXISTS "article_accessoire_produit_id_idx" ON "article" ("accessoire_produit_id")`);
+
+        // Daily rollup per accessoire_produit PER STORE, same grain and reasoning as
+        // analytics_resume_quotidien (see its own migration comment above). en_rupture is a same-day
+        // snapshot (SUM(quantite) = 0 for that product+store at the moment the nightly job runs),
+        // not a historical reconstruction - "days out of stock" can only start accumulating from
+        // whenever this first runs, never retroactively (no stock-level history exists before it).
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "accessoire_resume_quotidien" (
+                "date_jour" date NOT NULL,
+                "id_produit" integer NOT NULL,
+                "id_magasin" integer NOT NULL,
+                "qte_vendue" integer NOT NULL DEFAULT 0,
+                "montant_vente_total" numeric(12,2) NOT NULL DEFAULT 0,
+                "prix_vente_min" numeric(10,2),
+                "prix_vente_max" numeric(10,2),
+                "montant_achat_total" numeric(12,2) NOT NULL DEFAULT 0,
+                "qte_achat_total" integer NOT NULL DEFAULT 0,
+                "prix_achat_min" numeric(10,2),
+                "prix_achat_max" numeric(10,2),
+                "en_rupture" boolean NOT NULL DEFAULT false,
+                "date_calcul" timestamp NOT NULL DEFAULT now(),
+                PRIMARY KEY ("date_jour", "id_produit", "id_magasin")
+            )
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS "accessoire_resume_quotidien_produit_idx" ON "accessoire_resume_quotidien" ("id_produit")`);
+
         // Seed a super_admin account if requested and none exists yet (idempotent, every boot)
         const superAdminPwd = process.env.SEED_SUPER_ADMIN_PASSWORD || '';
         if (superAdminPwd.length >= 10) {
