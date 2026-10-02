@@ -1,10 +1,15 @@
-import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import * as bcrypt from 'bcrypt';
 import * as AdmZip from 'adm-zip';
 import { parse as parseCsv } from 'csv-parse/sync';
-import sharp from 'sharp';
+import * as sharp from 'sharp';
+// sharp's CJS export is the callable function itself (no `.default`) - `import sharp from 'sharp'`
+// compiles to expect one and silently fails at runtime ("sharp_1.default is not a function"),
+// while `import * as sharp` is typed as a non-callable namespace. This is the real, callable thing.
+const creerImage = sharp as unknown as (input: Buffer) => sharp.Sharp;
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { Utilisateur } from '../users/user.entity';
@@ -32,8 +37,8 @@ const PART_TYPE_MAP: Record<string, { nom_fr: string; nom_en: string; nom_ar: st
 const COLUMN_SYNONYMS: Record<string, string[]> = {
     marque: ['marque', 'brand', 'الماركة'],
     modele: ['موديل', 'model', 'modele', 'modelname', 'name', 'nom', 'الموديل'],
-    code: ['رمز', 'code', 'modelcode'],
-    image: ['صورة', 'image', 'photo', 'imagefile', 'filename', 'file', 'اسمملفالصورة'],
+    code: ['رمز', 'الرمز', 'code', 'modelcode'],
+    image: ['صورة', 'image', 'photo', 'imagefile', 'filename', 'file', 'اسمملفالصورة', 'اسمالصورة'],
 };
 
 function normaliserEntete(h: string): string {
@@ -147,6 +152,8 @@ export interface CompatibilitiesResult {
 
 @Injectable()
 export class CompatImportService {
+    private readonly logger = new Logger(CompatImportService.name);
+
     constructor(
         @InjectRepository(Utilisateur)
         private readonly usersRepo: Repository<Utilisateur>,
@@ -154,6 +161,33 @@ export class CompatImportService {
         private readonly caisseService: CaisseService,
         private readonly compatibilityService: CompatibilityService,
     ) { }
+
+    /** A preview the user never confirms (abandoned tab, browser closed, chose not to import)
+     *  leaves its uploaded file behind forever otherwise - a real export can be in the hundreds of
+     *  MB, so this isn't just tidiness. Sweeps anything older than 24h once a day. */
+    @Cron(CronExpression.EVERY_DAY_AT_4AM)
+    async nettoyerFichiersTempAbandonnes(): Promise<void> {
+        const UN_JOUR_MS = 24 * 60 * 60 * 1000;
+        let fichiers: string[];
+        try {
+            fichiers = await fs.readdir(TMP_DIR);
+        } catch {
+            return; // folder not created yet (fresh boot, nothing imported since) - nothing to do
+        }
+        const maintenant = Date.now();
+        for (const fichier of fichiers) {
+            const chemin = join(TMP_DIR, fichier);
+            try {
+                const stats = await fs.stat(chemin);
+                if (maintenant - stats.mtimeMs > UN_JOUR_MS) {
+                    await fs.unlink(chemin);
+                    this.logger.log(`Fichier d'import abandonné supprimé : ${fichier}`);
+                }
+            } catch {
+                // already gone, or a transient fs error - either way, nothing more to do for this one
+            }
+        }
+    }
 
     // ── Access checks ────────────────────────────────────────────
 
@@ -264,7 +298,7 @@ export class CompatImportService {
             }
         }
 
-        const rootCsv = entries.find(e => !e.entryName.includes('/') && e.entryName.toLowerCase() === 'all_models.csv');
+        const rootCsv = entries.find(e => this.basename(e.entryName).toLowerCase() === 'all_models.csv');
         const resultats: { marque: string; lignes: ModeleLigne[]; logo: Buffer | null; erreurs: string[]; images: Map<string, AdmZip.IZipEntry> }[] = [];
 
         if (rootCsv) {
@@ -285,26 +319,32 @@ export class CompatImportService {
             return resultats;
         }
 
-        const dossiers = new Map<string, { csv?: AdmZip.IZipEntry; logo?: AdmZip.IZipEntry; images: Map<string, AdmZip.IZipEntry> }>();
+        // A brand folder is identified by WHERE its models.csv sits, not by assuming it's the first
+        // path segment - the real export wraps every brand folder in one extra top-level directory
+        // (e.g. "export/SAMSUNG/models.csv"), so "first segment = brand" would have lumped every
+        // brand under a single fake "export" brand. Taking the csv's own parent folder name works
+        // regardless of how deeply nested it is, including with no wrapper at all ("SAMSUNG/models.csv").
+        const dossiers: { marque: string; folderPath: string; csv: AdmZip.IZipEntry; logo?: AdmZip.IZipEntry; images: Map<string, AdmZip.IZipEntry> }[] = [];
         for (const e of entries) {
-            const slash = e.entryName.indexOf('/');
-            if (slash === -1) continue; // stray root file other than all_models.csv - ignored, not an error
-            const dossier = e.entryName.substring(0, slash);
-            if (!dossiers.has(dossier)) dossiers.set(dossier, { images: new Map() });
-            const info = dossiers.get(dossier)!;
+            if (this.basename(e.entryName).toLowerCase() !== 'models.csv') continue;
+            const folderPath = e.entryName.slice(0, e.entryName.length - 'models.csv'.length); // e.g. "export/SAMSUNG/"
+            const sansSlashFinal = folderPath.endsWith('/') ? folderPath.slice(0, -1) : folderPath;
+            dossiers.push({ marque: this.basename(sansSlashFinal), folderPath, csv: e, images: new Map() });
+        }
+        for (const e of entries) {
             const base = this.basename(e.entryName);
-            if (base.toLowerCase() === 'models.csv') info.csv = e;
-            else if (base.toLowerCase() === '_logo.png') info.logo = e;
-            else if (/\.(png|jpe?g|webp)$/i.test(base)) info.images.set(base.toLowerCase(), e);
+            if (base.toLowerCase() === 'models.csv') continue;
+            // Must sit DIRECTLY inside that brand's folder (no further '/'), so an unrelated nested
+            // structure elsewhere in the archive never gets attributed to the wrong brand.
+            const dossier = dossiers.find(d => e.entryName.startsWith(d.folderPath) && !e.entryName.slice(d.folderPath.length).includes('/'));
+            if (!dossier) continue;
+            if (base.toLowerCase() === '_logo.png') dossier.logo = e;
+            else if (/\.(png|jpe?g|webp)$/i.test(base)) dossier.images.set(base.toLowerCase(), e);
         }
 
-        for (const [marque, info] of dossiers) {
-            if (!info.csv) {
-                resultats.push({ marque, lignes: [], logo: null, erreurs: [`Dossier "${marque}" : models.csv introuvable.`], images: info.images });
-                continue;
-            }
-            const { lignes, erreurs } = this.lireCsvMarque(info.csv.getData(), marque);
-            resultats.push({ marque, lignes, logo: info.logo?.getData() ?? null, erreurs, images: info.images });
+        for (const d of dossiers) {
+            const { lignes, erreurs } = this.lireCsvMarque(d.csv.getData(), d.marque);
+            resultats.push({ marque: d.marque, lignes, logo: d.logo?.getData() ?? null, erreurs, images: d.images });
         }
         return resultats;
     }
@@ -383,7 +423,7 @@ export class CompatImportService {
                 let thumbnail: string | null = null;
                 if (imageEntry) {
                     try {
-                        const buf = await sharp(imageEntry.getData()).resize({ width: 48 }).jpeg({ quality: 60 }).toBuffer();
+                        const buf = await creerImage(imageEntry.getData()).resize({ width: 48 }).jpeg({ quality: 60 }).toBuffer();
                         thumbnail = `data:image/jpeg;base64,${buf.toString('base64')}`;
                     } catch { /* thumbnail is cosmetic only - a bad image file is still reported via aUneImage/erreurs at confirm time */ }
                 }
@@ -414,6 +454,11 @@ export class CompatImportService {
         for (const { marque, lignes, logo, images } of parMarque) {
             if (marquesExclues.has(marque.trim().toLowerCase())) { resultat.ignores += lignes.length; continue; }
 
+            // Counted locally and only merged into `resultat` once this brand's transaction actually
+            // commits - a brand that throws partway through rolls back every INSERT it made, and
+            // must report zero of them too, not whatever happened to run before the failure. Without
+            // this, a row that failed (and was rolled back) could still be counted as "added".
+            let brandAjoutes = 0, brandMisAJour = 0, brandIgnores = 0;
             try {
                 await this.dataSource.transaction(async (manager) => {
                     const { id: idBrand } = await this.compatibilityService.creerMarqueInterne({ nom: marque }, manager);
@@ -427,7 +472,7 @@ export class CompatImportService {
 
                     for (const ligne of lignes) {
                         const cle = this.cleModele(marque, ligne.modele, ligne.code);
-                        if (modelesExclus.has(cle)) { resultat.ignores++; continue; }
+                        if (modelesExclus.has(cle)) { brandIgnores++; continue; }
 
                         const existant = await this.trouverModele(idBrand, ligne.modele, ligne.code);
                         let imageUrl: string | undefined;
@@ -447,9 +492,12 @@ export class CompatImportService {
                             image: imageUrl,
                         }, manager);
 
-                        if (existant) resultat.misAJour++; else resultat.ajoutes++;
+                        if (existant) brandMisAJour++; else brandAjoutes++;
                     }
                 });
+                resultat.ajoutes += brandAjoutes;
+                resultat.misAJour += brandMisAJour;
+                resultat.ignores += brandIgnores;
             } catch (e: any) {
                 resultat.erreurs.push({ marque, message: e.message || String(e) });
             }
@@ -463,7 +511,7 @@ export class CompatImportService {
     /** Resizes/compresses to webp (max width 400px) and saves into the same folder/naming scheme
      *  the rest of the compat catalogue's model photos already use. */
     private async enregistrerImage(buffer: Buffer): Promise<string> {
-        const resized = await sharp(buffer).resize({ width: 400, withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
+        const resized = await creerImage(buffer).resize({ width: 400, withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
         const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}.webp`;
         await fs.writeFile(join(MODELS_DIR, filename), resized);
         return `/uploads/compat-models/${filename}`;

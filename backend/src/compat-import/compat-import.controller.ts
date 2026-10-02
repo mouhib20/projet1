@@ -4,8 +4,10 @@ import { promises as fs } from 'fs';
 import { CompatImportService, BrandsModelsSelections, CompatibilitiesSelections } from './compat-import.service';
 import { importUploadOptions } from './import-upload.util';
 
-const ZIP_MAX_BYTES = 50 * 1024 * 1024;
-const COMPAT_FILE_MAX_BYTES = 20 * 1024 * 1024;
+// Real-world exports from the extractor app run into the hundreds of MB (thousands of device
+// photos) - the limit exists to reject garbage/attack uploads, not to constrain a legitimate export.
+const ZIP_MAX_BYTES = 1024 * 1024 * 1024;
+const COMPAT_FILE_MAX_BYTES = 50 * 1024 * 1024;
 
 @Controller('compat-import')
 export class CompatImportController {

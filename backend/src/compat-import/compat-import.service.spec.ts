@@ -156,6 +156,37 @@ describe('CompatImportService', () => {
                 expect(preview.marques.map(m => m.marque).sort()).toEqual(['OPPO', 'SAMSUNG']);
             } finally { require('fs').unlinkSync(file); }
         });
+
+        it('finds each brand by its own models.csv location, not by assuming it is the first path segment (real exports wrap every brand in one extra top-level folder)', async () => {
+            dataSource.query.mockResolvedValue([]);
+            const zip = buildZip([
+                { path: 'export/SAMSUNG/models.csv', content: 'الماركة,الموديل,الرمز,اسم ملف الصورة\nSAMSUNG,Galaxy A12,SM-A125F,a12.png\n' },
+                { path: 'export/SAMSUNG/a12.png', content: Buffer.from([0xff, 0xd8, 0xff]) },
+                { path: 'export/OPPO/models.csv', content: 'الماركة,الموديل,الرمز,اسم ملف الصورة\nOPPO,A5,CPH1920,\n' },
+            ]);
+            const file = tmpZipFile(zip);
+            try {
+                const preview = await service.previsualiserMarquesModeles(file, 'export.zip', 'Bearer x');
+                expect(preview.marques.map(m => m.marque).sort()).toEqual(['OPPO', 'SAMSUNG']);
+                expect(preview.erreursFichier).toEqual([]);
+                const samsungModel = preview.modeles.find(m => m.marque === 'SAMSUNG');
+                expect(samsungModel).toEqual(expect.objectContaining({ modele: 'Galaxy A12', code: 'SM-A125F', aUneImage: true }));
+            } finally { require('fs').unlinkSync(file); }
+        });
+
+        it('matches the real extractor app\'s Arabic column headers, including "الرمز" for the code', async () => {
+            dataSource.query.mockResolvedValue([]);
+            const zip = buildZip([{
+                path: 'SAMSUNG/models.csv',
+                content: '﻿الماركة,الموديل,الرمز,النص الأصلي,اسم ملف الصورة\nSAMSUNG,Galaxy A02S,SM-A025F/DS,Galaxy  A02S (SM-A025F/DS ),Galaxy  A02S (SM-A025F-DS ).png\n',
+            }]);
+            const file = tmpZipFile(zip);
+            try {
+                const preview = await service.previsualiserMarquesModeles(file, 'export.zip', 'Bearer x');
+                expect(preview.erreursFichier).toEqual([]);
+                expect(preview.modeles[0]).toEqual(expect.objectContaining({ marque: 'SAMSUNG', modele: 'Galaxy A02S', code: 'SM-A025F/DS' }));
+            } finally { require('fs').unlinkSync(file); }
+        });
     });
 
     describe('confirmerMarquesModeles() — image-overwrite rule and idempotency', () => {
@@ -186,6 +217,63 @@ describe('CompatImportService', () => {
                 }
                 const call = compatibilityService.creerModeleInterne.mock.calls[0][0];
                 expect(call.image).toBeUndefined();
+            } finally {
+                require('fs').rmSync(require('path').join(tmpDir, importId), { force: true });
+            }
+        });
+
+        it('actually resizes and saves a real image via sharp for a brand-new model (regression: a broken sharp import silently failed every call before, caught only by checking the real output)', async () => {
+            dataSource.query.mockResolvedValue([]); // brand and model both "not found" - a fresh model
+            compatibilityService.creerMarqueInterne.mockResolvedValue({ id: 7 });
+            compatibilityService.creerModeleInterne.mockResolvedValue({ id: 50 });
+            const sharp = require('sharp');
+            const realPng = await sharp({ create: { width: 20, height: 20, channels: 3, background: { r: 10, g: 20, b: 30 } } }).png().toBuffer();
+            const zip = buildZip([
+                { path: 'SAMSUNG/models.csv', content: 'modele,image\nGalaxy A12,a12.png\n' },
+                { path: 'SAMSUNG/a12.png', content: realPng },
+            ]);
+            const importId = writeToImportTmpDir(zip, '.zip');
+            const fs = require('fs');
+            const path = require('path');
+            const tmpImportDir = path.join(process.cwd(), 'uploads', 'compat-import-tmp');
+            const modelsDir = path.join(process.cwd(), 'uploads', 'compat-models');
+            let savedImageUrl: string | undefined;
+            try {
+                await service.confirmerMarquesModeles(importId, undefined, 'export.zip', 'Bearer x');
+                const call = compatibilityService.creerModeleInterne.mock.calls[0][0];
+                savedImageUrl = call.image;
+                expect(savedImageUrl).toMatch(/^\/uploads\/compat-models\/.+\.webp$/);
+                const savedPath = path.join(modelsDir, path.basename(savedImageUrl!));
+                expect(fs.existsSync(savedPath)).toBe(true);
+                const savedBuf = fs.readFileSync(savedPath);
+                expect(savedBuf.length).toBeGreaterThan(0);
+                const meta = await sharp(savedBuf).metadata();
+                expect(meta.format).toBe('webp');
+                expect(meta.width).toBeLessThanOrEqual(400);
+            } finally {
+                fs.rmSync(path.join(tmpImportDir, importId), { force: true });
+                if (savedImageUrl) fs.rmSync(path.join(modelsDir, path.basename(savedImageUrl)), { force: true });
+            }
+        });
+
+        it('regression: a row that fails partway through a brand must not leave earlier rows in that SAME brand counted as added (they were rolled back with it)', async () => {
+            dataSource.query.mockResolvedValue([]); // brand/model always "not found" - every row looks new
+            compatibilityService.creerMarqueInterne.mockResolvedValue({ id: 7 });
+            // First row's creerModeleInterne call succeeds, second throws - simulating the second
+            // row's image step (or any other failure) aborting the whole per-brand transaction.
+            compatibilityService.creerModeleInterne
+                .mockResolvedValueOnce({ id: 50 })
+                .mockRejectedValueOnce(new Error('simulated failure on the second row'));
+            const zip = buildZip([{ path: 'SAMSUNG/models.csv', content: 'modele\nModel One\nModel Two\n' }]);
+            const importId = writeToImportTmpDir(zip, '.zip');
+            const tmpDir = require('path').join(process.cwd(), 'uploads', 'compat-import-tmp');
+            try {
+                const result = await service.confirmerMarquesModeles(importId, undefined, 'export.zip', 'Bearer x');
+                // Model One succeeded before Model Two's failure aborted the transaction - but since
+                // the WHOLE brand transaction rolls back, Model One's insert never actually committed
+                // either, so the reported count must be 0 added, not 1.
+                expect(result.ajoutes).toBe(0);
+                expect(result.erreurs).toEqual([{ marque: 'SAMSUNG', message: 'simulated failure on the second row' }]);
             } finally {
                 require('fs').rmSync(require('path').join(tmpDir, importId), { force: true });
             }
@@ -311,6 +399,37 @@ describe('CompatImportService', () => {
             } finally {
                 fs.rmSync(path.join(tmpDir, importId), { force: true });
             }
+        });
+    });
+
+    describe('nettoyerFichiersTempAbandonnes() — sweeps stale temp uploads an abandoned preview leaves behind', () => {
+        const fs = require('fs');
+        const path = require('path');
+        const tmpDir = path.join(process.cwd(), 'uploads', 'compat-import-tmp');
+
+        beforeEach(() => fs.mkdirSync(tmpDir, { recursive: true }));
+
+        it('deletes a file older than 24h, keeps a fresh one', async () => {
+            const oldFile = path.join(tmpDir, 'old-test-cleanup.zip');
+            const freshFile = path.join(tmpDir, 'fresh-test-cleanup.zip');
+            fs.writeFileSync(oldFile, 'x');
+            fs.writeFileSync(freshFile, 'x');
+            const oldTime = (Date.now() - 25 * 60 * 60 * 1000) / 1000;
+            fs.utimesSync(oldFile, oldTime, oldTime);
+
+            try {
+                await service.nettoyerFichiersTempAbandonnes();
+                expect(fs.existsSync(oldFile)).toBe(false);
+                expect(fs.existsSync(freshFile)).toBe(true);
+            } finally {
+                fs.rmSync(oldFile, { force: true });
+                fs.rmSync(freshFile, { force: true });
+            }
+        });
+
+        it('does nothing if the temp folder does not exist yet (fresh boot)', async () => {
+            fs.rmSync(tmpDir, { recursive: true, force: true });
+            await expect(service.nettoyerFichiersTempAbandonnes()).resolves.toBeUndefined();
         });
     });
 });
