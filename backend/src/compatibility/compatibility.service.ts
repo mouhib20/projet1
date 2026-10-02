@@ -38,10 +38,12 @@ export class CompatibilityService {
         return acteur;
     }
 
-    /** Writing/editing the shared catalogue: compat_editor accounts, or super_admin. */
+    /** Writing/editing the shared catalogue: compat_editor accounts, compatibility_employee
+     *  accounts (same manual edit rights as compat_editor, granted on explicit request), or
+     *  super_admin. Hard-delete of a group stays super_admin-only (see supprimerGroupe). */
     private async editeurRequis(authorization?: string): Promise<Acteur> {
         const acteur = await this.caisseService.acteurRequis(authorization);
-        if (acteur.role !== 'compat_editor' && acteur.role !== 'super_admin') {
+        if (acteur.role !== 'compat_editor' && acteur.role !== 'compatibility_employee' && acteur.role !== 'super_admin') {
             throw new ForbiddenException("Action réservée aux éditeurs de compatibilité.");
         }
         return acteur;

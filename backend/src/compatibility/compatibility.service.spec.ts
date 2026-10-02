@@ -160,7 +160,7 @@ describe('CompatibilityService', () => {
         });
     });
 
-    describe('editeurRequis (via creerGroupe) — compat_editor or super_admin only', () => {
+    describe('editeurRequis (via creerGroupe) — compat_editor, compatibility_employee or super_admin only', () => {
         it('rejects a regular store admin', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 1, nom: 'X', role: 'admin' });
             await expect(
@@ -174,6 +174,14 @@ describe('CompatibilityService', () => {
             await expect(
                 service.creerGroupe({ id_part_type: 1, id_base_model: 1, modeleIds: [2] }, 'Bearer x'),
             ).resolves.toEqual({ id: 42 });
+        });
+
+        it('allows compatibility_employee the same manual edit rights as compat_editor', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 10, nom: 'Employe', role: 'compatibility_employee' });
+            dataSource.transaction.mockImplementation(async (cb) => cb({ query: jest.fn().mockResolvedValue([{ id: 44 }]) }));
+            await expect(
+                service.creerGroupe({ id_part_type: 1, id_base_model: 1, modeleIds: [2] }, 'Bearer x'),
+            ).resolves.toEqual({ id: 44 });
         });
 
         it('allows super_admin', async () => {
@@ -266,6 +274,11 @@ describe('CompatibilityService', () => {
     describe('superAdminRequis (via supprimerGroupe/creerEditeur) — super_admin only, not compat_editor', () => {
         it('rejects compat_editor from deleting a group', async () => {
             caisseService.acteurRequis.mockResolvedValue({ id: 9, nom: 'Editeur', role: 'compat_editor' });
+            await expect(service.supprimerGroupe(1, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
+        });
+
+        it('rejects compatibility_employee from deleting a group too (same boundary as compat_editor)', async () => {
+            caisseService.acteurRequis.mockResolvedValue({ id: 10, nom: 'Employe', role: 'compatibility_employee' });
             await expect(service.supprimerGroupe(1, 'Bearer x')).rejects.toBeInstanceOf(ForbiddenException);
         });
 

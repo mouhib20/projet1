@@ -9,7 +9,7 @@ export const compatEditorGuard: CanActivateFn = () => {
         router.navigate(['/login']);
         return false;
     }
-    if (auth.isCompatEditor() || auth.isSuperAdmin()) return true;
+    if (auth.isCompatEditor() || auth.isCompatImportEmployee() || auth.isSuperAdmin()) return true;
     router.navigate(['/vente/accueil']);
     return false;
 };
