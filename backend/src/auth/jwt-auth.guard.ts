@@ -45,13 +45,24 @@ export class JwtAuthGuard implements CanActivate {
         const user = await this.usersService.findById(payload.sub);
         if (!user || !user.actif) throw new ForbiddenException('Compte suspendu.');
 
+        const lecture = req.method === 'GET' || req.method === 'HEAD';
+
         if (user.id_magasin != null) {
-            const [magasin] = await this.dataSource.query(`SELECT actif FROM magasin WHERE id_magasin = $1`, [user.id_magasin]);
+            const [magasin] = await this.dataSource.query(
+                `SELECT m.actif, a.statut AS abonnement_statut
+                   FROM magasin m LEFT JOIN abonnement a ON a.id_magasin = m.id_magasin
+                  WHERE m.id_magasin = $1`,
+                [user.id_magasin],
+            );
             if (!magasin || !magasin.actif) throw new ForbiddenException('Ce magasin est suspendu.');
+            // Expired subscription past its grace period: read-only, same spirit as the visiteur
+            // role below - data stays fully visible/exportable, nothing new can be written.
+            if (!lecture && magasin.abonnement_statut === 'suspended') {
+                throw new ForbiddenException("Abonnement expiré. Lecture seule - contactez l'administrateur pour renouveler.");
+            }
         }
         this.storeContext.definir(user.id_magasin, user.role);
 
-        const lecture = req.method === 'GET' || req.method === 'HEAD';
         if (!lecture) {
             if (payload.role === 'visiteur') throw new ForbiddenException('Accès en lecture seule.');
             if (ECRITURE_ADMIN.test(req.originalUrl || req.url) && payload.role !== 'admin') {

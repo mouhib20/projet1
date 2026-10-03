@@ -79,6 +79,16 @@ export class MagasinsService {
             for (const dep of DEPARTEMENTS) {
                 await m.save(m.create(MagasinModuleEntity, { id_magasin: magasin.id_magasin, departement: dep, actif: true }));
             }
+            // Starts an actual trial (every department enabled above already covers "trial = all
+            // modules on") - see bootstrap-db.ts's migration comment for why existing stores from
+            // before this feature are backfilled as 'active' instead, never as a fresh trial.
+            const [{ duree_essai_jours: dureeEssaiJours }] = await m.query(
+                `SELECT duree_essai_jours FROM parametre_abonnement WHERE id = 1`,
+            );
+            await m.query(
+                `INSERT INTO abonnement (id_magasin, statut, date_fin_essai) VALUES ($1, 'trial', CURRENT_DATE + ($2 || ' days')::interval)`,
+                [magasin.id_magasin, dureeEssaiJours],
+            );
             return magasin;
         });
     }

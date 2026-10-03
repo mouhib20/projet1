@@ -1,0 +1,302 @@
+<div class="subs-page">
+
+    <div class="page-header">
+        <div>
+            <div class="page-title">💳 {{ 'SUBSCRIPTIONS.TITLE' | translate }}</div>
+            <div class="page-subtitle">{{ 'SUBSCRIPTIONS.SUBTITLE' | translate }}</div>
+        </div>
+        <div class="header-boutons">
+            <button class="btn btn-secondary btn-sm" (click)="toggleParametres()">⚙️ {{ 'SUBSCRIPTIONS.SETTINGS' | translate }}</button>
+            <button class="btn btn-secondary" (click)="goBack()">🏬 {{ 'MARKET_ANALYTICS.BACK_TO_STORES' | translate }}</button>
+            <button class="btn btn-secondary" (click)="logout()">🚪 {{ 'SUPER_ADMIN.LOGOUT' | translate }}</button>
+        </div>
+    </div>
+
+    <div class="alert alert-success" *ngIf="successMsg">✅ {{ successMsg | translate }}</div>
+    <div class="alert alert-error" *ngIf="errorMsg">⚠️ {{ errorMsg | translate }}</div>
+
+    <!-- Financial summary -->
+    <div class="summary-row" *ngIf="resume">
+        <div class="summary-card">
+            <div class="summary-value">{{ resume.nb_actifs }}</div>
+            <div class="summary-label">{{ 'SUBSCRIPTIONS.NB_ACTIVE' | translate }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ resume.revenus_mois }} DT</div>
+            <div class="summary-label">{{ 'SUBSCRIPTIONS.REVENUE_MONTH' | translate }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ resume.revenus_annee }} DT</div>
+            <div class="summary-label">{{ 'SUBSCRIPTIONS.REVENUE_YEAR' | translate }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">{{ resume.revenus_attendus_30j }} DT</div>
+            <div class="summary-label">{{ 'SUBSCRIPTIONS.EXPECTED_30D' | translate }} ({{ resume.nb_renouvellements_30j }})</div>
+        </div>
+    </div>
+
+    <!-- Settings panel -->
+    <div class="settings-panel" *ngIf="showParametres && parametres">
+        <div class="detail-section-title">{{ 'SUBSCRIPTIONS.BASE_SETTINGS' | translate }}</div>
+        <div class="settings-grid">
+            <div class="filter-group">
+                <label>{{ 'SUBSCRIPTIONS.BASE_PRICE' | translate }}</label>
+                <input type="number" min="0" [(ngModel)]="parametres.prix_base_annuel">
+            </div>
+            <div class="filter-group">
+                <label>{{ 'SUBSCRIPTIONS.TRIAL_DAYS' | translate }}</label>
+                <input type="number" min="1" [(ngModel)]="parametres.duree_essai_jours">
+            </div>
+            <div class="filter-group">
+                <label>{{ 'SUBSCRIPTIONS.GRACE_DAYS' | translate }}</label>
+                <input type="number" min="0" [(ngModel)]="parametres.duree_grace_jours">
+            </div>
+            <button class="btn btn-primary btn-sm" [disabled]="savingParametres" (click)="saveParametresBase()">
+                {{ (savingParametres ? 'SUBSCRIPTIONS.SAVING' : 'SUBSCRIPTIONS.SAVE') | translate }}
+            </button>
+        </div>
+
+        <div class="detail-section-title">{{ 'SUBSCRIPTIONS.SECTION_PRICES' | translate }}</div>
+        <div class="sections-price-grid">
+            <div class="section-price-row" *ngFor="let s of parametres.sections">
+                <span class="section-name">{{ s.departement }}</span>
+                <input type="number" min="0" [(ngModel)]="s.prix_annuel" [placeholder]="'SUBSCRIPTIONS.INCLUDED_IN_BASE' | translate">
+                <button class="btn-outline btn-sm" (click)="saveSectionPrice(s.departement, s.prix_annuel)">{{ 'SUBSCRIPTIONS.SAVE' | translate }}</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+        <div class="filter-group">
+            <label>{{ 'SUBSCRIPTIONS.FILTER_STATUS' | translate }}</label>
+            <select [(ngModel)]="filtreStatut">
+                <option value="tous">{{ 'MARKET_ANALYTICS.ALL' | translate }}</option>
+                <option value="trial">{{ 'SUBSCRIPTIONS.STATUS_TRIAL' | translate }}</option>
+                <option value="active">{{ 'SUBSCRIPTIONS.STATUS_ACTIVE' | translate }}</option>
+                <option value="grace">{{ 'SUBSCRIPTIONS.STATUS_GRACE' | translate }}</option>
+                <option value="suspended">{{ 'SUBSCRIPTIONS.STATUS_SUSPENDED' | translate }}</option>
+                <option value="expire_bientot">{{ 'SUBSCRIPTIONS.FILTER_EXPIRING_SOON' | translate }}</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>{{ 'SUPER_ADMIN.SEARCH_PLACEHOLDER' | translate }}</label>
+            <input type="text" [(ngModel)]="searchTerm">
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="loading">
+        <div class="loading-icon">⟳</div>
+        <strong>{{ 'MARKET_ANALYTICS.LOADING' | translate }}</strong>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container" *ngIf="!loading">
+        <table class="modern-table" *ngIf="filteredAbonnements.length; else emptyState">
+            <thead>
+                <tr>
+                    <th>{{ 'SUPER_ADMIN.COL_NAME' | translate }}</th>
+                    <th class="text-center">{{ 'SUBSCRIPTIONS.COL_STATUS' | translate }}</th>
+                    <th class="text-center">{{ 'SUBSCRIPTIONS.COL_DAYS_LEFT' | translate }}</th>
+                    <th class="text-center">{{ 'SUBSCRIPTIONS.COL_PRICE' | translate }}</th>
+                    <th>{{ 'SUBSCRIPTIONS.COL_LAST_PAYMENT' | translate }}</th>
+                    <th class="text-center">{{ 'SUPER_ADMIN.COL_ACTIONS' | translate }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <ng-container *ngFor="let a of filteredAbonnements">
+                    <tr>
+                        <td class="fw-bold">{{ a.nom }}</td>
+                        <td class="text-center"><span class="badge" [ngClass]="statutBadgeClass(a.statut)">{{ ('SUBSCRIPTIONS.STATUS_' + a.statut.toUpperCase()) | translate }}</span></td>
+                        <td class="text-center" [class.text-danger]="a.jours_restants != null && a.jours_restants < 0">{{ a.jours_restants ?? '—' }}</td>
+                        <td class="text-center">{{ a.prix_annuel }} DT</td>
+                        <td>{{ a.derniere_date_paiement ? (a.derniere_date_paiement | date:'yyyy-MM-dd') : '—' }}</td>
+                        <td class="text-center actions-cell">
+                            <button class="btn-outline btn-sm" (click)="openRow(a, 'paiement')">💰 {{ 'SUBSCRIPTIONS.ACTION_PAY' | translate }}</button>
+                            <button class="btn-outline btn-sm" (click)="openRow(a, 'prolonger-essai')" *ngIf="a.statut === 'trial'">⏳ {{ 'SUBSCRIPTIONS.ACTION_EXTEND_TRIAL' | translate }}</button>
+                            <button class="btn-outline btn-sm" (click)="openRow(a, 'prolonger')">📅 {{ 'SUBSCRIPTIONS.ACTION_EXTEND' | translate }}</button>
+                            <button class="btn-outline btn-sm" (click)="openRow(a, 'suspendre')" *ngIf="a.statut !== 'suspended'">⛔ {{ 'SUBSCRIPTIONS.ACTION_SUSPEND' | translate }}</button>
+                            <button class="btn-outline btn-sm" (click)="openRow(a, 'reactiver')" *ngIf="a.statut === 'suspended'">▶️ {{ 'SUBSCRIPTIONS.ACTION_REACTIVATE' | translate }}</button>
+                            <button class="btn-outline btn-sm" (click)="openRow(a, 'reduction')">🏷️ {{ 'SUBSCRIPTIONS.ACTION_DISCOUNT' | translate }}</button>
+                            <button class="btn-outline btn-sm" (click)="openRow(a, 'historique')">📜 {{ 'SUBSCRIPTIONS.ACTION_HISTORY' | translate }}</button>
+                        </td>
+                    </tr>
+
+                    <tr *ngIf="openRowId === a.id_magasin" class="detail-row">
+                        <td colspan="6">
+                            <div class="detail-panel">
+
+                                <!-- Payment form -->
+                                <ng-container *ngIf="openAction === 'paiement'">
+                                    <div class="detail-section-title">{{ 'SUBSCRIPTIONS.ACTION_PAY' | translate }} — {{ a.nom }}</div>
+                                    <div class="loading-state" *ngIf="detailLoading"><div class="loading-icon">⟳</div></div>
+                                    <div class="form-grid" *ngIf="!detailLoading">
+                                        <div class="filter-group">
+                                            <label>{{ 'SUBSCRIPTIONS.AMOUNT' | translate }}</label>
+                                            <input type="number" min="0" [(ngModel)]="formPaiement.montant">
+                                        </div>
+                                        <div class="filter-group">
+                                            <label>{{ 'SUBSCRIPTIONS.METHOD' | translate }}</label>
+                                            <select [(ngModel)]="formPaiement.methode">
+                                                <option *ngFor="let m of methodesPaiement" [value]="m">{{ m }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="filter-group">
+                                            <label>{{ 'SUBSCRIPTIONS.REFERENCE' | translate }}</label>
+                                            <input type="text" [(ngModel)]="formPaiement.reference">
+                                        </div>
+                                        <div class="filter-group">
+                                            <label>{{ 'SUBSCRIPTIONS.PAYMENT_DATE' | translate }}</label>
+                                            <input type="date" [(ngModel)]="formPaiement.date_paiement">
+                                        </div>
+                                        <div class="filter-group full">
+                                            <label>{{ 'SUBSCRIPTIONS.NOTE' | translate }}</label>
+                                            <input type="text" [(ngModel)]="formPaiement.note">
+                                        </div>
+                                        <div class="filter-group full">
+                                            <label>{{ 'SUBSCRIPTIONS.SECTIONS_PAID' | translate }}</label>
+                                            <div class="sections-checkboxes">
+                                                <label class="checkbox-chip" *ngFor="let dep of departements">
+                                                    <input type="checkbox" [checked]="formPaiement.sections.includes(dep)" (change)="toggleSection(dep)"> {{ dep }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions-row">
+                                        <button class="btn btn-primary btn-sm" [disabled]="saving" (click)="submitPaiement(a.id_magasin)">{{ 'SUBSCRIPTIONS.CONFIRM' | translate }}</button>
+                                        <button class="btn-outline btn-sm" (click)="closeRow()">{{ 'CANCEL' | translate }}</button>
+                                    </div>
+                                </ng-container>
+
+                                <!-- Extend trial -->
+                                <ng-container *ngIf="openAction === 'prolonger-essai'">
+                                    <div class="detail-section-title">{{ 'SUBSCRIPTIONS.ACTION_EXTEND_TRIAL' | translate }} — {{ a.nom }}</div>
+                                    <div class="form-grid">
+                                        <div class="filter-group">
+                                            <label>{{ 'SUBSCRIPTIONS.DAYS' | translate }}</label>
+                                            <input type="number" min="1" [(ngModel)]="formProlonger.jours">
+                                        </div>
+                                        <div class="filter-group full">
+                                            <label>{{ 'SUBSCRIPTIONS.REASON' | translate }}</label>
+                                            <input type="text" [(ngModel)]="formProlonger.raison">
+                                        </div>
+                                    </div>
+                                    <div class="form-actions-row">
+                                        <button class="btn btn-primary btn-sm" [disabled]="saving" (click)="submitProlongerEssai(a.id_magasin)">{{ 'SUBSCRIPTIONS.CONFIRM' | translate }}</button>
+                                        <button class="btn-outline btn-sm" (click)="closeRow()">{{ 'CANCEL' | translate }}</button>
+                                    </div>
+                                </ng-container>
+
+                                <!-- Extend subscription -->
+                                <ng-container *ngIf="openAction === 'prolonger'">
+                                    <div class="detail-section-title">{{ 'SUBSCRIPTIONS.ACTION_EXTEND' | translate }} — {{ a.nom }}</div>
+                                    <div class="form-grid">
+                                        <div class="filter-group">
+                                            <label>{{ 'SUBSCRIPTIONS.DAYS' | translate }}</label>
+                                            <input type="number" min="1" [(ngModel)]="formProlonger.jours">
+                                        </div>
+                                        <div class="filter-group full">
+                                            <label>{{ 'SUBSCRIPTIONS.REASON' | translate }}</label>
+                                            <input type="text" [(ngModel)]="formProlonger.raison">
+                                        </div>
+                                    </div>
+                                    <div class="form-actions-row">
+                                        <button class="btn btn-primary btn-sm" [disabled]="saving" (click)="submitProlongerAbonnement(a.id_magasin)">{{ 'SUBSCRIPTIONS.CONFIRM' | translate }}</button>
+                                        <button class="btn-outline btn-sm" (click)="closeRow()">{{ 'CANCEL' | translate }}</button>
+                                    </div>
+                                </ng-container>
+
+                                <!-- Suspend -->
+                                <ng-container *ngIf="openAction === 'suspendre'">
+                                    <div class="detail-section-title">{{ 'SUBSCRIPTIONS.ACTION_SUSPEND' | translate }} — {{ a.nom }}</div>
+                                    <div class="form-grid">
+                                        <div class="filter-group full">
+                                            <label>{{ 'SUBSCRIPTIONS.REASON' | translate }}</label>
+                                            <input type="text" [(ngModel)]="formRaisonSimple.raison">
+                                        </div>
+                                    </div>
+                                    <div class="form-actions-row">
+                                        <button class="btn btn-primary btn-sm" [disabled]="saving" (click)="submitSuspendre(a.id_magasin)">{{ 'SUBSCRIPTIONS.CONFIRM' | translate }}</button>
+                                        <button class="btn-outline btn-sm" (click)="closeRow()">{{ 'CANCEL' | translate }}</button>
+                                    </div>
+                                </ng-container>
+
+                                <!-- Reactivate -->
+                                <ng-container *ngIf="openAction === 'reactiver'">
+                                    <div class="detail-section-title">{{ 'SUBSCRIPTIONS.ACTION_REACTIVATE' | translate }} — {{ a.nom }}</div>
+                                    <div class="empty-hint">{{ 'SUBSCRIPTIONS.REACTIVATE_HINT' | translate }}</div>
+                                    <div class="form-grid">
+                                        <div class="filter-group full">
+                                            <label>{{ 'SUBSCRIPTIONS.REASON' | translate }}</label>
+                                            <input type="text" [(ngModel)]="formRaisonSimple.raison">
+                                        </div>
+                                    </div>
+                                    <div class="form-actions-row">
+                                        <button class="btn btn-primary btn-sm" [disabled]="saving" (click)="submitReactiver(a.id_magasin)">{{ 'SUBSCRIPTIONS.CONFIRM' | translate }}</button>
+                                        <button class="btn-outline btn-sm" (click)="closeRow()">{{ 'CANCEL' | translate }}</button>
+                                    </div>
+                                </ng-container>
+
+                                <!-- Discount -->
+                                <ng-container *ngIf="openAction === 'reduction'">
+                                    <div class="detail-section-title">{{ 'SUBSCRIPTIONS.ACTION_DISCOUNT' | translate }} — {{ a.nom }}</div>
+                                    <div class="form-grid">
+                                        <div class="filter-group">
+                                            <label>{{ 'SUBSCRIPTIONS.DISCOUNT_AMOUNT' | translate }}</label>
+                                            <input type="number" min="0" [(ngModel)]="formReduction.montant">
+                                        </div>
+                                        <div class="filter-group">
+                                            <label>{{ 'SUBSCRIPTIONS.DISCOUNT_PERCENT' | translate }}</label>
+                                            <input type="number" min="0" max="100" [(ngModel)]="formReduction.pourcentage">
+                                        </div>
+                                        <div class="filter-group full">
+                                            <label>{{ 'SUBSCRIPTIONS.REASON' | translate }}</label>
+                                            <input type="text" [(ngModel)]="formReduction.raison">
+                                        </div>
+                                    </div>
+                                    <div class="form-actions-row">
+                                        <button class="btn btn-primary btn-sm" [disabled]="saving" (click)="submitReduction(a.id_magasin)">{{ 'SUBSCRIPTIONS.CONFIRM' | translate }}</button>
+                                        <button class="btn-outline btn-sm" (click)="closeRow()">{{ 'CANCEL' | translate }}</button>
+                                    </div>
+                                </ng-container>
+
+                                <!-- History -->
+                                <ng-container *ngIf="openAction === 'historique'">
+                                    <div class="detail-section-title">{{ 'SUBSCRIPTIONS.ACTION_HISTORY' | translate }} — {{ a.nom }}</div>
+                                    <div class="loading-state" *ngIf="detailLoading"><div class="loading-icon">⟳</div></div>
+                                    <table class="modern-table" *ngIf="!detailLoading && detail?.historique?.length">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ 'SUBSCRIPTIONS.COL_DATE' | translate }}</th>
+                                                <th>{{ 'SUBSCRIPTIONS.COL_TYPE' | translate }}</th>
+                                                <th>{{ 'SUBSCRIPTIONS.COL_OLD_VALUE' | translate }}</th>
+                                                <th>{{ 'SUBSCRIPTIONS.COL_NEW_VALUE' | translate }}</th>
+                                                <th>{{ 'SUBSCRIPTIONS.REASON' | translate }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr *ngFor="let h of detail!.historique">
+                                                <td>{{ h.date_creation | date:'yyyy-MM-dd HH:mm' }}</td>
+                                                <td>{{ h.type }}</td>
+                                                <td class="small-cell">{{ h.ancienne_valeur }}</td>
+                                                <td class="small-cell">{{ h.nouvelle_valeur }}</td>
+                                                <td>{{ h.raison || '—' }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="empty-hint" *ngIf="!detailLoading && !detail?.historique?.length">{{ 'SUBSCRIPTIONS.NO_HISTORY' | translate }}</div>
+                                </ng-container>
+
+                            </div>
+                        </td>
+                    </tr>
+                </ng-container>
+            </tbody>
+        </table>
+        <ng-template #emptyState>
+            <div class="empty-state"><div class="empty-icon">📭</div>{{ 'MARKET_ANALYTICS.EMPTY' | translate }}</div>
+        </ng-template>
+    </div>
+
+</div>

@@ -32,6 +32,7 @@ import { CompatGroupsComponent } from './compat-editor/compat-groups/compat-grou
 import { CompatCatalogComponent } from './compat-editor/compat-catalog/compat-catalog.component';
 import { MarketAnalyticsComponent } from './super-admin/market-analytics/market-analytics.component';
 import { AccessoriesAnalyticsComponent } from './super-admin/accessories-analytics/accessories-analytics.component';
+import { SubscriptionsComponent } from './super-admin/subscriptions/subscriptions.component';
 import { SuggestionsComponent } from './compat-editor/suggestions/suggestions.component';
 import { ImportDataComponent } from './compat-import/import-data/import-data.component';
 import { WholesaleEditorProductsComponent } from './wholesale-editor/products/wholesale-editor-products.component';
@@ -82,6 +83,9 @@ export const routes: Routes = [
     },
     {
         path: 'super-admin/accessories-analytics', component: AccessoriesAnalyticsComponent, canActivate: [superAdminGuard],
+    },
+    {
+        path: 'super-admin/subscriptions', component: SubscriptionsComponent, canActivate: [superAdminGuard],
     },
     {
         path: 'compat-editor/groups', component: CompatGroupsComponent, canActivate: [compatEditorGuard],

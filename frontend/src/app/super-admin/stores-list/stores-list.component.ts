@@ -177,6 +177,10 @@ export class StoresListComponent implements OnInit {
         this.router.navigate(['/super-admin/accessories-analytics']);
     }
 
+    goToSubscriptions(): void {
+        this.router.navigate(['/super-admin/subscriptions']);
+    }
+
     logout(): void {
         this.auth.logout();
     }

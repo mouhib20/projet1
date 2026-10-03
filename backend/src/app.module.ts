@@ -51,6 +51,7 @@ import { WholesaleOrder } from './wholesale/wholesale-order.entity';
 import { WholesaleModule } from './wholesale/wholesale.module';
 import { AdminAnalyticsModule } from './admin-analytics/admin-analytics.module';
 import { AdminAccessoriesAnalyticsModule } from './admin-accessories-analytics/admin-accessories-analytics.module';
+import { AbonnementsModule } from './abonnements/abonnements.module';
 
 @Module({
     imports: [
@@ -110,6 +111,7 @@ import { AdminAccessoriesAnalyticsModule } from './admin-accessories-analytics/a
         WholesaleModule,
         AdminAnalyticsModule,
         AdminAccessoriesAnalyticsModule,
+        AbonnementsModule,
     ],
     controllers: [AppController],
     providers: [

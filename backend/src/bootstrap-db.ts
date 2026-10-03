@@ -510,6 +510,103 @@ async function migrer(): Promise<void> {
         `);
         await client.query(`CREATE INDEX IF NOT EXISTS "accessoire_resume_quotidien_produit_idx" ON "accessoire_resume_quotidien" ("id_produit")`);
 
+        // Subscriptions & billing (Phase 1: state machine, pricing, manual payment, enforcement -
+        // no PDF invoicing or owner-facing screen yet, see AbonnementsService). One global settings
+        // row (id is always 1, enforced by the service, not a DB constraint - simplest single-row
+        // table pattern, matches how this project has no other "settings" table to follow instead).
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "parametre_abonnement" (
+                "id" integer PRIMARY KEY DEFAULT 1,
+                "prix_base_annuel" numeric(10,2) NOT NULL DEFAULT 0,
+                "duree_essai_jours" integer NOT NULL DEFAULT 30,
+                "duree_grace_jours" integer NOT NULL DEFAULT 7,
+                "date_maj" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+        await client.query(`INSERT INTO "parametre_abonnement" ("id") VALUES (1) ON CONFLICT (id) DO NOTHING`);
+
+        // One row per department (see permission.entity.ts's DEPARTEMENTS) - a NULL price means
+        // that department is bundled into the base price, not sold separately. Backfilled below for
+        // every current department; re-run is a no-op thanks to ON CONFLICT.
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "parametre_prix_section" (
+                "departement" character varying(30) PRIMARY KEY,
+                "prix_annuel" numeric(10,2),
+                "date_maj" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+        for (const dep of ['ventes', 'stock', 'reparation', 'fournisseurs', 'charges', 'clients', 'rapports', 'compatibilite', 'wholesale']) {
+            await client.query(`INSERT INTO "parametre_prix_section" ("departement") VALUES ($1) ON CONFLICT (departement) DO NOTHING`, [dep]);
+        }
+
+        // One row per store - its current subscription state. date_fin_abonnement is null until the
+        // first payment (trial has no "subscription end", only date_fin_essai). Once a payment
+        // happens, date_fin_abonnement is the one authoritative anchor date from then on (the
+        // nightly job and AbonnementsService always read COALESCE(date_fin_abonnement,
+        // date_fin_essai) rather than branching on which one is set).
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "abonnement" (
+                "id_magasin" integer PRIMARY KEY,
+                "statut" character varying(20) NOT NULL DEFAULT 'trial',
+                "date_fin_essai" date NOT NULL,
+                "date_fin_abonnement" date,
+                "reduction_montant" numeric(10,2),
+                "reduction_pourcentage" numeric(5,2),
+                "reduction_raison" text,
+                "date_creation" timestamp NOT NULL DEFAULT now(),
+                "date_maj" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+
+        // Backfill: every store that existed before this feature shipped gets a full year of
+        // "active" runway starting today, NOT a trial - a store already in real use must never be
+        // silently put on a countdown to suspension by this migration. Only stores created from now
+        // on (via MagasinsService.create) start as an actual trial. Idempotent via the NOT IN check.
+        const magasinsSansAbonnement = await client.query(
+            `SELECT id_magasin FROM magasin WHERE id_magasin NOT IN (SELECT id_magasin FROM abonnement)`,
+        );
+        for (const { id_magasin } of magasinsSansAbonnement.rows) {
+            await client.query(
+                `INSERT INTO abonnement (id_magasin, statut, date_fin_essai, date_fin_abonnement)
+                 VALUES ($1, 'active', CURRENT_DATE, CURRENT_DATE + INTERVAL '365 days')`,
+                [id_magasin],
+            );
+        }
+
+        // Manual payment log (Phase 1 - no invoice PDF/number yet, see AbonnementsService).
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "abonnement_paiement" (
+                "id" SERIAL PRIMARY KEY,
+                "id_magasin" integer NOT NULL,
+                "montant" numeric(10,2) NOT NULL,
+                "methode" character varying(50) NOT NULL,
+                "reference" character varying(150),
+                "date_paiement" date NOT NULL,
+                "note" text,
+                "cree_par" integer,
+                "date_creation" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS "abonnement_paiement_id_magasin_idx" ON "abonnement_paiement" ("id_magasin")`);
+
+        // Audit trail for every subscription-related admin action (spec section 8) - who, when,
+        // what, old/new value, why. Every write in AbonnementsService logs one row here.
+        // id_magasin is nullable: a global pricing/trial-duration change (parametre_abonnement,
+        // parametre_prix_section) isn't tied to any one store.
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "abonnement_historique" (
+                "id" SERIAL PRIMARY KEY,
+                "id_magasin" integer,
+                "type" character varying(30) NOT NULL,
+                "id_utilisateur" integer,
+                "ancienne_valeur" text,
+                "nouvelle_valeur" text,
+                "raison" text,
+                "date_creation" timestamp NOT NULL DEFAULT now()
+            )
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS "abonnement_historique_id_magasin_idx" ON "abonnement_historique" ("id_magasin")`);
+
         // Seed a super_admin account if requested and none exists yet (idempotent, every boot)
         const superAdminPwd = process.env.SEED_SUPER_ADMIN_PASSWORD || '';
         if (superAdminPwd.length >= 10) {
